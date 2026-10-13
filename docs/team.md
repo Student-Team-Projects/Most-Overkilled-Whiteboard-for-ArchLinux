@@ -7,6 +7,8 @@ What we build → `docs/README.md` · how it is structured → `docs/architectur
 
 Mateusz · Filip · poneciak57. Board: https://github.com/users/poneciak57/projects/3
 
+Board rules: `docs/board.md`.
+
 ## Split: feature teams
 
 - Everyone takes features end-to-end (UI → core → net) from the milestone in `docs/roadmap.md`.

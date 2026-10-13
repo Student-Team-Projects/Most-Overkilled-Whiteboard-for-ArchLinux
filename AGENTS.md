@@ -17,6 +17,7 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 
 ## Backlog rules (ADR 0011)
 
+- Board rules (G/T ids, Status, Priority, templates): `docs/board.md`.
 - Work items exist only as GitHub issues. Never write tasks or TODO lists into markdown files.
 - Create, update and close items with `gh issue` / `gh project`; link blockers natively.
 - Every PR body has `Closes #N`. A grill issue closes only with an ADR or a contract change.
