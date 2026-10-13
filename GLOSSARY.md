@@ -1,0 +1,23 @@
+# Glossary
+
+Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
+
+| Term | Meaning |
+|---|---|
+| **Board** | one shared whiteboard, identified by `BoardId`; its state = strokes + tombstones |
+| **Session** | a board currently live on the network (≥ 1 peer has it open) |
+| **Peer** | one running app instance; random 64-bit `PeerId` per run |
+| **Stroke** | one finished freehand line: points + colour + width; immutable |
+| **StrokeId** | `(PeerId, counter)` — globally unique, assigned by the author |
+| **Lamport timestamp** | logical clock on each stroke: max seen + 1; with `PeerId` gives draw order |
+| **Tombstone** | record that a stroke was erased; never removed in v1 |
+| **Merge** | union of strokes and of tombstones; order and duplicates don't matter |
+| **Fast-forward** | joining when local state ⊆ live state: just take the live state |
+| **Diverged** | local state has things the live session lacks: user picks merge / copy / discard |
+| **Anti-entropy** | periodic digest exchange between peers to fill in lost ops |
+| **Gossip** | broadcast by forwarding to a few random peers instead of all |
+| **Camera** | affine matrix world ↔ screen (pan + zoom) |
+| **Chunk** | fixed-size world tile; unit of render caching |
+| **Seam** | a trait with a simple oracle impl and a later fast impl |
+| **Contract** | the effect every impl of a seam must have; `docs/contracts/` |
+| **Oracle** | the layer-0 impl that fast impls are tested against |
