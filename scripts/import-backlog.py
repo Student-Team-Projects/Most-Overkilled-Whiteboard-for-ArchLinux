@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """One-off (T02): turn docs/backlog.md tables into GitHub issues on a Project board.
 
+Used once for T02 (2026-10-13); docs/backlog.md is gone since. Kept for the official-repo move.
 Usage: scripts/import-backlog.py <owner/repo> <project-owner> <project-number> [--dry-run]
 Creates labels and milestones, one issue per row (ID kept in the title), native blocked-by links,
 and adds every issue to the project. Idempotent per title: rows whose issue exists are skipped.

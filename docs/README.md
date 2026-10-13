@@ -24,6 +24,8 @@
     and benchmark".
   - Huge board stays smooth — on prepared generated examples.
   - Save to disk: "we want to be able to save it to the disk".
+- **Rejected / deferred:** pixel eraser (ADR 0002) · TCP/QUIC (0003) · tokio (0004) ·
+  always-merge-on-open (0006) · tombstone GC in v1.
 - **Open questions:** what happens when you reopen a board from file — "not yet decided".
 
 ## Where things are
@@ -33,7 +35,7 @@
 | milestones, status | `docs/roadmap.md` |
 | crates, seams, layering rule | `docs/architecture.md` |
 | how the team works | `docs/team.md` |
-| what is left, what needs deciding | `docs/backlog.md` |
+| what is left, what needs deciding | GitHub board: https://github.com/users/poneciak57/projects/3 (ADR 0011) |
 | research notes | `docs/research/` |
 | decisions | `docs/adr/` |
 | feature specs and tickets | `docs/features/` |
