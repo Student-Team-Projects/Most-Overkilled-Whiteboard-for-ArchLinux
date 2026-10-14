@@ -31,6 +31,7 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 - Lean, minimal diffs: every line must be explainable by the human who owns the PR.
   No speculative abstraction, no drive-by refactors.
 - Full standards (no panics in libs, pedantic clippy, docs, proptest) → `docs/team.md`.
+- `spikes/` is prep code outside the workspace (`docs/team.md` → Spikes); never add it to `[workspace]`.
 
 ## Agent skills
 

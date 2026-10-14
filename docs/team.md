@@ -33,6 +33,12 @@ Board rules: `docs/board.md`.
 | 1 approving review from someone who did not write it; rotate reviewers | everyone understands every part |
 | squash merge, message = what + why | readable history |
 
+## Spikes
+
+`spikes/<name>/` holds prep and learning code: its own Cargo project, **outside the workspace**, not
+checked by CI, merged by PR. It uses stand-in types copied from `docs/contracts/README.md`, so the
+real task later moves code into the crates instead of rewriting it.
+
 ## CI (every PR)
 
 `cargo fmt --check` · `cargo clippy --all-targets -- -D warnings -W clippy::pedantic` ·
