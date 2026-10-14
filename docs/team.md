@@ -5,7 +5,15 @@ What we build → `docs/README.md` · how it is structured → `docs/architectur
 
 ## Team
 
-Mateusz · Filip · poneciak57. Board: https://github.com/users/poneciak57/projects/3
+Board: https://github.com/users/poneciak57/projects/3
+
+| Person | GitHub | Leads | Reviews PRs of |
+|---|---|---|---|
+| Kacper | `poneciak57` | net, protocol, infra | Filip |
+| Mateusz | `hakiers` | core, index, sim | Kacper |
+| Filip | `fimpro` | app, render | Mateusz |
+
+Leads know their area best; features still go end-to-end. Assignments live on the board.
 
 Board rules: `docs/board.md`.
 
