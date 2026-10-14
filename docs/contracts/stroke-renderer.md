@@ -9,7 +9,9 @@ pub trait StrokeRenderer {
     /// The board changed inside `area` (add or erase); cached output there is stale.
     fn invalidate(&mut self, area: Aabb);
     /// Draw the visible strokes for this frame.
-    fn paint(&mut self, painter: &egui::Painter, camera: &Camera, board: &Board, index: &dyn SpatialIndex);
+    /// Points come only through `cache` — never decoded here (ADR 0018).
+    fn paint(&mut self, painter: &egui::Painter, camera: &Camera, board: &Board,
+             index: &dyn SpatialIndex, cache: &mut dyn StrokeCache);
 }
 ```
 

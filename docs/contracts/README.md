@@ -51,6 +51,7 @@ Coordinate rule: every coordinate computation is `i64`; `i32` exists only as dec
 | `SpatialIndex` | `spatial-index.md` | draft |
 | `Camera` (type) | `camera.md` | draft |
 | `StrokeRenderer` | `stroke-renderer.md` | draft |
+| `StrokeCache` | `stroke-cache.md` | draft |
 | `Transport` | `transport.md` | draft |
 | `Discovery` | `discovery.md` | draft |
 | `Broadcast` | `broadcast.md` | draft |

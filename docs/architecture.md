@@ -18,7 +18,7 @@ oracle on random inputs, and must show a benchmark win, before it replaces layer
 | `wb-codec` | `StrokeCodec` seam, postcard wire/file format, version byte | core |
 | `wb-index` | `SpatialIndex` seam | core |
 | `wb-net` | sans-IO protocol state machine, `Transport` seam, `Discovery`, `Broadcast`, anti-entropy | core, codec |
-| `wb-render` | `Camera` (affine matrix), `StrokeRenderer` seam, chunks | core, index, egui |
+| `wb-render` | `Camera` (affine matrix), `StrokeRenderer` + `StrokeCache` seams, chunks | core, codec, index, egui |
 | `wb-app` | the binary: eframe window, tools, CLI, threads, save/load, join flow | all |
 | `wb-sim` | in-process deterministic sim, headless bot peers, chaos, workload generators | core, codec, net |
 
@@ -30,6 +30,7 @@ Rule: `core` knows nothing about IO, egui or sockets. Only `app` and `sim` own t
 |---|---|---|
 | `SpatialIndex` | `Vec` + linear scan | quadtree |
 | `StrokeRenderer` | egui painter, every visible stroke, every frame | cached chunk meshes → chunk textures (wgpu) |
+| `StrokeCache` | `DecodeAll`: unpack once on arrival, keep all | `ChunkWorkingSet`: resident chunks + margin, byte budget |
 | `Camera` | affine matrix (pan + zoom) from day 1 | — (already cheap) |
 | `StrokeCodec` | origin + plain `i32` offsets via postcard | point reduction → delta → bit packing |
 | `Transport` | real UDP socket · `SimTransport` (seeded loss/latency/partition) | — |
@@ -54,3 +55,4 @@ The protocol is a pure state machine: `handle(event, now) → Vec<Outgoing>`. Th
    timestamp (ADR 0008) → `Board::apply`.
 3. Main sends the op to net → broadcast; anti-entropy heals anything lost (ADR 0003).
 4. Remote op → net → main → `Board::merge` → index + renderer invalidate affected chunks.
+5. Drawing and erasing read unpacked points only through `StrokeCache` (ADR 0018).

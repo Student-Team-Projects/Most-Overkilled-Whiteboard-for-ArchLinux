@@ -19,6 +19,7 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | **Gossip** | broadcast by forwarding to a few random peers instead of all |
 | **Camera** | affine matrix world ↔ screen (pan + zoom) |
 | **Chunk** | fixed-size world tile; unit of render caching |
+| **Working set** | unpacked points of the strokes the screen needs; held by `StrokeCache` |
 | **Seam** | a trait with a simple oracle impl and a later fast impl |
 | **Contract** | the effect every impl of a seam must have; `docs/contracts/` |
 | **Oracle** | the layer-0 impl that fast impls are tested against |
