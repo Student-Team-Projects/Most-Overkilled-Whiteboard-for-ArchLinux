@@ -18,12 +18,18 @@ pub struct BoardId(pub u128);
 pub struct OpId { pub peer: PeerId, pub seq: u64 }  // ADR 0009
 pub type StrokeId = OpId;                           // a stroke's id = its Add op's id
 pub struct Lamport(pub u64);                        // ADR 0008
-pub struct Point { pub x: i32, pub y: i32 }         // fixed-point world coords, ADR 0010
-pub struct Stroke { pub id: StrokeId, pub lamport: Lamport, pub color: Rgba, pub width: u16, pub points: Vec<Point> }
-pub enum Op { Add(Stroke), Erase { id: OpId, target: StrokeId } }
+pub struct WorldPos { pub x: i64, pub y: i64 }      // 1 unit = 1/16 px at zoom 1; all math i64 (ADR 0014)
+pub struct Aabb { pub min: WorldPos, pub max: WorldPos }
+pub struct EncodedPoints(pub Vec<u8>);              // codec output: i64 origin + packed deltas; opaque to core
+pub struct StrokePoints { pub origin: WorldPos, pub offsets: Vec<[i32; 2]> }  // decoded, on demand only
+pub struct Stroke { pub id: StrokeId, pub lamport: Lamport, pub color: Rgba,
+                    pub width: u16 /* world units, ADR 0013 */, pub bbox: Aabb, pub points: EncodedPoints }
+pub enum Op { Add(Stroke), Erase { id: OpId, target: StrokeId } }  // grows by new variants (ADR 0015)
 pub struct Time(pub u64);                           // ms; injected by the driver, never read from the OS
 pub struct Outgoing { pub to: PeerAddr, pub msg: Message }  // sans-IO output
 ```
+
+Coordinate rule: every coordinate computation is `i64`; `i32` exists only as decoded offsets.
 
 ## File shape
 

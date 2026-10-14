@@ -21,12 +21,13 @@ impl Camera {
 
 1. `screen_to_world(world_to_screen(p)) ≈ p` (within float tolerance) at any zoom in range.
 2. `zoom_at` keeps the world point under `anchor` fixed.
-3. Zoom is clamped to `[MIN_ZOOM, MAX_ZOOM]`.
+3. Zoom is clamped to `[MIN_ZOOM, MAX_ZOOM]` = `[0.5, 2.0]` (ADR 0013).
 4. `visible_area` contains every world point that maps inside the viewport.
 
 ## Not guaranteed
 
 - Rotation (none) · smooth animation (UI concern).
+- `WorldPos` is `i64`; screen math is `f32` relative to the camera centre, so precision does not drop far from the origin.
 
 ## Conformance tests (proptest)
 

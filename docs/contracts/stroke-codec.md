@@ -7,15 +7,19 @@ Status: draft · How stroke points are shrunk and put into bytes (ADR 0005). For
 ```rust
 pub trait StrokeCodec {
     /// Lossy, author-side only, once per stroke: reduce points to what will be stored everywhere.
-    fn simplify(&self, raw: &[Point]) -> Vec<Point>;
-    fn encode(&self, points: &[Point], out: &mut Vec<u8>);
-    fn decode(&self, bytes: &[u8]) -> Result<Vec<Point>, CodecError>;
+    fn simplify(&self, raw: &[WorldPos]) -> Vec<WorldPos>;
+    /// First point becomes the i64 origin, the rest i32 offsets from it, then packed.
+    /// `Err` if an offset does not fit i32 (the caller splits the stroke, G06).
+    fn encode(&self, points: &[WorldPos]) -> Result<EncodedPoints, CodecError>;
+    /// On demand only: drawing and precise hit tests (ADR 0014).
+    fn decode(&self, points: &EncodedPoints) -> Result<StrokePoints, CodecError>;
 }
 ```
 
 ## Guarantees
 
-1. Round trip is exact after simplify: `decode(encode(simplify(raw))) == simplify(raw)`.
+1. Round trip is exact after simplify: `decode(encode(simplify(raw)))`, expanded to `origin + offset`,
+   equals `simplify(raw)`.
 2. `simplify` keeps the first and last point, and every raw point lies within `tolerance` of the result.
 3. `decode` never panics: any byte input gives `Ok` or `Err`.
 
@@ -28,7 +32,7 @@ pub trait StrokeCodec {
 
 | Layer | Impl |
 |---|---|
-| 0 | `Raw`: `simplify` = identity, points via postcard |
+| 0 | `Raw`: `simplify` = identity; origin + plain `i32` offsets via postcard |
 | later | `Packed`: point reduction → binary delta → bit packing (team's existing code) |
 
 ## Conformance tests

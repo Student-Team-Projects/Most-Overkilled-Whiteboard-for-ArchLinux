@@ -38,5 +38,5 @@ pub trait SpatialIndex {
 | Test | Checks |
 |---|---|
 | `matches_oracle` (proptest: random insert/remove/query vs `LinearIndex`) | 1, 2 |
-| `far_coordinates` (±2³⁰) | 3 |
+| `far_coordinates` (±2⁶²) | 3 |
 | bench: query time at 1k / 100k / 1M strokes | win vs oracle |

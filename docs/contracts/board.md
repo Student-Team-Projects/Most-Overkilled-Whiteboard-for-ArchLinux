@@ -8,7 +8,8 @@ laws below are its contract and its property tests. Format → `README.md` here.
 ```rust
 impl Board {
     /// Author a new stroke here: assigns OpId and Lamport, applies it, returns the op to send.
-    pub fn draw(&mut self, me: PeerId, color: Rgba, width: u16, points: Vec<Point>) -> Op;
+    /// `points` come from `StrokeCodec::encode`; `bbox` must cover them (caller's duty).
+    pub fn draw(&mut self, me: PeerId, color: Rgba, width: u16, points: EncodedPoints, bbox: Aabb) -> Op;
     /// Author an erase of `target` here; returns the op to send.
     pub fn erase(&mut self, me: PeerId, target: StrokeId) -> Op;
     /// Apply an op from anywhere. Returns whether the visible picture changed.
@@ -30,6 +31,7 @@ impl Board {
 
 ## Not guaranteed
 
+- Decoding: `Board` never looks inside `EncodedPoints` (ADR 0014).
 - Validation of foreign ops (no auth, README) · memory ever shrinking (tombstones stay, backlog P3).
 
 ## Conformance tests (proptest)
