@@ -23,3 +23,4 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | **Seam** | a trait with a simple oracle impl and a later fast impl |
 | **Contract** | the effect every impl of a seam must have; `docs/contracts/` |
 | **Oracle** | the layer-0 impl that fast impls are tested against |
+| **Kosher** | code that meets every rule in `docs/team.md` → Code standards: understood line by line by its owner and reviewer (no AI slop), lean, no panics in libs, documented API, property tests, pedantic lints clean |

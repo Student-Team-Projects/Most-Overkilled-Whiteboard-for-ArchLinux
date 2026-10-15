@@ -48,6 +48,8 @@ seeded sim convergence test. Benchmarks run manually, results committed to `docs
 
 ## Code standards
 
+Code that meets all of these is **kosher** (`GLOSSARY.md`).
+
 | Rule | Detail |
 |---|---|
 | understood, not just passing | every line is reviewed and understood by its stakeholder; no AI slop — if you can't explain it, it doesn't merge |
