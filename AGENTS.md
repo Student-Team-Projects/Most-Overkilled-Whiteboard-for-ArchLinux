@@ -12,6 +12,7 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 | diagrams: overview + complex topics | `docs/architecture.md`, `docs/design/` |
 | what each seam must do | `docs/contracts/` |
 | decisions | `docs/adr/` |
+| journal | `docs/journal.md` |
 | words | `GLOSSARY.md` |
 | team workflow, code standards, definition of done | `docs/team.md` |
 | **backlog** | **GitHub Issues + Project board** (ADR 0011) — see `docs/agents/issue-tracker.md` |
@@ -32,6 +33,12 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
   No speculative abstraction, no drive-by refactors.
 - Full standards (no panics in libs, pedantic clippy, docs, proptest) → `docs/team.md`.
 - `spikes/` is prep code outside the workspace (`docs/team.md` → Spikes); never add it to `[workspace]`.
+
+## PR reviews
+
+- Automated reviewers (Codex) review every PR and re-review after each push; treat their findings like a human reviewer's.
+- After fixing a finding: push, reply in the thread with the fixing commit, then resolve the thread. Leave unresolved only what is not fixed, with a one-line reason.
+- At most 2 fix rounds per PR; anything found after that goes to the PR owner to decide (fix now, or a follow-up issue).
 
 ## Commands
 

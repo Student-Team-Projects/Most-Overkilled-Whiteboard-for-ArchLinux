@@ -32,19 +32,20 @@ Board rules: `docs/board.md`.
 | `main` is always green; short-lived branches `feat/…`, `fix/…`, `bench/…` | no long-lived divergence |
 | PR ≤ ~1000 changed lines; bigger work is split | the size is a norm we hold each other to, not a tool check — the real rule is that the reviewer reads every line |
 | 1 approving review from someone who did not write it; rotate reviewers | everyone understands every part |
+| resolve a review thread once its finding is fixed; reply with the fixing commit | unresolved threads = open work |
 | squash merge, message = what + why | readable history |
 
 ## Spikes
 
 `spikes/<name>/` holds prep and learning code: its own Cargo project, **outside the workspace**, not
-checked by CI, merged by PR. It uses stand-in types copied from `docs/contracts/README.md`, so the
-real task later moves code into the crates instead of rewriting it.
+checked by CI, merged by PR. It uses stand-in types copied from the shared types in `docs/contracts/README.md` (T08 #32 moves
+them into `wb-core`).
 
-## CI (every PR)
+## CI (target for T06 #30; not active yet)
 
-`cargo fmt --check` · `cargo clippy --all-targets -- -D warnings -W clippy::pedantic` ·
-`cargo test --workspace` (incl. proptest) ·
-seeded sim convergence test. Benchmarks run manually, results committed to `docs/benchmarks/`.
+Target: every PR runs `ci` (fmt, clippy, test; command list → `AGENTS.md` → Commands). After approval, the PR
+goes through the GitHub merge queue, which re-runs `ci` on main + PR and merges only if green.
+Benchmarks: method: G20 (#20), M4.
 
 ## Code standards
 
@@ -69,5 +70,5 @@ Code that meets all of these is **kosher** (`GLOSSARY.md`).
 
 ## Rhythm
 
-- Weekly sync (30 min): what landed, what's blocked, next week's split. Notes → `docs/journal.md`.
+- Weekly sync (30 min): what landed, what's blocked, next week's split. notes → `docs/journal.md`.
 - Blocked > 1 day → say it in the chat, don't wait for the sync.

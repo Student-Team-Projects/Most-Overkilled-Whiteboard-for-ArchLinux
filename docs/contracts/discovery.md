@@ -24,8 +24,9 @@ Format → `README.md` here.
 
 | Layer | Impl |
 |---|---|
-| 0 | `Localhost`: probe a fixed port range on 127.0.0.1 every tick |
-| later | virtual network discovery — depends on its capabilities (backlog P1) |
+| 0 | Manual `ip:port` (+ `Localhost` for tests) |
+| M1 | STUN + rendezvous (G29 #63) |
+| M4 | LAN / virtual network discovery |
 
 ## Conformance tests
 
