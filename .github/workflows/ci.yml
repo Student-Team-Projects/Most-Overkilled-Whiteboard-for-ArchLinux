@@ -1,5 +1,3 @@
-# The `ci` job is the required status check on `main` (T06 #30, docs/team.md → CI).
-# It runs on PRs for fast feedback and again in the merge queue on the exact code that lands.
 name: CI
 
 on:
