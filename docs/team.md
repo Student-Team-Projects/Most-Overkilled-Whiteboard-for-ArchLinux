@@ -30,10 +30,21 @@ Board rules: `docs/board.md`.
 | Rule | Why |
 |---|---|
 | `main` is always green; short-lived branches `feat/…`, `fix/…`, `bench/…` | no long-lived divergence |
-| PR ≤ ~1000 changed lines; bigger work is split | the size is a norm we hold each other to, not a tool check — the real rule is that the reviewer reads every line |
+| PR ≤ ~1000 changed lines; a bigger task is a **PR stack** (below) | the size is a norm we hold each other to, not a tool check — the real rule is that the reviewer reads every line |
 | 1 approving review from someone who did not write it; rotate reviewers | everyone understands every part |
 | resolve a review thread once its finding is fixed; reply with the fixing commit | unresolved threads = open work |
 | squash merge, message = what + why | readable history |
+
+### PR stacks
+
+- A task whose diff would pass ~1000 changed lines is split into a stack: a chain of PRs, each one
+  building on the previous one and reviewable on its own.
+- Not counted: generated output (test snapshots, fixtures), lockfiles, dependency or version bumps in
+  `Cargo.toml`, and similar lines nobody reads line by line.
+- The first PR targets `main`; each next PR targets the branch of the one below it. Every PR is green
+  on its own.
+- Merge bottom-up. After a squash merge, rebase the next PR onto `main` and retarget it.
+- Every PR in the stack says `Part of #N` and links its neighbours; the last one says `Closes #N`.
 
 ## Spikes
 
