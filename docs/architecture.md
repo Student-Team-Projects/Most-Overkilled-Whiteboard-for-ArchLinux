@@ -54,7 +54,7 @@ Seams on the network side:
 ```mermaid
 flowchart LR
     tr["Transport: Udp + Sim · M1"]
-    di0["Discovery: Localhost · M1"] -->|M4| di1["virtual network: open G12"]
+    di0["Discovery: Manual ip:port + Stun · M1"] -->|M4| di1["LAN / virtual network"]
     br0["Broadcast: SendToAll · M1"] -->|M4| br1["Gossip"]
     ae0["AntiEntropy: FullSet · M2"] -->|later| ae1["VersionVector"]
 ```
@@ -93,12 +93,12 @@ oracle on random inputs, and must show a benchmark win, before it replaces layer
 
 | Crate | Contents | Depends on |
 |---|---|---|
-| `wb-core` | geometry, `Stroke`, `StrokeId`, `Board` CRDT state + `merge`, ops | serde only |
+| `wb-core` | geometry, `Stroke`, `StrokeId`, `Board` CRDT state + `merge`, ops, pages model | serde only |
 | `wb-codec` | `StrokeCodec` seam, postcard wire/file format, version byte | core |
 | `wb-index` | `SpatialIndex` seam | core |
-| `wb-net` | sans-IO protocol state machine, `Transport` seam, `Discovery`, `Broadcast`, anti-entropy | core, codec |
+| `wb-net` | sans-IO protocol state machine, `Transport` seam, discovery/rendezvous, manual join, `Broadcast`, anti-entropy | core, codec |
 | `wb-render` | `Camera` (affine matrix), `StrokeRenderer` + `StrokeCache` seams, chunks | core, codec, index, egui |
-| `wb-app` | the binary: eframe window, tools, CLI, threads, save/load, join flow | all except sim |
+| `wb-app` | the binary: eframe window, tools, GUI menu + connect modal, threads, save/load, PDF export, join flow | all except sim |
 | `wb-sim` | in-process deterministic sim, headless bot peers, chaos, workload generators | core, codec, net |
 
 Rule: `core` knows nothing about IO, egui or sockets. Only `app` and `sim` own threads and sockets.
