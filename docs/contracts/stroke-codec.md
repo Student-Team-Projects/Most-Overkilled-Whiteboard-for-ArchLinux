@@ -10,14 +10,12 @@ Status: draft · How stroke points are shrunk and put into bytes (ADR 0005). For
 
 ## Guarantees
 
-1. Round trip is exact after simplify: decode every returned piece and join them by dropping the
-   duplicated first point of each neighbouring piece; expanded to `origin + offset`, the result
-   equals `simplify(raw)`.
+1. When encode returns `Ok`, round trip is exact after simplify: decode every piece and join them
+   by dropping duplicated shared points; expanded to origin plus offset, the result equals
+   `simplify(raw)`. Each piece is within budget and neighbours share an endpoint (ADR 0020).
 2. `simplify` keeps the first and last point, and every raw point lies within `tolerance` of the result.
 3. `decode` never panics: any byte input gives `Ok` or `Err`.
-4. When `encode` returns `Ok`, it returns at least one piece; each is at most `budget` bytes.
-   Decoding every piece and joining them (dropping the duplicated first point of each neighbour)
-   gives exactly `points`; neighbours share one endpoint (ADR 0020).
+4. When `encode` returns `Ok`, it returns at least one piece.
 5. `encode` returns `Err` when the budget is smaller than the smallest single-piece encoding, or
    when two consecutive points have a delta that does not fit in `i32` and cannot be split at an
    existing point.
@@ -38,10 +36,9 @@ Status: draft · How stroke points are shrunk and put into bytes (ADR 0005). For
 
 | Test | Checks |
 |---|---|
-| `round_trip` (proptest; decode every piece and join by shared endpoint) | 1 |
+| `round_trip_after_simplify` (proptest on encode returning `Ok`; decode pieces and join shared endpoints) | 1 |
 | `within_tolerance` (proptest on generated points) | 2 |
 | `decode_fuzz` (random bytes) | 3 |
-| `encode_split_join` (proptest on inputs within encode preconditions: joined pieces equal original points) | 4 |
-| `encode_pieces_fit_budget` (proptest on inputs within encode preconditions) | 4 |
+| `encode_split_join_and_pieces_fit_budget` (proptest on inputs within encode preconditions) | 1, 4 |
 | `encode_errors_for_too_small_budget_and_unsplittable_delta` | 5 |
 | bench: bytes/stroke and µs/stroke on generated boards | ratio vs `Raw` |
