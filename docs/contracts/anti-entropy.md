@@ -16,8 +16,9 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
    Even on a hash match, compare one cursor range every tenth round with that peer; this heals a
    128-bit collision.
 2. `relation` compares local with the remote as seen in the join pages: `Behind` iff local ⊂ seen,
-   `Diverged` iff both have something the other lacks. The remote only grows, so no snapshot is
-   needed: `Equal` or `Behind` never hides local-only ops; at worst an op that reached the remote
+   `Diverged` iff both have something the other lacks. Only live members (peers that finished
+   their own join) answer join pages, and a live board only grows (discard happens before going
+   live), so no snapshot is needed: `Equal` or `Behind` never hides local-only ops; at worst an op that reached the remote
    mid-join gives `Ahead` or `Diverged` and one extra prompt.
 3. Every message fits in `Transport::max_datagram()` — large states are sent in pages.
 4. Every 1 s, the next peer of a shuffled rotation (each peer once per cycle) gets a push-pull
@@ -65,7 +66,7 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
 | `range_split_and_page_answer` (unit + proptest; retained erase op) | 4, 6 |
 | `multi_page_converges` (board requiring at least 3 pages) | 1, 4 |
 | `sparse_range_spans_pages_and_converges` (one replica sparse, other spans several pages) | 1, 4 |
-| `join_comparison_only_until_choice` (version-vector fallback; remote growing mid-join; buffered live ops; forced hash collision) | 2, 7 |
+| `join_comparison_only_until_choice` (version-vector fallback; remote growing mid-join; only live members answer; buffered live ops; forced hash collision) | 2, 7 |
 | bench: bytes and rounds to converge | win vs `FullSet` |
 
 G26 (#60, bulk catch-up after rejoin) and G27 (#61, range hashes when whole-board hashes rarely
