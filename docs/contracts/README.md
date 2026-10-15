@@ -27,7 +27,14 @@ pub struct Stroke { pub id: StrokeId, pub lamport: Lamport, pub color: Rgba,
 pub enum Op { Add(Stroke), Erase { id: OpId, target: StrokeId } }  // grows by new variants (ADR 0015)
 pub struct Time(pub u64);                           // ms; injected by the driver, never read from the OS
 pub struct Outgoing { pub to: PeerAddr, pub msg: Message }  // sans-IO output
+pub struct Packet { pub magic: [u8; 4], pub version: u8, pub body: Body }
+pub enum Body { Discovery(DiscoveryMsg), Board { board: BoardId, msg: BoardMsg } }
+pub enum BoardMsg { Op(Op), Sync(SyncMsg) }
 ```
+
+Wire packets use postcard enums. The `WBRD` magic and version are checked before postcard decodes
+the rest; version 1 is the initial format and every wire change, including the stroke codec, bumps
+it. Only one version is supported at a time, with no negotiation (ADR 0021).
 
 Coordinate rule: every coordinate computation is `i64`; `i32` exists only as decoded offsets.
 

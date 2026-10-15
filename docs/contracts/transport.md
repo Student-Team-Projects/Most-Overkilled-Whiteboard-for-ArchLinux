@@ -18,6 +18,8 @@ pub trait Transport {
 
 1. A datagram arrives whole or not at all — never truncated or merged.
 2. `send` of more than `max_datagram()` bytes is an `Err`, never a silent truncation.
+3. `max_datagram()` is 1200 bytes for both `Udp` and `Sim` until the virtual-network and STUN
+   answers settle a larger value (G11/G29).
 
 ## Not guaranteed
 
