@@ -1,0 +1,28 @@
+# The `ci` job is the required status check on `main` (T06 #30, docs/team.md → CI).
+# It runs on PRs for fast feedback and again in the merge queue on the exact code that lands.
+name: CI
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Installs the toolchain and components pinned in rust-toolchain.toml.
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: cargo fmt --check
+      # Pedantic lints come from [workspace.lints] in Cargo.toml.
+      - run: cargo clippy --all-targets --workspace -- -D warnings
+      - run: cargo test --workspace
