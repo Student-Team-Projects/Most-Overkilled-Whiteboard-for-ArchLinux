@@ -20,7 +20,8 @@ Board rules: `docs/board.md`.
 ## Split: feature teams
 
 - Everyone takes features end-to-end (UI → core → net) from the milestone in `docs/roadmap.md`.
-- Each feature gets a short spec in `docs/features/<slug>/spec.md` before code.
+- Each feature gets a short spec in `docs/features/<slug>/spec.md` before code, with at least one
+  Mermaid diagram (style and examples → `docs/design/`).
 - **Contracts are shared property:** changing a seam trait or anything in `wb-core`'s public API
   needs agreement from all 3 and an ADR line. That is where feature teams collide — keep it explicit.
 

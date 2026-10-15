@@ -34,6 +34,7 @@
 |---|---|
 | milestones, status | `docs/roadmap.md` |
 | crates, seams, layering rule | `docs/architecture.md` |
+| diagrams of complex topics | `docs/design/` |
 | how the team works | `docs/team.md` |
 | what is left, what needs deciding | GitHub board: https://github.com/users/poneciak57/projects/3 (ADR 0011) |
 | research notes | `docs/research/` |

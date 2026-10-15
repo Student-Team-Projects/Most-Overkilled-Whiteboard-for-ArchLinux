@@ -9,6 +9,7 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 | intent and scope | `docs/README.md` |
 | milestones | `docs/roadmap.md` |
 | crates, seams, layering rule | `docs/architecture.md` |
+| diagrams: overview + complex topics | `docs/architecture.md`, `docs/design/` |
 | what each seam must do | `docs/contracts/` |
 | decisions | `docs/adr/` |
 | words | `GLOSSARY.md` |
