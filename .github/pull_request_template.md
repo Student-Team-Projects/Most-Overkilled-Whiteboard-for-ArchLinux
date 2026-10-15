@@ -31,4 +31,6 @@ Closes #
 - [ ] Code is kosher (`docs/team.md` → Code standards)
 - [ ] Tests for the logic; seam impls pass the shared seam suite
 - [ ] A fast impl passes the oracle comparison and has a benchmark showing the win
-- [ ] Docs touched in this PR: backlog updated, ADR if a decision was made
+- [ ] Contract clause touched: none <!-- or e.g. `board.md` guarantee 3; a contract or `wb-core` public API change needs all 3 + an ADR -->
+- [ ] Docs touched in this PR: backlog updated, ADR if a decision was made (linked here)
+- [ ] Reviewer read and understood every line and can explain the change without the author (ticked by the reviewer)
