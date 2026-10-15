@@ -12,7 +12,7 @@ flowchart TD
     local -- yes --> live{"live session found? via Discovery"}
     live -- no --> seed["open alone; peers merge in when they appear"]
     live -- yes --> rel["AntiEntropy relation: local L vs live R · comparison-only summaries/pages"]
-    rel -- "Equal or Behind: L ⊆ R" --> ff["fast-forward: take R"]
+    rel -- "Equal or Behind: L ⊆ R" --> ff["fast-forward: union with R"]
     rel -- "Ahead or Diverged: L has what R lacks" --> dlg["in-app dialog · no ops applied yet"]
     dlg --> merge["merge: union"]
     dlg --> copy["open as copy: new BoardId"]
@@ -21,9 +21,9 @@ flowchart TD
 
 While the relation is being classified, peers exchange only summaries, range hashes, or id pages;
 they do not push or apply operations. For `Ahead` or `Diverged`, operation transfer starts only
-after the user chooses merge, copy, or discard. Live ops arriving during the join are buffered and
-applied afterwards (contract guarantee 7). A version-vector summary that falls back to range
-pages follows the same comparison-only rule.
+after the user chooses merge or discard. Live ops arriving during the join are buffered and applied
+afterwards; open-as-copy drops them (contract guarantee 7). Only *discard local* removes local ops.
+A version-vector summary that falls back to range pages follows the same comparison-only rule.
 
 ## Reading guide
 

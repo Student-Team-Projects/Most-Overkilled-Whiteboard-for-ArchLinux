@@ -7,7 +7,7 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
 
 - `tick` — accepts board, peers, and injected current time; returns outgoing sync messages. Does not report errors.
 - `on_receive` — accepts sender, sync message, board, and injected time; returns outgoing replies and operations to apply locally, except in comparison-only join mode where it returns no operations to apply. Does not report errors.
-- `relation` — accepts board and remote summary; returns `Equal`, `Behind`, `Ahead`, or `Diverged`. Does not report errors.
+- `relation` — accepts board and the comparison evidence (equal exact version vectors or id pages); returns `Equal`, `Behind`, `Ahead`, or `Diverged`. Does not report errors.
 
 ## Guarantees
 
@@ -16,10 +16,9 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
    Even on a hash match, compare one cursor range every tenth round with that peer; this heals a
    128-bit collision.
 2. `relation` compares local with the remote as seen in the join pages: `Behind` iff local ⊂ seen,
-   `Diverged` iff both have something the other lacks. Only live members (peers that finished
-   their own join) answer join pages, and a live board only grows (discard happens before going
-   live), so no snapshot is needed: `Equal` or `Behind` never hides local-only ops; at worst an op that reached the remote
-   mid-join gives `Ahead` or `Diverged` and one extra prompt.
+   `Diverged` iff both have something the other lacks. Fast-forward is a union (ADR 0006), so a
+   wrong relation from stale, mixed-source or racing pages costs at most a missing or extra prompt,
+   never local ops. No snapshot is needed.
 3. Every message fits in `Transport::max_datagram()` — large states are sent in pages.
 4. Every 1 s, the next peer of a shuffled rotation (each peer once per cycle) gets a push-pull
    round. On mismatch, range pages compare stroke ids and tombstone target ids in `[lo, hi)`. Each
@@ -38,8 +37,8 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
    are pushed or applied until relation is known and the user chooses merge, copy, or discard for
    `Diverged` or `Ahead`. Live ops arriving meanwhile are buffered (capped, oldest dropped;
    anti-entropy heals the drops) and applied after fast-forward, merge or discard; open-as-copy
-   drops them. A hash match alone never classifies a join; id pages (or an exact version-vector
-   summary) confirm it, so a collision cannot hide local ops.
+   drops them. A hash match alone never classifies a join; id pages confirm it (equal exact
+   version vectors suffice; differing ones need pages).
    Version-vector fallback pages in a join also use comparison-only mode.
 
 ## Not guaranteed
@@ -66,7 +65,7 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
 | `range_split_and_page_answer` (unit + proptest; retained erase op) | 4, 6 |
 | `multi_page_converges` (board requiring at least 3 pages) | 1, 4 |
 | `sparse_range_spans_pages_and_converges` (one replica sparse, other spans several pages) | 1, 4 |
-| `join_comparison_only_until_choice` (version-vector fallback; remote growing mid-join; only live members answer; buffered live ops; forced hash collision) | 2, 7 |
+| `join_comparison_only_until_choice` (version-vector fallback; remote growing mid-join; misclassified fast-forward keeps local ops; buffered live ops; forced hash collision) | 2, 7 |
 | bench: bytes and rounds to converge | win vs `FullSet` |
 
 G26 (#60, bulk catch-up after rejoin) and G27 (#61, range hashes when whole-board hashes rarely

@@ -17,7 +17,7 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | **Lamport timestamp** | logical clock on each stroke: max seen + 1; with `PeerId` gives draw order |
 | **Tombstone** | record that a stroke was erased; never removed in v1 |
 | **Merge** | union of strokes and of tombstones; order and duplicates don't matter |
-| **Fast-forward** | joining when local state ⊆ live state: just take the live state |
+| **Fast-forward** | joining when local state ⊆ live state: union with the live state, no prompt |
 | **Diverged** | local state has things the live session lacks: user picks merge / copy / discard |
 | **Anti-entropy** | periodic digest exchange between peers to fill in lost ops |
 | **Gossip** | broadcast by forwarding to a few random peers instead of all |
