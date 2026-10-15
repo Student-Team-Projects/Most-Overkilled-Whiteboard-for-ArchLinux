@@ -32,7 +32,7 @@ Board rules: `docs/board.md`.
 | `main` is always green; short-lived branches `feat/…`, `fix/…`, `bench/…` | no long-lived divergence |
 | PR ≤ ~1000 changed lines; bigger work is split | the size is a norm we hold each other to, not a tool check — the real rule is that the reviewer reads every line |
 | 1 approving review from someone who did not write it; rotate reviewers | everyone understands every part |
-| Resolve a review thread once its finding is fixed (reply with the commit); unresolved threads = open work. | |
+| resolve a review thread once its finding is fixed; reply with the fixing commit | unresolved threads = open work |
 | squash merge, message = what + why | readable history |
 
 ## Spikes
