@@ -1,7 +1,7 @@
 # Roadmap
 
 Milestones until the end of semester, done-criteria and status. Per-feature specs →
-`docs/features/<slug>/` · open items → https://github.com/users/poneciak57/projects/3.
+`docs/features/<slug>/` · open items → https://github.com/orgs/Student-Team-Projects/projects/6.
 
 Week 1 = 2026-10-13. Winter break (≈ 22.12–04.01) is buffer, not planned work.
 

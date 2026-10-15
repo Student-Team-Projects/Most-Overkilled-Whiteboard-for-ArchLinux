@@ -5,7 +5,7 @@ What we build → `docs/README.md` · how it is structured → `docs/architectur
 
 ## Team
 
-Board: https://github.com/users/poneciak57/projects/3
+Board: https://github.com/orgs/Student-Team-Projects/projects/6
 
 | Person | GitHub | Leads | Reviews PRs of |
 |---|---|---|---|
