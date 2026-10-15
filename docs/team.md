@@ -32,6 +32,7 @@ Board rules: `docs/board.md`.
 | `main` is always green; short-lived branches `feat/…`, `fix/…`, `bench/…` | no long-lived divergence |
 | PR ≤ ~1000 changed lines; bigger work is split | the size is a norm we hold each other to, not a tool check — the real rule is that the reviewer reads every line |
 | 1 approving review from someone who did not write it; rotate reviewers | everyone understands every part |
+| Resolve a review thread once its finding is fixed (reply with the commit); unresolved threads = open work. | |
 | squash merge, message = what + why | readable history |
 
 ## Spikes
@@ -40,9 +41,9 @@ Board rules: `docs/board.md`.
 checked by CI, merged by PR. It uses stand-in types copied from the shared types in `docs/contracts/README.md` (T08 #32 moves
 them into `wb-core`).
 
-## CI (every PR)
+## CI (target for T06 #30; not active yet)
 
-Every PR runs `ci` (fmt, clippy, test; command list → `AGENTS.md` → Commands). After approval, the PR
+Target: every PR runs `ci` (fmt, clippy, test; command list → `AGENTS.md` → Commands). After approval, the PR
 goes through the GitHub merge queue, which re-runs `ci` on main + PR and merges only if green.
 Benchmarks: method: G20 (#20), M4.
 
