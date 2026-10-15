@@ -9,9 +9,9 @@ Board: https://github.com/orgs/Student-Team-Projects/projects/6
 
 | Person | GitHub | Leads | Reviews PRs of |
 |---|---|---|---|
-| Kacper | `poneciak57` | net, protocol, infra | Filip |
-| Mateusz | `hakiers` | core, index, sim | Kacper |
-| Filip | `fimpro` | app, render | Mateusz |
+| Kacper | `poneciak57` | net (envelope, transports, STUN, rendezvous, manual join) | Filip |
+| Mateusz | `hakiers` | core, pages model, save/load, PDF export, sim; quadtree after the MVP | Kacper |
+| Filip | `fimpro` | GUI — window, tools, page view, start menu + connect modal | Mateusz |
 
 Leads know their area best; features still go end-to-end. Assignments live on the board.
 
