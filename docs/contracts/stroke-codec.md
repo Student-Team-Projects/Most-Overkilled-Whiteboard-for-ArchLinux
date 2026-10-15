@@ -14,9 +14,12 @@ Status: draft · How stroke points are shrunk and put into bytes (ADR 0005). For
    equals `simplify(raw)`.
 2. `simplify` keeps the first and last point, and every raw point lies within `tolerance` of the result.
 3. `decode` never panics: any byte input gives `Ok` or `Err`.
-4. `encode` returns at least one piece; each is at most `budget` bytes. Decoding and joining pieces
-   (dropping the duplicated first point of each neighbour) gives exactly `points`; neighbours
-   share one endpoint (G06).
+4. When `encode` returns `Ok`, it returns at least one piece; each is at most `budget` bytes.
+   Decoding and joining pieces (dropping the duplicated first point of each neighbour) gives
+   exactly `points`; neighbours share one endpoint (ADR 0020).
+5. `encode` returns `Err` when the budget is smaller than the smallest single-piece encoding, or
+   when two consecutive points have a delta that does not fit in `i32` and cannot be split at an
+   existing point.
 
 ## Not guaranteed
 
@@ -34,9 +37,10 @@ Status: draft · How stroke points are shrunk and put into bytes (ADR 0005). For
 
 | Test | Checks |
 |---|---|
-| `round_trip` (proptest on random strokes) | 1 |
-| `within_tolerance` | 2 |
+| `round_trip` (proptest on inputs within encode preconditions) | 1 |
+| `within_tolerance` (proptest on generated points) | 2 |
 | `decode_fuzz` (random bytes) | 3 |
-| `encode_split_join` (proptest: joined pieces equal original points) | 4 |
-| `encode_pieces_fit_budget` (proptest) | 4 |
+| `encode_split_join` (proptest on inputs within encode preconditions: joined pieces equal original points) | 4 |
+| `encode_pieces_fit_budget` (proptest on inputs within encode preconditions) | 4 |
+| `encode_errors_for_too_small_budget_and_unsplittable_delta` | 5 |
 | bench: bytes/stroke and µs/stroke on generated boards | ratio vs `Raw` |

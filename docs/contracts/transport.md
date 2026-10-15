@@ -28,4 +28,4 @@ never by protocol code. Format → `README.md` here.
 
 ## Conformance tests
 
-`whole_or_nothing` (1) · `oversize_is_err` (2) · protocol suites run over `Sim` with chaos on.
+`whole_or_nothing` (1) · `oversize_is_err` (2) · `max_datagram_is_1200` on both `Udp` and `Sim` (3) · protocol suites run over `Sim` with chaos on.

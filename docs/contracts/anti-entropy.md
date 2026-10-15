@@ -19,9 +19,13 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
    first; on mismatch, stateless range pages list local op ids in `[lo, hi)`. The receiver answers
    that page alone, pushing the ops whose ids the sender lacks and requesting ids it lacks. A lost page is retried
    next round; rounds keep no page state.
-5. The board state hash is the XOR of a 128-bit hash of every op id, including adds and erases;
-   each inserted op updates it in O(1), and `Board` keeps the result.
-6. A page fits within `max_datagram()` minus the packet envelope; no page-round state is retained.
+5. The state hash is `Board::state_hash`: its 128-bit hash includes every op id, including adds
+   and erases; each inserted op updates it in O(1), duplicates leave it unchanged, and equal boards
+   have equal hashes.
+6. A page's id list fits within `max_datagram()` less the serialized size of an empty Sync page
+   message. Measure that size by serializing the empty message, including packet envelope,
+   `Body`/`BoardMsg`/`SyncMsg` discriminants, range bounds, and length prefix; do not hand-count it.
+   No page-round state is retained.
 
 ## Not guaranteed
 

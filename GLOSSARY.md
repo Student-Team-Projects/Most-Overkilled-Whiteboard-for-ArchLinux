@@ -11,7 +11,7 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | **MVP** | M0–M1: pages + PDF + STUN connect + CLI and egui start menu (ADR 0019) |
 | **Session** | a board currently live on the network (≥ 1 peer has it open) |
 | **Peer** | one running app instance; random 64-bit `PeerId` per run |
-| **Stroke** | one finished freehand line: encoded points + bbox + colour + width; immutable |
+| **Stroke** | one finished freehand line: encoded points + bbox + colour + width; immutable; a long line may be split into several strokes (ADR 0020) |
 | **World unit** | 1/16 px at zoom 1.0; all coordinates are `i64` world units (ADR 0014) |
 | **StrokeId** | the `OpId` `(PeerId, seq)` of the stroke's `Add` op — globally unique |
 | **Lamport timestamp** | logical clock on each stroke: max seen + 1; with `PeerId` gives draw order |

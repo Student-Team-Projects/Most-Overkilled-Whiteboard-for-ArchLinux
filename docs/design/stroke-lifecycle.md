@@ -21,11 +21,13 @@ sequenceDiagram
     Cam-->>App: WorldPos, i64
     User->>App: pointer up
     App->>Codec: simplify + encode, once, author only
-    Codec-->>App: EncodedPoints
-    App->>Board: draw(me, color, width, points, bbox)
-    Board-->>App: Op::Add with OpId + Lamport
-    App->>Index: insert(id, bbox)
-    App->>Net: op via channel
+    Codec-->>App: one or more encoded pieces
+    loop each piece
+        App->>Board: draw(me, color, width, piece, bbox)
+        Board-->>App: Op::Add with its own OpId + Lamport
+        App->>Index: insert(id, bbox)
+        App->>Net: op via channel
+    end
     Net-)Peer: Broadcast, best-effort UDP
     Note over Net,Peer: lost? AntiEntropy heals it later
     Peer->>Peer: Board::apply(op), index insert, invalidate area
@@ -46,4 +48,4 @@ sequenceDiagram
 | remote apply | idempotent, any order | ADR 0001, `docs/contracts/board.md` |
 | `StrokeCache::get` | unpacked points only through the cache | ADR 0018, `docs/contracts/stroke-cache.md` |
 | strokes appear on pen-up only | no live ink in v1 | ADR 0012 |
-| op bigger than one datagram | open (G06) | — |
+| oversized strokes split into independently ordered pieces | ADR 0020 | `docs/contracts/stroke-codec.md` |

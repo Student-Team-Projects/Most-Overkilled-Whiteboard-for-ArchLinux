@@ -52,5 +52,5 @@ sequenceDiagram
 | every op has an `OpId` (dedup key) | ADR 0009 |
 | broadcast is best-effort | `docs/contracts/broadcast.md` |
 | convergence comes from anti-entropy | ADR 0003, `docs/contracts/anti-entropy.md` guarantee 1 |
-| round pacing, peer choice, page size | open (G10) |
-| version-vector growth per run | open (G09) |
+| round pacing, peer choice, page size | ADR 0023 |
+| version-vector growth per run | ADR 0022 |
