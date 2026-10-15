@@ -27,22 +27,18 @@
   - Save to disk: "we want to be able to save it to the disk".
 - **Rejected / deferred:** pixel eraser (ADR 0002) · TCP/QUIC (0003) · tokio (0004) ·
   always-merge-on-open (0006) · tombstone GC in v1.
-- **Open questions:** what happens when you reopen a board from file — "not yet decided".
+- **Open questions:** what a save file contains → G07 (reopen behaviour is decided: ADR 0006, ADR 0016).
 - **Re-scope 2026-10-15 (stakeholder, ADR 0019):** MVP for the grade = a page version (A4 pages, PDF
   export of pages with something drawn), connecting peers through STUN with a connect modal, and a
-  a visual interface, not CLI only — "we want both cli and visual as we prefer cli"; the egui menu is Kacper's call since egui is already a dependency. "if it works shitty but works we pass" — optimising
+  visual interface, not CLI only — "we want both cli and visual as we prefer cli"; the egui menu is Kacper's call since egui is already a dependency. "if it works shitty but works we pass" — optimising
   (infinite canvas, quadtree, chunks, gossip) comes after the MVP.
 
 ## Where things are
 
 | Looking for | Where |
 |---|---|
-| milestones, status | `docs/roadmap.md` |
-| crates, seams, layering rule | `docs/architecture.md` |
-| diagrams of complex topics | `docs/design/` |
-| how the team works | `docs/team.md` |
-| what is left, what needs deciding | GitHub board: https://github.com/orgs/Student-Team-Projects/projects/6 (ADR 0011) |
-| research notes | `docs/research/` |
-| decisions | `docs/adr/` |
-| feature specs and tickets | `docs/features/` |
-| domain vocabulary | `GLOSSARY.md` |
+| milestones | `docs/roadmap.md` |
+| team workflow | `docs/team.md` |
+| board | https://github.com/orgs/Student-Team-Projects/projects/6 |
+
+Full map → `AGENTS.md`.

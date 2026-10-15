@@ -19,6 +19,9 @@ flowchart TD
     dlg --> discard["discard local: take R"]
 ```
 
+In the MVP, joining uses a session code (rendezvous) or `ip:port` (T35 #72, T21 #45);
+`wb list` / name lookup needs LAN discovery (M4).
+
 While the relation is being classified, peers exchange only summaries, range hashes, or id pages;
 they do not push or apply operations. For `Ahead` or `Diverged`, operation transfer starts only
 after the user chooses merge, copy, or discard. Live ops arriving during the join are buffered and

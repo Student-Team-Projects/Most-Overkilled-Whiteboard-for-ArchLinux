@@ -12,6 +12,7 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 | diagrams: overview + complex topics | `docs/architecture.md`, `docs/design/` |
 | what each seam must do | `docs/contracts/` |
 | decisions | `docs/adr/` |
+| journal | `docs/journal.md` |
 | words | `GLOSSARY.md` |
 | team workflow, code standards, definition of done | `docs/team.md` |
 | **backlog** | **GitHub Issues + Project board** (ADR 0011) — see `docs/agents/issue-tracker.md` |

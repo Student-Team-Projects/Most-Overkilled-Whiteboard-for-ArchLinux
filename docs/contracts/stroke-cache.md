@@ -25,7 +25,7 @@ Status: draft · Unpacked points for the strokes the screen needs (ADR 0014, 001
 | Layer | Impl |
 |---|---|
 | 0 | `DecodeAll`: unpack once per stroke, keep all, `set_resident` is a no-op — **the oracle** |
-| M3 | `ChunkWorkingSet`: strokes in resident chunks + 1 ring of margin; drop with the chunk; byte budget |
+| M4 | `ChunkWorkingSet`: strokes in resident chunks + 1 ring of margin; drop with the chunk; byte budget |
 
 ## Conformance tests
 

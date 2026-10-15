@@ -14,7 +14,7 @@ Format → `README.md` here.
 1. `query` returns **exactly** the inserted-and-not-removed ids whose bbox intersects `area` — no
    misses, no extras, no duplicates.
 2. Inserting an id already present replaces its bbox.
-3. Works for any coordinates (infinite canvas): no fixed world bounds.
+3. Works for any coordinates: no fixed world bounds, because world coordinates are `i64` (ADR 0014).
 
 ## Not guaranteed
 
@@ -25,7 +25,10 @@ Format → `README.md` here.
 | Layer | Impl |
 |---|---|
 | 0 | `LinearIndex`: `Vec<(StrokeId, Aabb)>`, linear scan — **the oracle** |
-| later | `QuadTree` (growing root for the infinite canvas) |
+| M4 | `QuadTree` (growing root for the infinite canvas) |
+
+The unbounded-coordinate guarantee comes from `i64` world coordinates (ADR 0014); the quadtree
+and growing root support the M4 infinite canvas.
 
 ## Conformance tests
 

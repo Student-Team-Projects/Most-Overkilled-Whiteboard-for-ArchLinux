@@ -2,6 +2,7 @@
 
 The layering rule as a pipeline: when a fast impl may replace the layer-0 oracle.
 Rule text → `docs/architecture.md` · contracts → `docs/contracts/README.md` · team rules → `docs/team.md`.
+Source for oracle and fast mappings: each contract's Impls table.
 
 ```mermaid
 flowchart LR
@@ -21,12 +22,12 @@ flowchart LR
 
 | Seam | Oracle | Fast | Suite task |
 |---|---|---|---|
-| `SpatialIndex` | `LinearIndex` | `QuadTree` | T10 |
-| `StrokeCodec` | `Raw` | `Packed` | T12 |
-| `StrokeCache` | `DecodeAll` | `ChunkWorkingSet` | T25 |
-| `StrokeRenderer` | `Naive` | `ChunkMesh` → `ChunkTexture` | T13 |
+| `SpatialIndex` | `LinearIndex` | `QuadTree` (M4) | T10 |
+| `StrokeCodec` | `Raw` | `Packed` (M4) | T12 |
+| `StrokeCache` | `DecodeAll` | `ChunkWorkingSet` (M4) | T25 |
+| `StrokeRenderer` | `Naive` | `ChunkMesh` → `ChunkTexture` (M4) | T13 |
 | `Broadcast` | `SendToAll` | `Gossip` | T18 |
-| `Discovery` | `Localhost` | virtual network, open (G12) | T17 |
+| `Discovery` | Manual `ip:port` (+ `Localhost` for tests) | STUN + rendezvous (M1); LAN / virtual network (M4) | T17 |
 | `AntiEntropy` | `FullSet` | `VersionVector` | M2 |
 
 | Rule | Source |

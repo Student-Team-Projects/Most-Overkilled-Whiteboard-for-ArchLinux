@@ -8,7 +8,7 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | **Page** | an A4 rectangle in world units; MVP drawing happens only on pages (ADR 0019) |
 | **STUN** | protocol to learn your public ip:port behind NAT; used with a rendezvous to connect peers |
 | **Rendezvous** | the step where two peers exchange their public addresses before hole punching |
-| **MVP** | M0–M1: pages + PDF + STUN connect + CLI and egui start menu (ADR 0019) |
+| **MVP** | See `docs/roadmap.md` (ADR 0019) |
 | **Session** | a board currently live on the network (≥ 1 peer has it open) |
 | **Peer** | one running app instance; random 64-bit `PeerId` per run |
 | **Stroke** | one finished freehand line: encoded points + bbox + colour + width; immutable; a long line may be split into several strokes (ADR 0020) |
@@ -27,4 +27,4 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | **Seam** | a trait with a simple oracle impl and a later fast impl |
 | **Contract** | the effect every impl of a seam must have; `docs/contracts/` |
 | **Oracle** | the layer-0 impl that fast impls are tested against |
-| **Kosher** | code that meets every rule in `docs/team.md` → Code standards: understood line by line by its owner and reviewer (no AI slop), lean, no panics in libs, documented API, property tests, pedantic lints clean |
+| **Kosher** | code meeting every rule in `docs/team.md` → Code standards |

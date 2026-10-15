@@ -27,7 +27,7 @@ Done when · Context · Blocked by; task: Goal · Deliverable · Acceptance · C
 | | P1 | needed for the current milestone |
 | | P2 | later milestone — do not start yet |
 | Milestone | M0–M5 | `docs/roadmap.md` |
-| Labels | type + area | area: `core` `codec` `index` `render` `net` `sim` `app` `infra` `team` `external` |
+| Labels | type + area | type: `grill` `task`; area: `core` `codec` `index` `render` `net` `sim` `app` `infra` `team` `external`; optional: `bug` `research` |
 
 ## Rules
 

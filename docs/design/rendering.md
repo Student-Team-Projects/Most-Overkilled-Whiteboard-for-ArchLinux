@@ -1,6 +1,6 @@
 # Design: rendering
 
-How a frame is drawn: the M0 naive path (the oracle) and the M3 chunk path.
+How a frame is drawn: the M0 naive path (the oracle) and the M4 chunk path.
 Overview → `docs/architecture.md` · contracts → `docs/contracts/stroke-renderer.md`, `docs/contracts/stroke-cache.md`.
 
 ## M0 — `Naive` renderer, every frame
@@ -13,7 +13,7 @@ flowchart LR
     get --> paint["egui painter draws each stroke via Camera transform"]
 ```
 
-## M3 — chunk path
+## M4 — chunk path
 
 ```mermaid
 flowchart TD

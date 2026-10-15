@@ -1,6 +1,6 @@
 # Design: dev network on one laptop
 
-Topology and lifecycle of the namespace dev network (ADR 0017). Script: T24 on the board.
+Topology and lifecycle of the namespace dev network (ADR 0017). Script: `scripts/devnet.sh`, self-check `scripts/devnet-test.sh`.
 Overview → `docs/architecture.md` · discovery contract → `docs/contracts/discovery.md`.
 
 Namespaces are `wb0` through `wb<N-1>`, attached to bridge `wbbr0`. Namespace `wb<i>` uses

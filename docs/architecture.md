@@ -42,10 +42,10 @@ Seams on the local side — layer 0 is the oracle, the arrow is the later fast i
 
 ```mermaid
 flowchart LR
-    si0["SpatialIndex: LinearIndex · M0"] -->|M3| si1["QuadTree"]
-    sc0["StrokeCache: DecodeAll · M0"] -->|M3| sc1["ChunkWorkingSet"]
-    sr0["StrokeRenderer: Naive · M0"] -->|M3| sr1["ChunkMesh → ChunkTexture"]
-    cd0["StrokeCodec: Raw · M0"] -->|M3| cd1["Packed"]
+    si0["SpatialIndex: LinearIndex · M0"] -->|M4| si1["QuadTree"]
+    sc0["StrokeCache: DecodeAll · M0"] -->|M4| sc1["ChunkWorkingSet"]
+    sr0["StrokeRenderer: Naive · M0"] -->|M4| sr1["ChunkMesh → ChunkTexture"]
+    cd0["StrokeCodec: Raw · M0"] -->|M4| cd1["Packed"]
     cam["Camera: one impl · M0"]
 ```
 
@@ -54,7 +54,7 @@ Seams on the network side:
 ```mermaid
 flowchart LR
     tr["Transport: Udp + Sim · M1"]
-    di0["Discovery: Manual ip:port + Stun · M1"] -->|M4| di1["LAN / virtual network"]
+    di0["Discovery: Manual ip:port + STUN / rendezvous · M1"] -->|M4| di1["LAN / virtual network"]
     br0["Broadcast: SendToAll · M1"] -->|M4| br1["Gossip"]
     ae0["AntiEntropy: FullSet · M2"] -->|later| ae1["VersionVector"]
 ```
@@ -81,7 +81,8 @@ flowchart LR
     end
 ```
 
-Channel details (bounded or not, crate) are open in G21.
+Channel details (bounded or not, crate) are open in G21. The app net thread uses a blocking UDP
+socket with timers.
 
 ## Layering rule
 
@@ -113,16 +114,11 @@ Rule: `core` knows nothing about IO, egui or sockets. Only `app` and `sim` own t
 | `Camera` | affine matrix (pan + zoom) from day 1 | — (already cheap) |
 | `StrokeCodec` | origin + plain `i32` offsets via postcard | point reduction → delta → bit packing |
 | `Transport` | real UDP socket · `SimTransport` (seeded loss/latency/partition) | — |
-| `Discovery` | localhost: probe a fixed port range on 127.0.0.1 | discovery protocol on the virtual network |
+| `Discovery` | manual ip:port + STUN/rendezvous (M1) | LAN / virtual network (M4) |
 | `Broadcast` | send to every known peer | gossip (fanout k) |
 | `AntiEntropy` | exchange full id sets | compact digests (version vectors / hashes) |
 
 ## Runtime (ADR 0004)
-
-| Thread | Does |
-|---|---|
-| main | egui UI, tools, camera, render; owns the `Board` replica for drawing |
-| net | blocking UDP socket + timers; drives the sans-IO protocol; talks to main via channels |
 
 The protocol is a pure state machine: `handle(event, now) → Vec<Outgoing>`. The net thread and
 `wb-sim` are just two drivers of the same code.
@@ -134,7 +130,7 @@ The protocol is a pure state machine: `handle(event, now) → Vec<Outgoing>`. Th
    encoded in memory). For each piece: compute its bounding box → `Board::draw` assigns the `OpId`
    (ADR 0009) and Lamport timestamp (ADR 0008) → insert into the spatial index → broadcast.
 3. Anti-entropy heals anything broadcast lost (ADR 0003).
-4. Remote op → net → main → `Board::apply` → index + renderer invalidate affected chunks.
+4. Remote op → net → main → `Board::apply` → index + invalidate the affected area.
 5. Drawing and erasing read unpacked points only through `StrokeCache` (ADR 0018).
 
 The same flow as a sequence diagram → `docs/design/stroke-lifecycle.md`.
