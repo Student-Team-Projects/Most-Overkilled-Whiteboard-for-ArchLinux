@@ -10,7 +10,7 @@ laws below are its contract and its property tests. Format → `README.md` here.
 - `apply` — accepts any operation and reports whether the visible picture changed. Does not report errors.
 - `merge` — accepts another replica of the same board and unions its state. Does not report errors.
 - `visible` — accepts no inputs and yields added, unerased strokes in draw order. Does not report errors.
-- `state_hash` — accepts no inputs and returns the incrementally maintained 128-bit hash of all operation ids.
+- `state_hash` — accepts no inputs and returns the incrementally maintained 128-bit hash of canonical state: all stroke ids ever added plus tombstoned target ids.
 
 ## Guarantees
 
@@ -19,7 +19,7 @@ laws below are its contract and its property tests. Format → `README.md` here.
 3. Erase wins: once `Erase(target)` is applied, `target` is never visible, even if its `Add` arrives later.
 4. `visible` is sorted by `(lamport, peer)` (ADR 0008).
 5. `draw` gives a Lamport greater than every Lamport this board has seen; OpIds from one `me` never repeat.
-6. `draw`, `erase`, `apply`, and `merge` update `state_hash` for every newly inserted operation; duplicates leave it unchanged (idempotence). Equal boards have equal hashes.
+6. Inserting a stroke id or newly tombstoning a target updates `state_hash` in O(1); duplicate adds and repeated erases leave it unchanged. Erase OpIds are not hashed. Equal canonical state has equal hashes.
 
 ## Not guaranteed
 
@@ -36,4 +36,4 @@ laws below are its contract and its property tests. Format → `README.md` here.
 | `erase_before_add` | 3 |
 | `visible_is_sorted` | 4 |
 | `draw_after_merge_is_on_top` | 5 |
-| `state_hash_tracks_inserted_ops_and_matches_equal_boards` | 6 |
+| `state_hash_tracks_canonical_state_and_matches_equal_boards` (including two erases of one target) | 6 |

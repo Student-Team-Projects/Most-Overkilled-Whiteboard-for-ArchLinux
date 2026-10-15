@@ -6,7 +6,7 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
 ## Operations
 
 - `tick` — accepts board, peers, and injected current time; returns outgoing sync messages. Does not report errors.
-- `on_receive` — accepts sender, sync message, board, and injected time; returns outgoing replies and operations to apply locally. Does not report errors.
+- `on_receive` — accepts sender, sync message, board, and injected time; returns outgoing replies and operations to apply locally, except in comparison-only join mode where it returns no operations to apply. Does not report errors.
 - `relation` — accepts board and remote summary; returns `Equal`, `Behind`, `Ahead`, or `Diverged`. Does not report errors.
 
 ## Guarantees
@@ -15,17 +15,18 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
    (loss < 100 %, partitions heal), all boards become equal in finite time.
 2. `relation` is correct: `Behind` iff local ⊂ remote, `Diverged` iff both have something the other lacks.
 3. Every message fits in `Transport::max_datagram()` — large states are sent in pages.
-4. Every 1 s, one random peer is selected for a push-pull round. The round compares state hashes
-   first; on mismatch, stateless range pages list local op ids in `[lo, hi)`. The receiver answers
-   that page alone, pushing the ops whose ids the sender lacks and requesting ids it lacks. A lost page is retried
-   next round; rounds keep no page state.
-5. The state hash is `Board::state_hash`: its 128-bit hash includes every op id, including adds
-   and erases; each inserted op updates it in O(1), duplicates leave it unchanged, and equal boards
-   have equal hashes.
-6. A page's id list fits within `max_datagram()` less the serialized size of an empty Sync page
-   message. Measure that size by serializing the empty message, including packet envelope,
-   `Body`/`BoardMsg`/`SyncMsg` discriminants, range bounds, and length prefix; do not hand-count it.
-   No page-round state is retained.
+4. Every 1 s, one random peer is selected for a push-pull round. On mismatch, range pages compare
+   stroke ids and tombstone target ids in `[lo, hi)`. Each peer rotates a local cursor through the
+   ranges, one per round and wrapping; this cursor is not shared round state. A lost page is retried
+   next round.
+5. `Board::state_hash` hashes canonical state: all stroke ids ever added plus the set of tombstoned
+   target ids, excluding erase OpIds. A newly inserted stroke id or newly tombstoned target updates
+   it in O(1). Equal canonical state has equal hashes.
+6. Pages are filled by serializing each candidate and stopping before it exceeds
+   `Transport::max_datagram()` (or by reserving worst-case postcard prefix and id sizes).
+7. During join classification, summaries, range hashes, and id pages are comparison-only: no ops
+   are pushed or applied until relation is known and the user chooses merge, copy, or discard for
+   `Diverged` or `Ahead`. Version-vector fallback pages in a join also use comparison-only mode.
 
 ## Not guaranteed
 
@@ -36,7 +37,7 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
 
 | Layer | Impl |
 |---|---|
-| 0 | `FullSet`: exchange full op-id lists, paged |
+| 0 | `FullSet`: exchange full stroke-id and tombstone-target-id sets, paged |
 | later | `VersionVector`: per-author highest contiguous `seq` + gap lists (ADR 0009); v1 grows by one
   author per run, accepted pending simulation measurement (ADR 0022) |
 
@@ -47,8 +48,10 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
 | `converges_under_chaos` (sim, seeded loss/latency/partition, N = 3…100) | 1 |
 | `relation_matches_set_compare` (proptest vs brute-force set diff) | 2 |
 | `pages_fit_datagram` on 100k-stroke boards | 3 |
-| `state_hash_xor_matches_ids` (unit + proptest) | 5 |
+| `state_hash_tracks_canonical_state` (unit + proptest, including repeated erase) | 5 |
 | `range_split_and_page_answer` (unit + proptest) | 4, 6 |
+| `multi_page_converges` (board requiring at least 3 pages) | 1, 4 |
+| `join_comparison_only_until_choice` (including version-vector fallback) | 2, 7 |
 | bench: bytes and rounds to converge | win vs `FullSet` |
 
 G26 (#60, bulk catch-up after rejoin) and G27 (#61, range hashes when whole-board hashes rarely

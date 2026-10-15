@@ -33,6 +33,11 @@ Wire packets use postcard enums. The `WBRD` magic and version are checked before
 the rest; version 1 is the initial format and every wire change, including the stroke codec, bumps
 it. Only one version is supported at a time, with no negotiation (ADR 0021).
 
+The datagram envelope conformance suite uses injected time to verify separate exact invalid-packet
+counters for wrong magic, unknown version, undecodable body, and foreign board id; immediate first
+logs per reason; per-reason 10-second throttling and correct “+N more” counts over several intervals;
+and version-mismatch logs that include both versions (ADR 0021).
+
 Coordinate rule: every coordinate computation is `i64`; `i32` exists only as decoded offsets.
 
 ## File shape

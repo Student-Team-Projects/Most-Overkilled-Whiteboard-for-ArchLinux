@@ -130,9 +130,10 @@ The protocol is a pure state machine: `handle(event, now) → Vec<Outgoing>`. Th
 ## Data flow: drawing a stroke
 
 1. Pointer down/move → points collected in screen space → camera inverse → `i64` world space.
-2. Pointer up → codec simplifies and encodes once (ADR 0005, 0014; stays encoded in memory) →
-   `Board::draw` assigns the `OpId` (ADR 0009) and Lamport timestamp (ADR 0008).
-3. Main sends the op to net → broadcast; anti-entropy heals anything lost (ADR 0003).
+2. Pointer up → codec simplifies and encodes into one or more pieces (ADR 0005, 0014; stays
+   encoded in memory). For each piece: compute its bounding box → `Board::draw` assigns the `OpId`
+   (ADR 0009) and Lamport timestamp (ADR 0008) → insert into the spatial index → broadcast.
+3. Anti-entropy heals anything broadcast lost (ADR 0003).
 4. Remote op → net → main → `Board::apply` → index + renderer invalidate affected chunks.
 5. Drawing and erasing read unpacked points only through `StrokeCache` (ADR 0018).
 

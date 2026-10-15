@@ -5,7 +5,10 @@ Status: accepted · 2026-10-15 · closes G06
 - **Context:** UDP datagrams have a fixed budget, and encoded offsets may not fit `i32`.
 - **Decision:** `encode(points, budget) -> Result<Vec<EncodedPoints>, CodecError>` splits one stroke
   into one or more pieces. Every piece fits the budget and neighbouring pieces share one point;
-  offset overflow uses the same split path. `budget = max_datagram − envelope − op header`.
+  offset overflow uses the same split path. The point budget is `max_datagram` minus the
+  worst-case serialized size of a complete Add packet with empty points: envelope, discriminants,
+  OpId, Lamport, color, width, and bounding box, using maximum varint sizes. Measure it once by
+  serializing that worst-case Add; do not hand-count it.
   The caller calls `draw` once for each piece, so each piece is an independent stroke with its own
   `OpId` and Lamport timestamp. Another peer's concurrent stroke may be ordered between pieces at
   crossings; this rare case is accepted. The split pieces are several strokes under ADR 0002, and
