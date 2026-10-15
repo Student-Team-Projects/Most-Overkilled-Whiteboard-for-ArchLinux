@@ -3,23 +3,13 @@
 Status: draft · The replicated board state (ADR 0001, 0008). A concrete type, not a trait — but the
 laws below are its contract and its property tests. Format → `README.md` here.
 
-## Signature
+## Operations
 
-```rust
-impl Board {
-    /// Author a new stroke here: assigns OpId and Lamport, applies it, returns the op to send.
-    /// `points` come from `StrokeCodec::encode`; `bbox` must cover them (caller's duty).
-    pub fn draw(&mut self, me: PeerId, color: Rgba, width: u16, points: EncodedPoints, bbox: Aabb) -> Op;
-    /// Author an erase of `target` here; returns the op to send.
-    pub fn erase(&mut self, me: PeerId, target: StrokeId) -> Op;
-    /// Apply an op from anywhere. Returns whether the visible picture changed.
-    pub fn apply(&mut self, op: Op) -> Changed;
-    /// Union with another replica of the same board.
-    pub fn merge(&mut self, other: &Board);
-    /// Visible (added, not erased) strokes in draw order.
-    pub fn visible(&self) -> impl Iterator<Item = &Stroke>;
-}
-```
+- `draw` — accepts the author peer, color, world-unit width, encoded points, and a bounding box that covers them; assigns identifiers and a Lamport timestamp, applies and returns the operation. Does not report errors.
+- `erase` — accepts the author peer and target stroke; applies and returns the erase operation. Does not report errors.
+- `apply` — accepts any operation and reports whether the visible picture changed. Does not report errors.
+- `merge` — accepts another replica of the same board and unions its state. Does not report errors.
+- `visible` — accepts no inputs and yields added, unerased strokes in draw order. Does not report errors.
 
 ## Guarantees
 

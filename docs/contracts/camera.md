@@ -3,19 +3,13 @@
 Status: draft · World ↔ screen transform for pan and zoom. A concrete type (an affine matrix).
 Format → `README.md` here.
 
-## Signature
+## Operations
 
-```rust
-impl Camera {
-    pub fn world_to_screen(&self, p: WorldPos) -> ScreenPos;
-    pub fn screen_to_world(&self, p: ScreenPos) -> WorldPos;
-    pub fn pan(&mut self, delta: ScreenVec);
-    /// Zoom by `factor` keeping the world point under `anchor` fixed on screen.
-    pub fn zoom_at(&mut self, anchor: ScreenPos, factor: f32);
-    /// World rectangle visible in a viewport of `size`.
-    pub fn visible_area(&self, size: ScreenVec) -> Aabb;
-}
-```
+- `world_to_screen` — maps a world point to screen coordinates; does not report errors.
+- `screen_to_world` — maps a screen point to world coordinates; does not report errors.
+- `pan` — accepts a screen-space delta and moves the camera; does not report errors.
+- `zoom_at` — accepts a screen anchor and zoom factor, keeping the world point under the anchor fixed; does not report errors.
+- `visible_area` — accepts viewport size and returns its world-space rectangle; does not report errors.
 
 ## Guarantees
 

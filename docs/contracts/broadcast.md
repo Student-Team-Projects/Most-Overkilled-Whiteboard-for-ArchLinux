@@ -2,19 +2,12 @@
 
 Status: draft · How an op leaves this peer towards the others. Format → `README.md` here.
 
-## Signature
+## Operations
 
-```rust
-/// Sans-IO: returns datagrams to send; never touches a socket.
-pub trait Broadcast {
-    /// Start spreading `msg` (authored here) to the board's peers.
-    fn broadcast(&mut self, op: Op, peers: &PeerSet) -> Vec<Outgoing>;
-    /// A broadcast datagram arrived; may produce forwards (gossip).
-    fn on_receive(&mut self, from: PeerAddr, op: &Op, peers: &PeerSet) -> Vec<Outgoing>;
-}
-```
+- `broadcast` — accepts a locally authored operation and peer set; returns outgoing datagrams to spread it. Does not report errors.
+- `on_receive` — accepts sender, received operation, and peer set; returns outgoing forwards, or none for an already seen operation. Does not report errors.
 
-## Effect
+These operations are sans-IO and never touch a socket.
 
 - `broadcast` — makes an attempt to get `op` to every peer in `peers`.
 - `on_receive` — decides whether to forward; returns nothing for a message already seen.

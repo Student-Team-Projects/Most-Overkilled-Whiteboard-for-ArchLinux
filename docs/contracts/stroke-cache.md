@@ -3,18 +3,11 @@
 Status: draft · Unpacked points for the strokes the screen needs (ADR 0014, 0018). Lives in
 `wb-render`. Format → `README.md` here.
 
-## Signature
+## Operations
 
-```rust
-pub trait StrokeCache {
-    /// Unpacked points of `id`; decodes and keeps them if missing.
-    fn get(&mut self, board: &Board, codec: &dyn StrokeCodec, id: StrokeId) -> Result<&StrokePoints, CodecError>;
-    /// These chunks are on screen (+ margin) now; points of other strokes may be dropped.
-    fn set_resident(&mut self, chunks: &[ChunkId]);
-    /// The stroke was erased; drop its points.
-    fn forget(&mut self, id: StrokeId);
-}
-```
+- `get` — accepts a board, codec, and stroke id; returns decoded points or `CodecError` if decoding fails.
+- `set_resident` — accepts the chunks currently on screen plus margin; points for other strokes may be dropped. Does not report errors.
+- `forget` — accepts an erased stroke id and drops its cached points. Does not report errors.
 
 ## Guarantees
 

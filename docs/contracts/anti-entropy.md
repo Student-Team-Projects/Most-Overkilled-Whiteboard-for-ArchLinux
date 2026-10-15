@@ -3,18 +3,11 @@
 Status: draft · The guarantee of convergence (ADR 0003): heals whatever `Broadcast` lost, and powers
 late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
 
-## Signature
+## Operations
 
-```rust
-pub trait AntiEntropy {
-    /// Periodic work: start a sync round with some peer.
-    fn tick(&mut self, board: &Board, peers: &PeerSet, now: Time) -> Vec<Outgoing>;
-    /// Handle a sync message; returns replies and the ops to apply locally.
-    fn on_receive(&mut self, from: PeerAddr, msg: SyncMsg, board: &Board, now: Time) -> (Vec<Outgoing>, Vec<Op>);
-    /// Compare local state with a remote summary (join flow).
-    fn relation(&self, board: &Board, remote: &Summary) -> Relation; // Equal | Behind | Ahead | Diverged
-}
-```
+- `tick` — accepts board, peers, and injected current time; returns outgoing sync messages. Does not report errors.
+- `on_receive` — accepts sender, sync message, board, and injected time; returns outgoing replies and operations to apply locally. Does not report errors.
+- `relation` — accepts board and remote summary; returns `Equal`, `Behind`, `Ahead`, or `Diverged`. Does not report errors.
 
 ## Guarantees
 

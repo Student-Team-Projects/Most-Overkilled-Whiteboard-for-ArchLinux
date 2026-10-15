@@ -3,16 +3,11 @@
 Status: draft · Moves datagrams; nothing else (ADR 0003). Used only by drivers (net thread, sim),
 never by protocol code. Format → `README.md` here.
 
-## Signature
+## Operations
 
-```rust
-pub trait Transport {
-    fn send(&mut self, to: PeerAddr, datagram: &[u8]) -> Result<(), TransportError>;
-    /// Wait up to `timeout` for one datagram.
-    fn recv(&mut self, timeout: Duration) -> Result<Option<(PeerAddr, Vec<u8>)>, TransportError>;
-    fn max_datagram(&self) -> usize;
-}
-```
+- `send` — accepts destination peer and datagram bytes; returns success or `TransportError`.
+- `recv` — accepts a timeout; returns one peer and datagram, no datagram on timeout, or `TransportError`.
+- `max_datagram` — accepts no inputs and returns the maximum supported datagram size; does not report errors.
 
 ## Guarantees
 

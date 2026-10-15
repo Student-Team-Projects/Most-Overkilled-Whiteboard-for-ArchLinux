@@ -2,18 +2,10 @@
 
 Status: draft · Puts the visible part of the board on screen. Format → `README.md` here.
 
-## Signature
+## Operations
 
-```rust
-pub trait StrokeRenderer {
-    /// The board changed inside `area` (add or erase); cached output there is stale.
-    fn invalidate(&mut self, area: Aabb);
-    /// Draw the visible strokes for this frame.
-    /// Points come only through `cache` — never decoded here (ADR 0018).
-    fn paint(&mut self, painter: &egui::Painter, camera: &Camera, board: &Board,
-             index: &dyn SpatialIndex, cache: &mut dyn StrokeCache);
-}
-```
+- `invalidate` — accepts an area changed by an add or erase and marks cached output there stale. Does not report errors.
+- `paint` — accepts the painter, camera, board, spatial index, and stroke cache, then draws the visible strokes for the frame; points are obtained only through the cache (ADR 0018). Does not report errors.
 
 ## Guarantees
 

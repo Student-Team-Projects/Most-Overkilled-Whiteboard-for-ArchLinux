@@ -2,19 +2,11 @@
 
 Status: draft · How stroke points are shrunk and put into bytes (ADR 0005). Format → `README.md` here.
 
-## Signature
+## Operations
 
-```rust
-pub trait StrokeCodec {
-    /// Lossy, author-side only, once per stroke: reduce points to what will be stored everywhere.
-    fn simplify(&self, raw: &[WorldPos]) -> Vec<WorldPos>;
-    /// First point becomes the i64 origin, the rest i32 offsets from it, then packed.
-    /// Split into pieces within `budget`; an offset that does not fit i32 also starts a new piece.
-    fn encode(&self, points: &[WorldPos], budget: usize) -> Result<Vec<EncodedPoints>, CodecError>;
-    /// On demand only: drawing and precise hit tests (ADR 0014).
-    fn decode(&self, points: &EncodedPoints) -> Result<StrokePoints, CodecError>;
-}
-```
+- `simplify` — accepts raw world points and returns their lossy author-side reduction, preserving endpoints and tolerance guarantees. Does not report errors.
+- `encode` — accepts points and a byte budget; returns one or more encoded pieces or `CodecError`. Pieces split when required by budget or when an offset cannot fit in i32; neighboring pieces share an endpoint.
+- `decode` — accepts encoded points and returns decoded stroke points or `CodecError`; used on demand for drawing and precise hit tests (ADR 0014).
 
 ## Guarantees
 

@@ -3,19 +3,12 @@
 Status: draft · Who is out there and which board sessions exist (ADR 0006). Sans-IO.
 Format → `README.md` here.
 
-## Signature
+## Operations
 
-```rust
-pub trait Discovery {
-    /// Periodic work: announce self, probe, expire silent peers.
-    fn tick(&mut self, now: Time) -> Vec<Outgoing>;
-    fn on_receive(&mut self, from: PeerAddr, msg: DiscoveryMsg, now: Time) -> Vec<Outgoing>;
-    /// Peers currently believed alive, with the board each has open.
-    fn peers(&self) -> &PeerSet;
-    /// Board sessions seen on the network (for "scan for sessions").
-    fn sessions(&self) -> Vec<SessionInfo>;
-}
-```
+- `tick` — accepts injected current time and returns outgoing announcements, probes, or expiry effects. Does not report errors.
+- `on_receive` — accepts sender, discovery message, and injected time; returns outgoing replies. Does not report errors.
+- `peers` — accepts no inputs and returns peers currently believed alive with their open board. Does not report errors.
+- `sessions` — accepts no inputs and returns board sessions seen on the network. Does not report errors.
 
 ## Guarantees
 
