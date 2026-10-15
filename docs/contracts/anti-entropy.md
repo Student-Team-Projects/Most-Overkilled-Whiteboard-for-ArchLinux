@@ -39,6 +39,7 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
 ## Not guaranteed
 
 - Bandwidth or time bounds · progress during a partition (only after it heals).
+- A join page mix that keeps the same 128-bit hash (a hash collision) going unnoticed.
 - A whole-board hash matching during live drawing; range hashes may replace this approach (G27).
 
 ## Impls
