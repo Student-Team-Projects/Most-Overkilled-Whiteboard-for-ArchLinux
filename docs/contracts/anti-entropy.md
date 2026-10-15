@@ -15,7 +15,10 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
    (loss < 100 %, partitions heal), all boards become equal in finite time.
    Even on a hash match, compare one cursor range every tenth round with that peer; this heals a
    128-bit collision.
-2. `relation` is correct: `Behind` iff local ⊂ remote, `Diverged` iff both have something the other lacks.
+2. `relation` compares local with the remote as seen in the join pages: `Behind` iff local ⊂ seen,
+   `Diverged` iff both have something the other lacks. The remote only grows, so no snapshot is
+   needed: `Equal` or `Behind` never hides local-only ops; at worst an op that reached the remote
+   mid-join gives `Ahead` or `Diverged` and one extra prompt.
 3. Every message fits in `Transport::max_datagram()` — large states are sent in pages.
 4. Every 1 s, one random peer is selected for a push-pull round. On mismatch, range pages compare
    stroke ids and tombstone target ids in `[lo, hi)`. Each peer rotates a local cursor through the
@@ -31,15 +34,13 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
    `Transport::max_datagram()` (or by reserving worst-case postcard prefix and id sizes).
 7. During join classification, summaries, range hashes, and id pages are comparison-only: no ops
    are pushed or applied until relation is known and the user chooses merge, copy, or discard for
-   `Diverged` or `Ahead`. Every join page carries the sender's state hash; a page with a different
-   hash from the first page discards the partial comparison and restarts next round. Relation uses
-   one consistent remote state. If the remote keeps changing, join retries (G27, #61).
+   `Diverged` or `Ahead`. Live ops arriving meanwhile are buffered (capped, oldest dropped; anti-entropy
+   heals the drops) and applied after fast-forward, merge or discard; open-as-copy drops them.
    Version-vector fallback pages in a join also use comparison-only mode.
 
 ## Not guaranteed
 
 - Bandwidth or time bounds · progress during a partition (only after it heals).
-- A join page mix that keeps the same 128-bit hash (a hash collision) going unnoticed.
 - A whole-board hash matching during live drawing; range hashes may replace this approach (G27).
 
 ## Impls
@@ -61,7 +62,7 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
 | `range_split_and_page_answer` (unit + proptest; retained erase op) | 4, 6 |
 | `multi_page_converges` (board requiring at least 3 pages) | 1, 4 |
 | `sparse_range_spans_pages_and_converges` (one replica sparse, other spans several pages) | 1, 4 |
-| `join_comparison_only_until_choice` (including version-vector fallback and hash restart) | 2, 7 |
+| `join_comparison_only_until_choice` (version-vector fallback; remote growing mid-join; buffered live ops) | 2, 7 |
 | bench: bytes and rounds to converge | win vs `FullSet` |
 
 G26 (#60, bulk catch-up after rejoin) and G27 (#61, range hashes when whole-board hashes rarely

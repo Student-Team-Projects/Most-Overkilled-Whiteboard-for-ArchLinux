@@ -21,7 +21,8 @@ flowchart TD
 
 While the relation is being classified, peers exchange only summaries, range hashes, or id pages;
 they do not push or apply operations. For `Ahead` or `Diverged`, operation transfer starts only
-after the user chooses merge, copy, or discard. A version-vector summary that falls back to range
+after the user chooses merge, copy, or discard. Live ops arriving during the join are buffered and
+applied afterwards (contract guarantee 7). A version-vector summary that falls back to range
 pages follows the same comparison-only rule.
 
 ## Reading guide
