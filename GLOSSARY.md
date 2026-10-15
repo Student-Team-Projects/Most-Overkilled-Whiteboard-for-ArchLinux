@@ -8,7 +8,7 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | **Page** | an A4 rectangle in world units; MVP drawing happens only on pages (ADR 0019) |
 | **STUN** | protocol to learn your public ip:port behind NAT; used with a rendezvous to connect peers |
 | **Rendezvous** | the step where two peers exchange their public addresses before hole punching |
-| **MVP** | M0–M1: pages + PDF + STUN connect + GUI menu (ADR 0019) |
+| **MVP** | M0–M1: pages + PDF + STUN connect + CLI and egui start menu (ADR 0019) |
 | **Session** | a board currently live on the network (≥ 1 peer has it open) |
 | **Peer** | one running app instance; random 64-bit `PeerId` per run |
 | **Stroke** | one finished freehand line: encoded points + bbox + colour + width; immutable |

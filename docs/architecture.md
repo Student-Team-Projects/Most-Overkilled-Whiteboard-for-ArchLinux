@@ -97,8 +97,8 @@ oracle on random inputs, and must show a benchmark win, before it replaces layer
 | `wb-codec` | `StrokeCodec` seam, postcard wire/file format, version byte | core |
 | `wb-index` | `SpatialIndex` seam | core |
 | `wb-net` | sans-IO protocol state machine, `Transport` seam, discovery/rendezvous, manual join, `Broadcast`, anti-entropy | core, codec |
-| `wb-render` | `Camera` (affine matrix), `StrokeRenderer` + `StrokeCache` seams, chunks | core, codec, index, egui |
-| `wb-app` | the binary: eframe window, tools, GUI menu + connect modal, threads, save/load, PDF export, join flow | all except sim |
+| `wb-render` | `Camera` (affine matrix), `StrokeRenderer` + `StrokeCache` seams, chunks, PDF export | core, codec, index, egui |
+| `wb-app` | the binary: eframe window, tools, GUI menu + connect modal, threads, save/load, join flow | all except sim |
 | `wb-sim` | in-process deterministic sim, headless bot peers, chaos, workload generators | core, codec, net |
 
 Rule: `core` knows nothing about IO, egui or sockets. Only `app` and `sim` own threads and sockets.
