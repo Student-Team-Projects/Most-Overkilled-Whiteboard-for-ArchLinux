@@ -19,7 +19,7 @@ oracle on random inputs, and must show a benchmark win, before it replaces layer
 | `wb-index` | `SpatialIndex` seam | core |
 | `wb-net` | sans-IO protocol state machine, `Transport` seam, `Discovery`, `Broadcast`, anti-entropy | core, codec |
 | `wb-render` | `Camera` (affine matrix), `StrokeRenderer` + `StrokeCache` seams, chunks | core, codec, index, egui |
-| `wb-app` | the binary: eframe window, tools, CLI, threads, save/load, join flow | all |
+| `wb-app` | the binary: eframe window, tools, CLI, threads, save/load, join flow | all except sim |
 | `wb-sim` | in-process deterministic sim, headless bot peers, chaos, workload generators | core, codec, net |
 
 Rule: `core` knows nothing about IO, egui or sockets. Only `app` and `sim` own threads and sockets.

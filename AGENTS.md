@@ -33,6 +33,14 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 - Full standards (no panics in libs, pedantic clippy, docs, proptest) → `docs/team.md`.
 - `spikes/` is prep code outside the workspace (`docs/team.md` → Spikes); never add it to `[workspace]`.
 
+## Commands
+
+- `cargo build --workspace`
+- `cargo test --workspace`
+- `cargo clippy --all-targets --workspace -- -D warnings`
+- `cargo fmt --check`
+- `cargo run -p wb-app`
+
 ## Agent skills
 
 - Issue tracker: GitHub Issues. See `docs/agents/issue-tracker.md`.

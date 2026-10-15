@@ -1,0 +1,13 @@
+[package]
+name = "wb-net"
+edition.workspace = true
+rust-version.workspace = true
+version.workspace = true
+publish.workspace = true
+
+[dependencies]
+wb-core = { workspace = true }
+wb-codec = { workspace = true }
+
+[lints]
+workspace = true
