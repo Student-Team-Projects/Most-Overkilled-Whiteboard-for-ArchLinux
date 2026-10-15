@@ -36,7 +36,7 @@
 | crates, seams, layering rule | `docs/architecture.md` |
 | diagrams of complex topics | `docs/design/` |
 | how the team works | `docs/team.md` |
-| what is left, what needs deciding | GitHub board: https://github.com/users/poneciak57/projects/3 (ADR 0011) |
+| what is left, what needs deciding | GitHub board: https://github.com/orgs/Student-Team-Projects/projects/6 (ADR 0011) |
 | research notes | `docs/research/` |
 | decisions | `docs/adr/` |
 | feature specs and tickets | `docs/features/` |

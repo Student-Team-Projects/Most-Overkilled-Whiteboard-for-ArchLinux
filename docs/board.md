@@ -1,6 +1,6 @@
 # Board rules
 
-How we use the GitHub board: https://github.com/users/poneciak57/projects/3 (ADR 0011).
+How we use the GitHub board: https://github.com/orgs/Student-Team-Projects/projects/6 (ADR 0011).
 Mirrored into the project README. Team workflow → `docs/team.md` · agent rules → `AGENTS.md`.
 
 ## Item types

@@ -22,8 +22,7 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 - Work items exist only as GitHub issues. Never write tasks or TODO lists into markdown files.
 - Create, update and close items with `gh issue` / `gh project`; link blockers natively.
 - Every PR body has `Closes #N`. A grill issue closes only with an ADR or a contract change.
-- Board: https://github.com/users/poneciak57/projects/3 · repo: `poneciak57/most-overkilled-whiteboard-temporary` (temporary; moves to
-  the official repo later — issues get copied by script).
+- Board: https://github.com/orgs/Student-Team-Projects/projects/6 · repo: `Student-Team-Projects/Most-Overkilled-Whiteboard-for-ArchLinux`.
 
 ## Code rules
 
