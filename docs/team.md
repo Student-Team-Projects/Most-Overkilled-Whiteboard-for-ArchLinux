@@ -39,11 +39,12 @@ Board rules: `docs/board.md`.
 
 - A task whose diff would pass ~1000 changed lines is split into a stack: a chain of PRs, each one
   building on the previous one and reviewable on its own.
-- Not counted: generated output (test snapshots, fixtures), lockfiles, dependency or version bumps in
-  `Cargo.toml`, and similar lines nobody reads line by line.
+- Not counted: output a tool regenerates reproducibly (test snapshots, generated fixtures), lockfiles,
+  dependency or version bumps in `Cargo.toml`. Hand-written fixtures count — the reviewer reads them.
 - The first PR targets `main`; each next PR targets the branch of the one below it. Every PR is green
   on its own.
-- Merge bottom-up. After a squash merge, rebase the next PR onto `main` and retarget it.
+- Merge bottom-up. After a squash merge, rebase the next PR onto `main` and retarget it, then rebase
+  each PR above onto its rebased parent, so no PR carries already-merged commits.
 - Every PR in the stack says `Part of #N` and links its neighbours; the last one says `Closes #N`.
 
 ## Spikes
