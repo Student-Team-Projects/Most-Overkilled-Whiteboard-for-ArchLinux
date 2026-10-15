@@ -11,6 +11,7 @@
   - Rust. Team of 3.
   - Another team builds the Arch Linux virtual network — we assume all devices are connected and we
     can send to them like in a local network. We do not handle connecting, just P2P whiteboard.
+    (Re-scope: the virtual network and LAN discovery are post-MVP; MVP connects via STUN + manual ip:port.)
   - Layered plan: first everything as simple as possible but with good engineering practices, so the
     structure is final. Later reimplement components to be more performant, each testable in
     isolation (e.g. quadtree starts as a vector with linear search).
@@ -27,6 +28,10 @@
 - **Rejected / deferred:** pixel eraser (ADR 0002) · TCP/QUIC (0003) · tokio (0004) ·
   always-merge-on-open (0006) · tombstone GC in v1.
 - **Open questions:** what happens when you reopen a board from file — "not yet decided".
+- **Re-scope 2026-10-15 (stakeholder, ADR 0019):** MVP for the grade = a page version (A4 pages, PDF
+  export of pages with something drawn), connecting peers through STUN with a connect modal, and a
+  a visual interface, not CLI only — "we want both cli and visual as we prefer cli"; the egui menu is Kacper's call since egui is already a dependency. "if it works shitty but works we pass" — optimising
+  (infinite canvas, quadtree, chunks, gossip) comes after the MVP.
 
 ## Where things are
 

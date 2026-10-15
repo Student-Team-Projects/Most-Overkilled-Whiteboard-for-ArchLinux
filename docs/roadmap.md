@@ -4,17 +4,17 @@ Milestones until the end of semester, done-criteria and status. Per-feature spec
 `docs/features/<slug>/` · open items → https://github.com/orgs/Student-Team-Projects/projects/6.
 
 Week 1 = 2026-10-13. Winter break (≈ 22.12–04.01) is buffer, not planned work.
+MVP = M0–M1, functional first, layer 0 everywhere; M2–M3 harden; M4 optimises.
 
 | Milestone | Weeks | Done when | Status |
 |---|---|---|---|
-| **M0 Local whiteboard + test env** | 1–3 (→ 02.11) | workspace + CI green; contracts agreed by all 3; **one local window**: draw in colours, whole-stroke eraser, pan/zoom — all through the seams (`Board`, `LinearIndex`, `Camera`, `Raw` codec, `StrokeCache`, `Naive` renderer); **test env**: `devnet.sh` (ADR 0017), conformance-suite pattern, CI | next |
-| **M1 Networked skeleton** | 4–5 (→ 16.11) | transports (`Udp`, `Sim`), message envelope, `Localhost` discovery, `SendToAll`, net thread, CLI (ADR 0016); several peers draw together in the devnet; 3-peer in-process sim passes in CI; 2 laptops on the virtual network if it is ready | — |
-| **M2 Bulletproof** | 6–7 (→ 30.11) | anti-entropy; late join; save/load; join flow (fast-forward / diverged, ADR 0006); sim with loss + latency + partitions proves convergence on seeded random runs; headless bot peers | — |
-| **M3 Fast** | 8–10 (→ 21.12) | quadtree; chunk rendering; stroke codec; generated huge boards (100k+ strokes) pan/zoom smoothly; benchmarks: layer 0 vs fast for each seam | — |
-| **M4 Distributed** | 11–12 (→ ~11.01) | scan network for board sessions; discovery; gossip broadcast; ~100 bot peers on several machines under chaos converge; metrics (convergence time, bytes sent) | — |
-| **M5 Demo** | 13–14 (→ ~25.01) | hardening, demo script, report with benchmark numbers | — |
+| **M0 Local paged whiteboard** | 1–3 (→ 02.11) | CI green; contracts agreed; one window: draw in colours, whole-stroke eraser, pan/zoom over A4 pages, add page — all through layer 0; devnet | next |
+| **M1 MVP: two peers over the internet** | 4–5 (→ 16.11) | envelope + UDP + SendToAll + net thread; STUN + rendezvous + manual ip:port join; start menu + connect modal; PDF export of non-empty pages; 2 peers on different networks draw together | — |
+| **M2 Bulletproof** | 6–7 (→ 30.11) | anti-entropy (incl. range hashes G27); late join; save/load; join flow (ADR 0006); sim with loss/latency/partitions converges | — |
+| **M3 Polish + stakeholder demo** | 8–10 (→ 21.12) | UX polish, hardening, bug bash; stakeholder demo of MVP before the break | — |
+| **M4 Post-MVP: fast + distributed** | 11–12 (→ 11.01) | infinite canvas; quadtree; chunk rendering; Packed codec; ChunkWorkingSet; LAN discovery; virtual network; gossip; 100-bot sim; benchmarks | — |
+| **M5 Final demo** | 13–14 (→ 25.01) | demo script, report with numbers | — |
 
 ## Cut line
 
-If time runs out, cut from the bottom of M4 upward (gossip before discovery). M0–M2 + the quadtree
-and chunk rendering from M3 are the minimum we defend.
+Cut M4 from the bottom up. M0–M3 (the MVP, hardened) is what we defend.
