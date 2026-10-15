@@ -37,8 +37,9 @@ sequenceDiagram
     A-)C: Broadcast op o1
     A-xB: Broadcast op o1, lost
     Note over B: B is missing o1
-    B->>A: AntiEntropy round: my summary
-    A->>B: ops you lack: o1
+    B->>A: AntiEntropy round: comparison summary
+    A->>B: comparison identifies missing o1
+    A->>B: send o1 after comparison (ordinary sync)
     Note over A,C: all equal once no new ops and partitions heal
 ```
 
@@ -52,5 +53,5 @@ sequenceDiagram
 | every op has an `OpId` (dedup key) | ADR 0009 |
 | broadcast is best-effort | `docs/contracts/broadcast.md` |
 | convergence comes from anti-entropy | ADR 0003, `docs/contracts/anti-entropy.md` guarantee 1 |
-| round pacing, peer choice, page size | open (G10) |
-| version-vector growth per run | open (G09) |
+| round pacing, peer choice, page size | ADR 0023 |
+| version-vector growth per run | ADR 0022 |

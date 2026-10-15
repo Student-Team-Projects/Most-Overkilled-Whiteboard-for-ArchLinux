@@ -56,6 +56,7 @@ Code that meets all of these is **kosher** (`GLOSSARY.md`).
 | lean | the smallest code that keeps the contract; no speculative abstraction |
 | no panics in libs | no `unwrap`/`expect`/`panic!` outside tests and `wb-app` `main`; errors are `thiserror` enums |
 | documented API | `#![deny(missing_docs)]` in library crates; seam methods cite their contract clause |
+| docs without code | docs describe effects, guarantees and data in words; signatures live in code (rustdoc cites the contract clause); pseudocode only for algorithms and protocols |
 | property tests | `proptest` for CRDT laws and oracle comparisons |
 | pedantic lints | `clippy::pedantic` on; every `#[allow]` has a one-line reason |
 

@@ -3,17 +3,11 @@
 Status: draft · "Which strokes are in this area?" — used by the eraser and the renderer.
 Format → `README.md` here.
 
-## Signature
+## Operations
 
-```rust
-pub trait SpatialIndex {
-    fn insert(&mut self, id: StrokeId, bbox: Aabb);
-    /// Returns whether `id` was present.
-    fn remove(&mut self, id: StrokeId) -> bool;
-    /// Appends every present id whose bbox intersects `area` (closed bounds) to `out`.
-    fn query(&self, area: Aabb, out: &mut Vec<StrokeId>);
-}
-```
+- `insert` — accepts a stroke id and bounding box, inserting or replacing its bounds. Does not report errors.
+- `remove` — accepts a stroke id and returns whether it was present. Does not report errors.
+- `query` — accepts an area and appends every present id with an intersecting closed-bound box to the output. Does not report errors.
 
 ## Guarantees
 

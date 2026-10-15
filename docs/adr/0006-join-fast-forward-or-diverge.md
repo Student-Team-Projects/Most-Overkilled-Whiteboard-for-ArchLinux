@@ -5,7 +5,8 @@ Status: accepted · 2026-10-13
 - **Context:** a peer may hold local state for a board (from a file or offline work) that differs
   from the live session.
 - **Decision:** peers can scan the network for live board sessions. On join, compare local state L
-  with live state R:
+  with live state R using comparison-only summaries and pages; no operations are pushed or applied
+  until the relation is known. Then:
   - L ⊆ R → **fast-forward**: just take R, no prompt.
   - L has strokes/tombstones R lacks → **diverged**: the user chooses *merge* (union, ADR 0001),
     *open as copy* (new board_id) or *discard local* (take R).

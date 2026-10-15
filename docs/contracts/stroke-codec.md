@@ -2,26 +2,23 @@
 
 Status: draft · How stroke points are shrunk and put into bytes (ADR 0005). Format → `README.md` here.
 
-## Signature
+## Operations
 
-```rust
-pub trait StrokeCodec {
-    /// Lossy, author-side only, once per stroke: reduce points to what will be stored everywhere.
-    fn simplify(&self, raw: &[WorldPos]) -> Vec<WorldPos>;
-    /// First point becomes the i64 origin, the rest i32 offsets from it, then packed.
-    /// `Err` if an offset does not fit i32 (the caller splits the stroke, G06).
-    fn encode(&self, points: &[WorldPos]) -> Result<EncodedPoints, CodecError>;
-    /// On demand only: drawing and precise hit tests (ADR 0014).
-    fn decode(&self, points: &EncodedPoints) -> Result<StrokePoints, CodecError>;
-}
-```
+- `simplify` — accepts raw world points and returns their lossy author-side reduction, preserving endpoints and tolerance guarantees. Does not report errors.
+- `encode` — accepts points and a byte budget; returns one or more encoded pieces or `CodecError`. Pieces split when required by budget or when an offset cannot fit in i32; neighboring pieces share an endpoint.
+- `decode` — accepts encoded points and returns decoded stroke points or `CodecError`; used on demand for drawing and precise hit tests (ADR 0014).
 
 ## Guarantees
 
-1. Round trip is exact after simplify: `decode(encode(simplify(raw)))`, expanded to `origin + offset`,
-   equals `simplify(raw)`.
+1. When encode returns `Ok`, round trip is exact after simplify: decode every piece and join them
+   by dropping duplicated shared points; expanded to origin plus offset, the result equals
+   `simplify(raw)`. Each piece is within budget and neighbours share an endpoint (ADR 0020).
 2. `simplify` keeps the first and last point, and every raw point lies within `tolerance` of the result.
 3. `decode` never panics: any byte input gives `Ok` or `Err`.
+4. When `encode` returns `Ok`, it returns at least one piece.
+5. `encode` returns `Err` when the budget is smaller than the smallest single-piece encoding, or
+   when two consecutive points have a delta that does not fit in `i32` and cannot be split at an
+   existing point.
 
 ## Not guaranteed
 
@@ -39,7 +36,9 @@ pub trait StrokeCodec {
 
 | Test | Checks |
 |---|---|
-| `round_trip` (proptest on random strokes) | 1 |
-| `within_tolerance` | 2 |
+| `round_trip_after_simplify` (proptest on encode returning `Ok`; decode pieces and join shared endpoints) | 1 |
+| `within_tolerance` (proptest on generated points) | 2 |
 | `decode_fuzz` (random bytes) | 3 |
+| `encode_split_join_and_pieces_fit_budget` (proptest on inputs within encode preconditions) | 1, 4 |
+| `encode_errors_for_too_small_budget_and_unsplittable_delta` | 5 |
 | bench: bytes/stroke and µs/stroke on generated boards | ratio vs `Raw` |

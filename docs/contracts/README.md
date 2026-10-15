@@ -2,6 +2,7 @@
 
 One file per seam: the effect every implementation must have. Written and agreed **before** any impl.
 Seam list and layers → `docs/architecture.md` · decisions → `docs/adr/`.
+Write each contract in prose; the trait in code is the signature, and rustdoc links back to the contract clause.
 
 ## Rules
 
@@ -12,22 +13,30 @@ Seam list and layers → `docs/architecture.md` · decisions → `docs/adr/`.
 
 ## Shared types (`wb-core`)
 
-```rust
-pub struct PeerId(pub u64);                         // random per run (ADR 0006)
-pub struct BoardId(pub u128);
-pub struct OpId { pub peer: PeerId, pub seq: u64 }  // ADR 0009
-pub type StrokeId = OpId;                           // a stroke's id = its Add op's id
-pub struct Lamport(pub u64);                        // ADR 0008
-pub struct WorldPos { pub x: i64, pub y: i64 }      // 1 unit = 1/16 px at zoom 1; all math i64 (ADR 0014)
-pub struct Aabb { pub min: WorldPos, pub max: WorldPos }
-pub struct EncodedPoints(pub Vec<u8>);              // codec output: i64 origin + packed deltas; opaque to core
-pub struct StrokePoints { pub origin: WorldPos, pub offsets: Vec<[i32; 2]> }  // decoded, on demand only
-pub struct Stroke { pub id: StrokeId, pub lamport: Lamport, pub color: Rgba,
-                    pub width: u16 /* world units, ADR 0013 */, pub bbox: Aabb, pub points: EncodedPoints }
-pub enum Op { Add(Stroke), Erase { id: OpId, target: StrokeId } }  // grows by new variants (ADR 0015)
-pub struct Time(pub u64);                           // ms; injected by the driver, never read from the OS
-pub struct Outgoing { pub to: PeerAddr, pub msg: Message }  // sans-IO output
-```
+- `PeerId` — per-run random peer identifier (ADR 0006).
+- `BoardId` — board identifier.
+- `OpId` — operation identifier composed of a peer and its sequence number (ADR 0009); `StrokeId` aliases it and identifies the Add operation for a stroke.
+- `Lamport` — logical timestamp used for draw order (ADR 0008).
+- `WorldPos` — x/y coordinates in signed 64-bit units; one unit is 1/16 px at zoom 1 (ADR 0014).
+- `Aabb` — minimum and maximum `WorldPos` bounds.
+- `EncodedPoints` — opaque codec bytes containing an i64 origin and packed deltas.
+- `StrokePoints` — decoded origin and signed 32-bit offsets, materialized on demand.
+- `Stroke` — id, Lamport timestamp, color, width in world units (ADR 0013), bounding box, and encoded points.
+- `Op` — either `Add(Stroke)` or `Erase { id, target }`; new variants may be added (ADR 0015).
+- `Time` — injected millisecond time; drivers provide it and it is never read from the OS.
+- `Outgoing` — sans-IO destination peer and message.
+- `Packet` — wire magic, version, and body.
+- `Body` — either a discovery message or a board id paired with a `BoardMsg`.
+- `BoardMsg` — either an operation or a sync message.
+
+Wire packets use postcard enums. The `WBRD` magic and version are checked before postcard decodes
+the rest; version 1 is the initial format and every wire change, including the stroke codec, bumps
+it. Only one version is supported at a time, with no negotiation (ADR 0021).
+
+The datagram envelope conformance suite uses injected time to verify separate exact invalid-packet
+counters for wrong magic, unknown version, undecodable body, and foreign board id; immediate first
+logs per reason; per-reason 10-second throttling and correct “+N more” counts over several intervals;
+and version-mismatch logs that include both versions (ADR 0021).
 
 Coordinate rule: every coordinate computation is `i64`; `i32` exists only as decoded offsets.
 
@@ -35,8 +44,8 @@ Coordinate rule: every coordinate computation is `i64`; `i32` exists only as dec
 
 | Section | Contents |
 |---|---|
-| Signature | the Rust trait, doc comments only |
-| Effect | what a call does, one line per method |
+| Operations | named operation, inputs, outputs, and error conditions |
+| Data | named shared type and its meaning |
 | Guarantees | what callers may rely on |
 | Not guaranteed | what callers must not rely on (as important as guarantees) |
 | Impls | layer 0 · later layers |
