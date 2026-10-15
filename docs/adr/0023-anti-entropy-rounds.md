@@ -4,7 +4,8 @@ Status: accepted · 2026-10-15 · closes G10
 
 ## Decision
 
-- Every 1 s, push-pull with one random peer; compare a 128-bit canonical state hash first.
+- Every 1 s, push-pull with the next peer of a shuffled rotation (each peer once per cycle, so no
+  peer is skipped forever); compare a 128-bit canonical state hash first.
 - On mismatch, compare stateless range pages of ids; a local cursor rotates through ranges.
 - Join classification is comparison-only and needs no snapshot (state only grows); live ops are
   buffered; `Ahead` or `Diverged` waits for the user's choice.
