@@ -42,9 +42,9 @@ Board rules: `docs/board.md`.
 checked by CI, merged by PR. It uses stand-in types copied from the shared types in `docs/contracts/README.md` (T08 #32 moves
 them into `wb-core`).
 
-## CI (target for T06 #30; not active yet)
+## CI
 
-Target: every PR runs `ci` (fmt, clippy, test; command list → `AGENTS.md` → Commands). After approval, the PR
+Every PR runs `ci` (`.github/workflows/ci.yml`: fmt, clippy, test; command list → `AGENTS.md` → Commands). After approval, the PR
 goes through the GitHub merge queue, which re-runs `ci` on main + PR and merges only if green.
 Benchmarks: method: G20 (#20), M4.
 
