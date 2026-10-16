@@ -11,11 +11,7 @@ publish = false
 
 [workspace.dependencies]
 wb-core = { path = "crates/wb-core" }
-wb-codec = { path = "crates/wb-codec" }
-wb-index = { path = "crates/wb-index" }
 wb-net = { path = "crates/wb-net" }
-wb-render = { path = "crates/wb-render" }
-wb-sim = { path = "crates/wb-sim" }
 eframe = "=0.36.2"
 egui = "=0.36.2"
 

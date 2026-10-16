@@ -11,31 +11,15 @@ Crates and who may depend on whom (arrow = "depends on"; `wb-core` knows no IO, 
 ```mermaid
 flowchart TD
     app["wb-app (binary)"]
-    sim["wb-sim"]
-    render["wb-render"]
     net["wb-net"]
-    index["wb-index"]
-    codec["wb-codec"]
     core["wb-core"]
     eframe(["eframe"])
     egui(["egui"])
-    app --> render
     app --> net
-    app --> index
-    app --> codec
     app --> core
     app --> eframe
-    sim --> net
-    sim --> codec
-    sim --> core
-    render --> index
-    render --> codec
-    render --> core
-    render --> egui
-    net --> codec
+    app --> egui
     net --> core
-    index --> core
-    codec --> core
 ```
 
 Seams on the local side — layer 0 is the oracle, the arrow is the later fast impl (milestone):
@@ -75,7 +59,7 @@ flowchart LR
         netth -->|"channel: remote ops, events + repaint"| mainth
         drv <-->|"Transport: Udp"| udp[("UDP")]
     end
-    subgraph simproc["wb-sim"]
+    subgraph simproc["wb-sim binary (wb-net)"]
         sdrv["sim driver: simulated Time"] --> sproto["same sans-IO protocol"]
         sdrv <-->|"Transport: Sim, seeded chaos"| chaos[("loss · latency · partitions")]
     end
@@ -94,15 +78,11 @@ oracle on random inputs, and must show a benchmark win, before it replaces layer
 
 | Crate | Contents | Depends on |
 |---|---|---|
-| `wb-core` | geometry, `Stroke`, `StrokeId`, `Board` CRDT state + `merge`, ops, pages model | serde only |
-| `wb-codec` | `StrokeCodec` seam, postcard wire/file format, version byte | core |
-| `wb-index` | `SpatialIndex` seam | core |
-| `wb-net` | sans-IO protocol state machine, `Transport` seam, discovery/rendezvous, manual join, `Broadcast`, anti-entropy | core, codec |
-| `wb-render` | `Camera` (affine matrix), `StrokeRenderer` + `StrokeCache` seams, chunks, PDF export | core, codec, index, egui |
-| `wb-app` | the binary: eframe window, tools, GUI menu + connect modal, threads, save/load, join flow | all except sim |
-| `wb-sim` | in-process deterministic sim, headless bot peers, chaos, workload generators | core, codec, net |
+| `wb-core` | geometry, `Stroke`, `StrokeId`, `Board` CRDT state + `merge`, ops, pages, `StrokeCodec` + postcard format, `SpatialIndex` seam | serde only |
+| `wb-net` | sans-IO protocol, `Transport` seam + UDP/Sim drivers, discovery, broadcast, anti-entropy, deterministic sim module and `wb-sim` binary | core |
+| `wb-app` | the binary: eframe window, tools, menu + connect modal, threads, save/load, join flow, `Camera`, `StrokeRenderer` + `StrokeCache`, chunks, PDF export | core, net, eframe/egui |
 
-Rule: `core` knows nothing about IO, egui or sockets. Only `app` and `sim` own threads and sockets.
+Rule: `wb-core` knows nothing about IO, egui or sockets; sockets and threads live only in `wb-net` drivers and `wb-app`.
 
 ## Seams
 
@@ -120,8 +100,8 @@ Rule: `core` knows nothing about IO, egui or sockets. Only `app` and `sim` own t
 
 ## Runtime (ADR 0004)
 
-The protocol is a pure state machine: `handle(event, now) → Vec<Outgoing>`. The net thread and
-`wb-sim` are just two drivers of the same code.
+The protocol is a pure state machine: `handle(event, now) → Vec<Outgoing>`. The net thread and the
+deterministic sim module are two drivers of the same code.
 
 ## Data flow: drawing a stroke
 

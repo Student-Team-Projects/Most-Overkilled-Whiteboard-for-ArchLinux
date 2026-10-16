@@ -13,5 +13,4 @@ Status: accepted · 2026-10-15 · stakeholder re-plan
     the GUI, including the start menu and connect modal.
 - **Consequences:** quadtree, infinite canvas, chunks, `Packed`, `ChunkWorkingSet`, LAN discovery,
   virtual network, gossip, and large-scale sim move to M4. The cut line moves to M0–M3 as the
-  hardened MVP. ADR 0007 still holds: egui is the only UI library. PDF export lives in `wb-render`
-  (rendering code, no egui needed), not `wb-app`.
+  hardened MVP. ADR 0007 still holds: egui is the only UI library. PDF export lives in `wb-app`.

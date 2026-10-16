@@ -1,7 +1,7 @@
 # Contract: `StrokeCache`
 
 Status: draft · Unpacked points for the strokes the screen needs (ADR 0014, 0018). Lives in
-`wb-render`. Format → `README.md` here.
+`wb-app`. Format → `README.md` here.
 
 ## Operations
 
