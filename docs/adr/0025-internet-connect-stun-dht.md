@@ -16,6 +16,7 @@ Status: accepted · 2026-10-16 · closes G29
   - Peer traffic and STUN share one UDP socket; the driver splits STUN (magic cookie, known transaction)
     from `WBRD` before envelope checks, so STUN never counts as invalid (ADR 0021).
     15 s idle → keepalive to each peer, from both sides. IPv4 only; `max_datagram` is one constant.
+  - The app shows its own LAN and public (STUN) `ip:port`, so users can share it for manual join.
   - Punch timeout → "can't reach peer — probably NAT; relay is planned". TURN (hosted coturn or a
     public server, our client only) is post-MVP (G30).
 - **Why:** standard protocols, no server of ours, and data always flows peer to peer; a peer whose
