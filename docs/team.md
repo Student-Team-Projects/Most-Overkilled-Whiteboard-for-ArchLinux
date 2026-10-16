@@ -30,11 +30,25 @@ Board rules: `docs/board.md`.
 | Rule | Why |
 |---|---|
 | `main` is always green; short-lived branches `feat/…`, `fix/…`, `bench/…` | no long-lived divergence |
-| PR ≤ ~1000 changed lines; bigger work is split | the size is a norm we hold each other to, not a tool check — the real rule is that the reviewer reads every line |
+| PR ≤ ~1000 changed lines; a bigger task is a **PR stack** (below) | the size is a norm we hold each other to, not a tool check — the real rule is that the reviewer reads every line |
 | 1 approving review from someone who did not write it; rotate reviewers | everyone understands every part |
 | resolve a review thread once its finding is fixed; reply with the fixing commit | unresolved threads = open work |
 | squash merge, message = what + why | readable history |
 | PR body follows `.github/pull_request_template.md` | `Closes #N` and the definition of done are never forgotten |
+
+### PR stacks
+
+- A task whose diff would pass ~1000 changed lines is split into a stack: a chain of PRs, each one
+  building on the previous one and reviewable on its own.
+- Not counted: output a tool regenerates reproducibly (test snapshots, generated fixtures), lockfiles,
+  dependency or version bumps in `Cargo.toml`. Hand-written fixtures count — the reviewer reads them.
+- The first PR targets `main`; each next PR targets the branch of the one below it. Every PR is green
+  on its own.
+- Merge bottom-up. After a squash merge, move the next PR with `git rebase --onto main <old parent
+  tip> <branch>` (a plain rebase replays the already-merged commits), retarget it to `main`, and do
+  the same for each PR above onto its moved parent. A rebased PR needs CI green and a fresh approval
+  (the ruleset dismisses stale ones) before it joins the merge queue.
+- Every PR in the stack says `Part of #N` and links its neighbours; the last one says `Closes #N`.
 
 ## Spikes
 
