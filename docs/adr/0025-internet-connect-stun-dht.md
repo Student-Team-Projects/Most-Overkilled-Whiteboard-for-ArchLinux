@@ -20,7 +20,8 @@ Status: accepted · 2026-10-16 · closes G29
     public server, our client only) is post-MVP (G30).
 - **Why:** standard protocols, no server of ours, and data always flows peer to peer; a peer whose
   address changes re-announces and is found again without anyone swapping codes.
-- **Consequences:** amends ADR 0019 (DHT instead of a rendezvous server) and ADR 0016 (MVP `wb join`
+- **Consequences:** amends ADR 0004 (`mainline` runs its own worker thread behind a blocking API;
+  the net thread calls it, the sim uses a fake DHT), ADR 0019 (DHT instead of a rendezvous server) and ADR 0016 (MVP `wb join`
   takes a code or `ip:port`; names stay M4). DHT may be blocked on campus networks: manual `ip:port`
   is the fallback and works only when one side is reachable (same LAN, public IP, forwarded port);
   test the demo network early (T34). Same-LAN peers without router hairpinning need manual `ip:port`
