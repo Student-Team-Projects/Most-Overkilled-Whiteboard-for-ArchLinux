@@ -78,7 +78,7 @@ oracle on random inputs, and must show a benchmark win, before it replaces layer
 
 | Crate | Contents | Depends on |
 |---|---|---|
-| `wb-core` | geometry, `Stroke`, `StrokeId`, `Board` CRDT state + `merge`, ops, pages, `StrokeCodec` + postcard format, `SpatialIndex` seam | serde only |
+| `wb-core` | geometry, `Stroke`, `StrokeId`, `Board` CRDT state + `merge`, ops, pages, `StrokeCodec` + postcard format, `SpatialIndex` seam | serde, postcard |
 | `wb-net` | sans-IO protocol, `Transport` seam + UDP/Sim drivers, discovery, broadcast, anti-entropy, deterministic sim module and `wb-sim` binary | core |
 | `wb-app` | the binary: eframe window, tools, menu + connect modal, threads, save/load, join flow, `Camera`, `StrokeRenderer` + `StrokeCache`, chunks, PDF export | core, net, eframe/egui |
 
