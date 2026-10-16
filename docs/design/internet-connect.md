@@ -11,12 +11,12 @@ sequenceDiagram
     participant B as Peer B
     A->>S: Binding request (data socket)
     S-->>A: your public ip:port
-    A->>D: publish {public, LAN} under key(BoardId), every 30 s
-    Note over A,B: A shares the code (BoardId short form) over chat
+    A->>D: announce public port under hash(BoardId) · every 30 s: STUN + re-announce
+    Note over A,B: A shares the code (full BoardId, base32) over chat
     B->>S: Binding request
     S-->>B: your public ip:port
-    B->>D: publish own record · read records for key(BoardId)
-    A->>D: re-read (≤ 30 s) · finds B
+    B->>D: announce · get_peers(hash(BoardId))
+    A->>D: get_peers on its next round · finds B
     par punch all candidates, ≤ 60 s
         A->>B: punch
         B->>A: punch
@@ -24,21 +24,20 @@ sequenceDiagram
     A-->>B: board traffic, direct · keepalive after 15 s idle
 ```
 
-Candidates come from manual `ip:port`, the LAN address and the DHT (later: a TURN relay). All are
-tried at once; the first that answers is kept, direct before relay. STUN and the DHT never carry
-board data; only a TURN relay would (post-MVP, G30).
+Candidate rules and timers → ADR 0025. STUN and the DHT never carry board data; only a TURN relay
+would (post-MVP, G30).
 
 ## What works and what fails
 
 | Situation | Result | Fix |
 |---|---|---|
 | normal home NATs | ✅ punch works | — |
-| same LAN | ✅ via the LAN candidate | — |
-| Wi-Fi switch, router reboot | ✅ heals in ~30–60 s (re-publish + re-read) | — |
+| same LAN | ✅ if the router hairpins | manual `ip:port`; LAN discovery (M4) |
+| Wi-Fi switch, router reboot | ✅ usually heals on the next 30 s rounds | — |
 | idle connection | ✅ kept open by keepalives | — |
-| network blocks the DHT (campus, company) | ❌ nobody found | manual `ip:port` |
+| network blocks the DHT (campus, company) | ❌ nobody found | manual `ip:port` if one side is reachable |
 | symmetric NAT, many mobile/CGNAT pairs | ❌ punch fails | TURN relay (G30) |
-| network blocks all UDP | ❌ nothing connects | TURN over TCP/443 (G30) |
+| network blocks all UDP | ❌ nothing connects | TURN over TCP (G30; needs an ADR 0003 exception) |
 
 ## Reading guide
 

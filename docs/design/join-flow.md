@@ -5,7 +5,7 @@ Overview → `docs/architecture.md` · decisions → ADR 0006, ADR 0016 in `docs
 
 ```mermaid
 flowchart TD
-    start["wb join name or id · wb open file"] --> local{"local state for this BoardId?"}
+    start["wb join code or ip:port · wb open file"] --> local{"local state for this BoardId?"}
     local -- no --> livecheck{"live session found? via Discovery"}
     livecheck -- yes --> take["take the live state"]
     livecheck -- no --> missing["error: board not found (no state to open)"]

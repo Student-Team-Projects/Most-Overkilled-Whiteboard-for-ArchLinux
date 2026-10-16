@@ -19,6 +19,7 @@ Format → `README.md` here.
 ## Not guaranteed
 
 - That all peers have the same view at the same time · detection faster than the timeouts.
+- DHT impl: no bound on lookup time, so guarantee 1 holds only for `Manual`; `sessions()` lists only the looked-up board.
 
 ## Impls
 
