@@ -1,18 +1,19 @@
 # 0025 — Internet connect: candidates, STUN, DHT rendezvous
 
-Status: accepted · 2026-10-16 · closes G29
+Status: proposed · 2026-10-16 · closes G29 · accepted once all 3 agree (sync 2026-10-20)
 
 - **Context:** peers sit behind home NATs; the stakeholder does not want to depend on one third party.
 - **Decision:**
   - Every source yields **candidate** addresses: manual `ip:port`, DHT lookup (TURN relay later).
-    The app punches all candidates in parallel for up to 60 s; the first direct reply wins. When a
+    The app punches all candidates in parallel for up to 60 s; per peer (`PeerId`), the first direct reply wins. When a
     relay may be chosen over a direct path → G30. No strategy negotiation.
   - STUN (RFC 8489 Binding, via `stun_codec`) runs on the data socket, so the learned public address
     is the one peers punch. Any STUN server: a public one by default, `--stun host:port` or the modal.
   - Rendezvous is the BitTorrent Mainline DHT (`mainline`, no tokio), BEP 5: every peer announces its
     STUN port under info-hash = SHA-1 of `"wb-board-v1"` + the 8 `BoardId` bytes (big-endian) and
-    reads the others with `get_peers`. Every 30 s: STUN again, re-announce, re-read. Session code =
-    the 8 bytes in RFC 4648 base32, no padding, case-insensitive (13 chars); anyone with it can join.
+    reads the others with `get_peers`; a joiner only reads until it has the board, then announces.
+    Every 30 s: STUN again, re-announce, re-read (own endpoint skipped). Session code = the 8 bytes
+    in RFC 4648 base32, no padding, case-insensitive (13 chars); anyone with it can join.
   - Peer traffic and STUN share one UDP socket; the driver splits STUN (magic cookie, known transaction)
     from `WBRD` before envelope checks, so STUN never counts as invalid (ADR 0021).
     15 s idle → keepalive to each peer, from both sides. IPv4 only; `max_datagram` is one constant.

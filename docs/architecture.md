@@ -54,12 +54,12 @@ Seams on the network side:
 ```mermaid
 flowchart LR
     tr["Transport: Udp + Sim · M1"]
-    di0["Discovery: Manual ip:port + STUN + DHT · M1"] -->|M4| di1["LAN / virtual network"]
+    di0["Discovery: candidates + STUN punching · M1 · DHT feeds candidates from the driver"] -->|M4| di1["LAN / virtual network"]
     br0["Broadcast: SendToAll · M1"] -->|M4| br1["Gossip"]
     ae0["AntiEntropy: FullSet · M2"] -->|later| ae1["VersionVector"]
 ```
 
-Runtime (ADR 0004): two threads in the app; the simulator drives the same sans-IO protocol code:
+Runtime (ADR 0004): main and net threads in the app, plus the DHT threads (ADR 0025); the simulator drives the same sans-IO protocol code:
 
 ```mermaid
 flowchart LR
@@ -74,6 +74,7 @@ flowchart LR
         mainth -->|"channel: local ops, commands"| netth
         netth -->|"channel: remote ops, events + repaint"| mainth
         drv <-->|"Transport: Udp"| udp[("UDP")]
+        dht["DHT threads: mainline"] -->|"channel: candidates"| drv
     end
     subgraph simproc["wb-sim"]
         sdrv["sim driver: simulated Time"] --> sproto["same sans-IO protocol"]
@@ -114,7 +115,7 @@ Rule: `core` knows nothing about IO, egui or sockets. Only `app` and `sim` own t
 | `Camera` | affine matrix (pan + zoom) from day 1 | — (already cheap) |
 | `StrokeCodec` | origin + plain `i32` offsets via postcard | point reduction → delta → bit packing |
 | `Transport` | real UDP socket · `SimTransport` (seeded loss/latency/partition) | — |
-| `Discovery` | manual ip:port + STUN + DHT rendezvous (M1) | LAN / virtual network (M4) |
+| `Discovery` | candidates (manual ip:port; DHT from the driver) + STUN punching (M1) | LAN / virtual network (M4) |
 | `Broadcast` | send to every known peer | gossip (fanout k) |
 | `AntiEntropy` | exchange full id sets | compact digests (version vectors / hashes) |
 
