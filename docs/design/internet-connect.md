@@ -15,7 +15,7 @@ sequenceDiagram
     Note over A,B: A shares the code (full BoardId, base32) over chat
     B->>S: Binding request
     S-->>B: your public ip:port
-    B->>D: get_peers(hash(BoardId)) · announces only after it has the board
+    B->>D: announce · get_peers(hash(BoardId)), own endpoint skipped
     A->>D: get_peers on its next round · finds B
     par punch all candidates, ≤ 60 s
         A->>B: punch

@@ -11,7 +11,8 @@ Status: proposed · 2026-10-16 · closes G29 · accepted once all 3 agree (sync 
     is the one peers punch. Any STUN server: a public one by default, `--stun host:port` or the modal.
   - Rendezvous is the BitTorrent Mainline DHT (`mainline`, no tokio), BEP 5: every peer announces its
     STUN port under info-hash = SHA-1 of `"wb-board-v1"` + the 8 `BoardId` bytes (big-endian) and
-    reads the others with `get_peers`; a joiner only reads until it has the board, then announces.
+    reads the others with `get_peers`; a joiner announces at once, since the host learns it only
+    from that announce and punching needs both sides.
     Every 30 s: STUN again, re-announce, re-read (own endpoint skipped). Session code = the 8 bytes
     in RFC 4648 base32, no padding, case-insensitive (13 chars); anyone with it can join.
   - Peer traffic and STUN share one UDP socket; the driver splits STUN (magic cookie, known transaction)
