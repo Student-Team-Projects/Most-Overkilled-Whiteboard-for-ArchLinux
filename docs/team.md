@@ -43,8 +43,10 @@ Board rules: `docs/board.md`.
   dependency or version bumps in `Cargo.toml`. Hand-written fixtures count — the reviewer reads them.
 - The first PR targets `main`; each next PR targets the branch of the one below it. Every PR is green
   on its own.
-- Merge bottom-up. After a squash merge, rebase the next PR onto `main` and retarget it, then rebase
-  each PR above onto its rebased parent, so no PR carries already-merged commits.
+- Merge bottom-up. After a squash merge, move the next PR with `git rebase --onto main <old parent
+  tip> <branch>` (a plain rebase replays the already-merged commits), retarget it to `main`, and do
+  the same for each PR above onto its moved parent. A rebased PR needs CI green and a fresh approval
+  (the ruleset dismisses stale ones) before it joins the merge queue.
 - Every PR in the stack says `Part of #N` and links its neighbours; the last one says `Closes #N`.
 
 ## Spikes
