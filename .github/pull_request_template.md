@@ -1,7 +1,7 @@
 <!-- Lines in these comments are instructions; they are hidden in the rendered PR. Rules: docs/team.md -->
 
 Closes #
-<!-- Every PR closes an issue (AGENTS.md → Backlog rules). A grill (G) issue closes only with an ADR or contract change. -->
+<!-- Linking rule, incl. `Part of #N` in a PR stack: AGENTS.md → Backlog rules. -->
 
 ## Summary
 
@@ -31,6 +31,7 @@ Closes #
 - [ ] Code is kosher (`docs/team.md` → Code standards)
 - [ ] Tests for the logic; seam impls pass the shared seam suite
 - [ ] A fast impl passes the oracle comparison and has a benchmark showing the win
-- [ ] Contract clause touched: none <!-- or e.g. `board.md` guarantee 3; a contract or `wb-core` public API change needs all 3 + an ADR -->
+- [ ] Contract clause touched: none <!-- or e.g. `board.md` guarantee 3; rule: AGENTS.md → Code rules -->
+- [ ] ≤ ~1000 changed lines; bigger work is split into a PR stack (`docs/team.md` → Git flow)
 - [ ] Docs touched in this PR: backlog updated, ADR if a decision was made (linked here)
 - [ ] Reviewer read and understood every line and can explain the change without the author (ticked by the reviewer)
