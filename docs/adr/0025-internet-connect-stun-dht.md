@@ -22,8 +22,8 @@ Status: accepted · 2026-10-16 · closes G29
     TURN (hosted coturn or a public server, our client only) is post-MVP (G30).
 - **Why:** standard protocols, no server of ours, and data always flows peer to peer; a peer whose
   address changes re-announces and is found again without anyone swapping codes.
-- **Consequences:** amends ADR 0004 (one DHT helper thread calls the blocking `mainline` API and
-  sends candidates to the net thread by channel; the sim feeds candidates directly), ADR 0019 (DHT
+- **Consequences:** amends ADR 0004 (DHT threads: `mainline`'s own worker plus one helper that calls its
+  blocking API and sends candidates to the net thread by channel; the sim feeds candidates directly), ADR 0019 (DHT
   instead of a rendezvous server) and ADR 0016 (MVP `wb join` takes a code or `ip:port`; names stay
   M4). BEP 5 stores the announcer's source IP, so the DHT and data sockets must leave through the
   same route (VPN split routing and dual-WAN unsupported). DHT may be blocked on campus networks:
