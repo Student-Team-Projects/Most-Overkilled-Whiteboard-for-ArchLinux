@@ -27,7 +27,7 @@ flowchart LR
 | `StrokeCache` | `DecodeAll` | `ChunkWorkingSet` (M4) | T25 |
 | `StrokeRenderer` | `Naive` | `ChunkMesh` → `ChunkTexture` (M4) | T13 |
 | `Broadcast` | `SendToAll` | `Gossip` | T18 |
-| `Discovery` | Manual `ip:port` (+ `Localhost` for tests) | STUN + rendezvous (M1); LAN / virtual network (M4) | T17 |
+| `Discovery` | Manual `ip:port` (+ `Localhost` for tests) | STUN + DHT (M1); LAN / virtual network (M4) | T17 |
 | `AntiEntropy` | `FullSet` | `VersionVector` | M2 |
 
 | Rule | Source |

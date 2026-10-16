@@ -24,8 +24,8 @@ Format → `README.md` here.
 
 | Layer | Impl |
 |---|---|
-| 0 | Manual `ip:port` (+ `Localhost` for tests) |
-| M1 | STUN + rendezvous (G29 #63) |
+| 0 | Manual `ip:port`, given at construction (+ `Localhost` for tests) |
+| M1 | STUN + Mainline DHT rendezvous (ADR 0025) |
 | M4 | LAN / virtual network discovery |
 
 ## Conformance tests

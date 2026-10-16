@@ -54,7 +54,7 @@ Seams on the network side:
 ```mermaid
 flowchart LR
     tr["Transport: Udp + Sim · M1"]
-    di0["Discovery: Manual ip:port + STUN / rendezvous · M1"] -->|M4| di1["LAN / virtual network"]
+    di0["Discovery: Manual ip:port + STUN + DHT · M1"] -->|M4| di1["LAN / virtual network"]
     br0["Broadcast: SendToAll · M1"] -->|M4| br1["Gossip"]
     ae0["AntiEntropy: FullSet · M2"] -->|later| ae1["VersionVector"]
 ```
@@ -114,7 +114,7 @@ Rule: `core` knows nothing about IO, egui or sockets. Only `app` and `sim` own t
 | `Camera` | affine matrix (pan + zoom) from day 1 | — (already cheap) |
 | `StrokeCodec` | origin + plain `i32` offsets via postcard | point reduction → delta → bit packing |
 | `Transport` | real UDP socket · `SimTransport` (seeded loss/latency/partition) | — |
-| `Discovery` | manual ip:port + STUN/rendezvous (M1) | LAN / virtual network (M4) |
+| `Discovery` | manual ip:port + STUN + DHT rendezvous (M1) | LAN / virtual network (M4) |
 | `Broadcast` | send to every known peer | gossip (fanout k) |
 | `AntiEntropy` | exchange full id sets | compact digests (version vectors / hashes) |
 
