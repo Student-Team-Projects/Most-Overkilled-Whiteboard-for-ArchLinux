@@ -34,6 +34,7 @@ Board rules: `docs/board.md`.
 | 1 approving review from someone who did not write it; rotate reviewers | everyone understands every part |
 | resolve a review thread once its finding is fixed; reply with the fixing commit | unresolved threads = open work |
 | squash merge, message = what + why | readable history |
+| PR body follows `.github/pull_request_template.md` | `Closes #N` and the definition of done are never forgotten |
 
 ## Spikes
 
