@@ -85,5 +85,5 @@ Code that meets all of these is **kosher** (`GLOSSARY.md`).
 
 ## Rhythm
 
-- Weekly sync (30 min): what landed, what's blocked, next week's split. notes → `docs/journal.md`.
+- Weekly sync, Tuesdays (30 min): notes → `docs/journal.md`, in its sync-entry format.
 - Blocked > 1 day → say it in the chat, don't wait for the sync.
