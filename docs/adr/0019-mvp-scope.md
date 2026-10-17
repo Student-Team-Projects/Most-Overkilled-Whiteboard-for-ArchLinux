@@ -4,7 +4,7 @@ Status: accepted · 2026-10-15 · stakeholder re-plan
 
 - **Decision:**
   - MVP for the grade is a vertical stack of A4 pages, PDF export, internet connection through STUN
-    and rendezvous with manual `ip:port` join, and both front ends: CLI (ADR 0016, preferred) and
+    and a DHT rendezvous (ADR 0025) with manual `ip:port` join, and both front ends: CLI (ADR 0016, preferred) and
     an egui start menu + connect modal (egui already a dependency, ADR 0007).
   - MVP is functional by M1 with layer 0 everywhere: `LinearIndex`, `Raw`, `SendToAll`, and `Naive`.
     Coordinates remain `i64` world units (ADR 0014); drawing is limited to pages, with an add-page

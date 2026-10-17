@@ -13,8 +13,8 @@ never by protocol code. Format → `README.md` here.
 
 1. A datagram arrives whole or not at all — never truncated or merged.
 2. `send` of more than `max_datagram()` bytes is an `Err`, never a silent truncation.
-3. `max_datagram()` is 1200 bytes for both `Udp` and `Sim` until the virtual-network and STUN
-   answers settle a larger value (G11/G29).
+3. `max_datagram()` is 1200 bytes for both `Udp` and `Sim`, one constant (ADR 0025), until the
+   virtual-network answer settles a larger value (G11).
 
 ## Not guaranteed
 

@@ -7,7 +7,8 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | **Board** | one shared whiteboard, identified by `BoardId`; its state = strokes + tombstones |
 | **Page** | an A4 rectangle in world units; MVP drawing happens only on pages (ADR 0019) |
 | **STUN** | protocol to learn your public ip:port behind NAT; used with a rendezvous to connect peers |
-| **Rendezvous** | the step where two peers exchange their public addresses before hole punching |
+| **Rendezvous** | the step where two peers exchange their public addresses before hole punching; MVP: via the DHT (ADR 0025) |
+| **Candidate** | one address a peer might be reached at: manual, DHT or relay (ADR 0025) |
 | **MVP** | See `docs/roadmap.md` (ADR 0019) |
 | **Session** | a board currently live on the network (≥ 1 peer has it open) |
 | **Peer** | one running app instance; random 64-bit `PeerId` per run |
