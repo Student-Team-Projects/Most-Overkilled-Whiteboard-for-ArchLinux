@@ -1,5 +1,13 @@
 Dated notes: weekly syncs and debt payouts; newest first. Status lives on the board.
 
+Sync-entry format — heading `## YYYY-MM-DD — sync`, then one line each; link issues, never list tasks:
+
+- **Present:** who attended.
+- **Landed:** merged PRs since the last sync.
+- **Blocked:** item → what unblocks it, who.
+- **Decided:** one line each, with the ADR or issue link.
+- **Next week:** person → issues they own.
+
 ## 2026-10-15 — debt payout
 
 - Aligned seam milestones and discovery scope with ADR 0019; clarified spatial coordinates and renderer invalidation wording.
