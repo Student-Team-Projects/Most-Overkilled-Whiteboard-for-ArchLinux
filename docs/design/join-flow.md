@@ -5,7 +5,7 @@ Overview → `docs/architecture.md` · decisions → ADR 0006, ADR 0016 in `docs
 
 ```mermaid
 flowchart TD
-    start["wb join name or id · wb open file"] --> local{"local state for this BoardId?"}
+    start["wb join code · wb open file · wb join ip:port: ask that peer for its BoardId first"] --> local{"local state for this BoardId?"}
     local -- no --> livecheck{"live session found? via Discovery"}
     livecheck -- yes --> take["take the live state"]
     livecheck -- no --> missing["error: board not found (no state to open)"]
@@ -19,7 +19,7 @@ flowchart TD
     dlg --> discard["discard local: take R"]
 ```
 
-In the MVP, joining uses a session code (rendezvous) or `ip:port` (T35 #72, T21 #45);
+In the MVP, joining uses a board code (DHT, ADR 0025) or `ip:port` (T35 #72, T21 #45);
 `wb list` / name lookup needs LAN discovery (M4).
 
 While the relation is being classified, peers exchange only summaries, range hashes, or id pages;
