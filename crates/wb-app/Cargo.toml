@@ -11,11 +11,9 @@ path = "src/main.rs"
 
 [dependencies]
 wb-core = { workspace = true }
-wb-codec = { workspace = true }
-wb-index = { workspace = true }
 wb-net = { workspace = true }
-wb-render = { workspace = true }
 eframe = { workspace = true }
+egui = { workspace = true }
 
 [lints]
 workspace = true

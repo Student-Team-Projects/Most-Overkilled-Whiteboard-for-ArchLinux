@@ -3420,18 +3420,9 @@ name = "wb-app"
 version = "0.1.0"
 dependencies = [
  "eframe",
- "wb-codec",
+ "egui",
  "wb-core",
- "wb-index",
  "wb-net",
- "wb-render",
-]
-
-[[package]]
-name = "wb-codec"
-version = "0.1.0"
-dependencies = [
- "wb-core",
 ]
 
 [[package]]
@@ -3439,37 +3430,10 @@ name = "wb-core"
 version = "0.1.0"
 
 [[package]]
-name = "wb-index"
-version = "0.1.0"
-dependencies = [
- "wb-core",
-]
-
-[[package]]
 name = "wb-net"
 version = "0.1.0"
 dependencies = [
- "wb-codec",
  "wb-core",
-]
-
-[[package]]
-name = "wb-render"
-version = "0.1.0"
-dependencies = [
- "egui",
- "wb-codec",
- "wb-core",
- "wb-index",
-]
-
-[[package]]
-name = "wb-sim"
-version = "0.1.0"
-dependencies = [
- "wb-codec",
- "wb-core",
- "wb-net",
 ]
 
 [[package]]

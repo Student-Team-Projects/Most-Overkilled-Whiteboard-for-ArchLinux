@@ -7,7 +7,10 @@ publish.workspace = true
 
 [dependencies]
 wb-core = { workspace = true }
-wb-codec = { workspace = true }
+
+[[bin]]
+name = "wb-sim"
+path = "src/bin/sim.rs"
 
 [lints]
 workspace = true
