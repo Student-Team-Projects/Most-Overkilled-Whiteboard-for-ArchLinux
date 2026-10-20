@@ -19,6 +19,9 @@ Status: proposed · 2026-10-16 · closes G29 · accepted once all 3 agree (sync 
     from `WBRD` before envelope checks, so STUN never counts as invalid (ADR 0021).
     15 s idle → keepalive to each peer, from both sides. IPv4 only; `max_datagram` is one constant.
   - The app shows its own LAN and public (STUN) `ip:port`, so users can share it for manual join.
+    Manual join takes the code plus `ip:port`; a peer never reveals its `BoardId` and answers only
+    packets that carry it (ADR 0021), so a crawled address alone gets nothing. Nothing is encrypted:
+    the code is not a password.
   - Two errors: no candidates ("no peers for this code — check the code, or the network may block
     the DHT") and candidates that never answer ("can't reach peer — probably NAT; relay is planned").
     TURN (hosted coturn or a public server, our client only) is post-MVP (G30).
@@ -26,7 +29,7 @@ Status: proposed · 2026-10-16 · closes G29 · accepted once all 3 agree (sync 
   address changes re-announces and is found again without anyone swapping codes.
 - **Consequences:** amends ADR 0004 (DHT threads: `mainline`'s own worker plus one helper that calls its
   blocking API and sends candidates to the net thread by channel; the sim feeds candidates directly), ADR 0019 (DHT
-  instead of a rendezvous server) and ADR 0016 (MVP `wb join` takes a code or `ip:port`; names stay
+  instead of a rendezvous server) and ADR 0016 (MVP `wb join` takes a code, optionally with `ip:port`; names stay
   M4). BEP 5 stores the announcer's source IP, so the DHT and data sockets must leave through the
   same route (VPN split routing and dual-WAN unsupported). DHT may be blocked on campus networks:
   manual `ip:port` is the fallback and works only when one side is reachable (same LAN, public IP,
