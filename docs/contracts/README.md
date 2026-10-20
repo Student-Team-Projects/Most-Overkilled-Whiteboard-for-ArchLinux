@@ -14,7 +14,7 @@ Write each contract in prose; the trait in code is the signature, and rustdoc li
 ## Shared types (`wb-core`)
 
 - `PeerId` — per-run random peer identifier (ADR 0006).
-- `BoardId` — board identifier.
+- `BoardId` — board identifier: 8 random bytes (ADR 0025 encodes it).
 - `OpId` — operation identifier composed of a peer and its sequence number (ADR 0009); `StrokeId` aliases it and identifies the Add operation for a stroke.
 - `Lamport` — logical timestamp used for draw order (ADR 0008).
 - `WorldPos` — x/y coordinates in signed 64-bit units; one unit is 1/16 px at zoom 1 (ADR 0014).

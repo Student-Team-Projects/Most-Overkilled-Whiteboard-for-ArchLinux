@@ -1,6 +1,6 @@
 # Contract: `StrokeRenderer`
 
-Status: draft · Puts the visible part of the board on screen. Format → `README.md` here.
+Status: agreed 2026-10-20 · Puts the visible part of the board on screen. Format → `README.md` here.
 
 ## Operations
 

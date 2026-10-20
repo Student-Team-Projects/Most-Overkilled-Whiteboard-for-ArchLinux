@@ -1,6 +1,6 @@
 # Contract: `AntiEntropy`
 
-Status: draft · The guarantee of convergence (ADR 0003): heals whatever `Broadcast` lost, and powers
+Status: agreed 2026-10-20 · The guarantee of convergence (ADR 0003): heals whatever `Broadcast` lost, and powers
 late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
 
 ## Operations

@@ -1,6 +1,6 @@
 # Contract: `Broadcast`
 
-Status: draft · How an op leaves this peer towards the others. Format → `README.md` here.
+Status: agreed 2026-10-20 · How an op leaves this peer towards the others. Format → `README.md` here.
 
 ## Operations
 

@@ -1,6 +1,6 @@
 # Contract: `StrokeCodec`
 
-Status: draft · How stroke points are shrunk and put into bytes (ADR 0005). Format → `README.md` here.
+Status: agreed 2026-10-20 · How stroke points are shrunk and put into bytes (ADR 0005). Format → `README.md` here.
 
 ## Operations
 

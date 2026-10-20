@@ -1,6 +1,6 @@
 # 0025 — Internet connect: candidates, STUN, DHT rendezvous
 
-Status: proposed · 2026-10-16 · closes G29 · accepted once all 3 agree (sync 2026-10-20)
+Status: accepted · 2026-10-20 (sync, all 3) · closes G29
 
 - **Context:** peers sit behind home NATs; the stakeholder does not want to depend on one third party.
 - **Decision:**
