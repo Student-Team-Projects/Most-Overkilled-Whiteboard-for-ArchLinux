@@ -55,15 +55,15 @@ Coordinate rule: every coordinate computation is `i64`; `i32` exists only as dec
 
 | Seam | File | Status |
 |---|---|---|
-| `Board` (type, not a trait) | `board.md` | draft |
-| `StrokeCodec` | `stroke-codec.md` | draft |
-| `SpatialIndex` | `spatial-index.md` | draft |
-| `Camera` (type) | `camera.md` | draft |
-| `StrokeRenderer` | `stroke-renderer.md` | draft |
-| `StrokeCache` | `stroke-cache.md` | draft |
-| `Transport` | `transport.md` | draft |
-| `Discovery` | `discovery.md` | draft |
-| `Broadcast` | `broadcast.md` | draft |
-| `AntiEntropy` | `anti-entropy.md` | draft |
+| `Board` (type, not a trait) | `board.md` | agreed |
+| `StrokeCodec` | `stroke-codec.md` | agreed |
+| `SpatialIndex` | `spatial-index.md` | agreed |
+| `Camera` (type) | `camera.md` | agreed |
+| `StrokeRenderer` | `stroke-renderer.md` | agreed |
+| `StrokeCache` | `stroke-cache.md` | agreed |
+| `Transport` | `transport.md` | agreed |
+| `Discovery` | `discovery.md` | agreed |
+| `Broadcast` | `broadcast.md` | agreed |
+| `AntiEntropy` | `anti-entropy.md` | agreed |
 
-All drafts are reviewed and amended by the team in M0, then marked `agreed`.
+All agreed at the 2026-10-20 sync (G24); a change needs all 3 + an ADR line.
