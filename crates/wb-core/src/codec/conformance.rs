@@ -104,7 +104,7 @@ fn check_pieces(
 }
 
 /// Guarantee 1, at any budget: `Ok` round-trips, and the only `Err` is a too-small budget.
-pub(crate) fn round_trip_after_simplify(
+pub fn round_trip_after_simplify(
     codec: &impl StrokeCodec,
     raw: &[WorldPos],
     budget: usize,
@@ -121,7 +121,7 @@ pub(crate) fn round_trip_after_simplify(
 
 /// Guarantee 2: endpoints kept, every raw point within `tolerance` world units of the result;
 /// an empty stroke simplifies to an empty one.
-pub(crate) fn within_tolerance(
+pub fn within_tolerance(
     codec: &impl StrokeCodec,
     tolerance: f64,
     raw: &[WorldPos],
@@ -140,7 +140,7 @@ pub(crate) fn within_tolerance(
 
 /// Guarantee 3: any bytes decode to `Ok` or `Err`, never a panic; `Ok` points expand without
 /// overflowing `i64` (ADR 0014), or `expand` would panic in this debug build.
-pub(crate) fn decode_fuzz(codec: &impl StrokeCodec, bytes: Vec<u8>) {
+pub fn decode_fuzz(codec: &impl StrokeCodec, bytes: Vec<u8>) {
     if let Ok(points) = codec.decode(&EncodedPoints(bytes)) {
         expand(&points);
     }
@@ -148,7 +148,7 @@ pub(crate) fn decode_fuzz(codec: &impl StrokeCodec, bytes: Vec<u8>) {
 
 /// Guarantee 3 on bytes close to valid: a real piece cut short at `cut`, and one with the byte at
 /// `position` replaced by `byte`.
-pub(crate) fn decode_fuzz_on_damaged_pieces(
+pub fn decode_fuzz_on_damaged_pieces(
     codec: &impl StrokeCodec,
     raw: &[WorldPos],
     cut: prop::sample::Index,
@@ -166,7 +166,7 @@ pub(crate) fn decode_fuzz_on_damaged_pieces(
 
 /// Guarantees 1 and 4: within `encode`'s preconditions it succeeds, and its pieces fit the
 /// budget, share endpoints and join back to the simplified stroke.
-pub(crate) fn encode_split_join_and_pieces_fit_budget(
+pub fn encode_split_join_and_pieces_fit_budget(
     codec: &impl StrokeCodec,
     raw: &[WorldPos],
     budget: usize,
@@ -177,7 +177,7 @@ pub(crate) fn encode_split_join_and_pieces_fit_budget(
 }
 
 /// Guarantees 1 and 4 on strokes at the limits, at the smallest and the real budget.
-pub(crate) fn encode_split_join_on_edge_strokes(codec: &impl StrokeCodec) {
+pub fn encode_split_join_on_edge_strokes(codec: &impl StrokeCodec) {
     for raw in edge_strokes() {
         for budget in [MIN_BUDGET, BUDGET] {
             encode_split_join_and_pieces_fit_budget(codec, &raw, budget)
@@ -191,7 +191,7 @@ pub(crate) fn encode_split_join_on_edge_strokes(codec: &impl StrokeCodec) {
 ///   the stroke exactly as guarantees 1 and 4 require, and is no larger than a single piece;
 /// - a consecutive step too long for `i32` is `UnsplittableDelta` at any budget, even where the
 ///   offsets from the first point would fit.
-pub(crate) fn encode_errors_for_too_small_budget_and_unsplittable_delta(codec: &impl StrokeCodec) {
+pub fn encode_errors_for_too_small_budget_and_unsplittable_delta(codec: &impl StrokeCodec) {
     let fitting = [
         vec![],
         vec![at(0, 0)],
