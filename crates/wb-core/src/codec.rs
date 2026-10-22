@@ -4,6 +4,8 @@ mod raw;
 
 #[cfg(test)]
 mod conformance;
+#[cfg(test)]
+mod testing;
 
 pub use raw::Raw;
 
@@ -25,9 +27,8 @@ pub trait StrokeCodec {
     ///
     /// # Errors
     ///
-    /// [`CodecError::BudgetTooSmall`] if a piece cannot fit `budget`,
-    /// [`CodecError::UnsplittableDelta`] if consecutive points are too far apart, and
-    /// [`CodecError::NoPoints`] for an empty input.
+    /// [`CodecError::UnsplittableDelta`] if two consecutive points are further apart than an
+    /// `i32` offset reaches, else [`CodecError::BudgetTooSmall`] if a piece cannot fit `budget`.
     fn encode(&self, points: &[WorldPos], budget: usize) -> Result<Vec<EncodedPoints>, CodecError>;
 
     /// Decodes one piece.
@@ -36,23 +37,20 @@ pub trait StrokeCodec {
     ///
     /// # Errors
     ///
-    /// [`CodecError::Postcard`] if `encoded` is not a piece this codec wrote.
+    /// [`CodecError::Malformed`] if `encoded` is not a well-formed piece.
     fn decode(&self, encoded: &EncodedPoints) -> Result<StrokePoints, CodecError>;
 }
 
 /// Why a stroke could not be encoded or decoded.
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 pub enum CodecError {
-    /// There are no points to encode.
-    #[error("no points to encode")]
-    NoPoints,
-    /// A piece holding the next point does not fit the byte budget.
-    #[error("a piece does not fit the budget of {0} bytes")]
-    BudgetTooSmall(usize),
-    /// Two consecutive points are further apart than an `i32` offset can reach.
+    /// Two consecutive points are further apart than an `i32` offset reaches.
     #[error("consecutive points are too far apart to encode")]
     UnsplittableDelta,
-    /// postcard could not read the bytes as a piece, or could not write one.
-    #[error("postcard: {0}")]
-    Postcard(#[from] postcard::Error),
+    /// A piece cannot fit the byte budget.
+    #[error("a piece does not fit the byte budget")]
+    BudgetTooSmall,
+    /// The bytes are not a well-formed piece.
+    #[error("encoded points are malformed")]
+    Malformed,
 }

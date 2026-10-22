@@ -1,5 +1,12 @@
 //! Layer-0 codec: origin + plain `i32` offsets via postcard (`stroke-codec.md` → Impls).
 
+#[cfg(test)]
+#[path = "raw_test.rs"]
+mod test;
+
+use postcard::ser_flavors::Size;
+use serde::Serialize;
+
 use super::{CodecError, StrokeCodec};
 use crate::{EncodedPoints, StrokePoints, WorldPos};
 
@@ -14,17 +21,34 @@ impl StrokeCodec for Raw {
     }
 
     fn encode(&self, points: &[WorldPos], budget: usize) -> Result<Vec<EncodedPoints>, CodecError> {
-        let (&first, rest) = points.split_first().ok_or(CodecError::NoPoints)?;
+        if points
+            .windows(2)
+            .any(|pair| offset(pair[0], pair[1]).is_none())
+        {
+            return Err(CodecError::UnsplittableDelta);
+        }
+        let Some((&first, rest)) = points.split_first() else {
+            // An empty stroke is one piece without points, so guarantees 1 and 4 still hold.
+            let empty = Piece::new(WorldPos { x: 0, y: 0 });
+            return if empty.size()? <= budget {
+                Ok(vec![empty.finish()?])
+            } else {
+                Err(CodecError::BudgetTooSmall)
+            };
+        };
+
         let mut pieces = Vec::new();
         let mut piece = Piece::start(first, budget)?;
         let mut prev = first;
         for &point in rest {
-            if piece.push(point, budget).is_err() {
-                // Split: the next piece starts at the previous point, shared by both (ADR 0020).
-                // A piece that cannot take even one more point fails again with the reason.
+            if !piece.try_push(point, budget)? {
+                // Split at the previous point, which both pieces share (ADR 0020). Consecutive
+                // offsets fit `i32`, so only the budget can stop `[prev, point]`.
                 pieces.push(piece.finish()?);
                 piece = Piece::start(prev, budget)?;
-                piece.push(point, budget)?;
+                if !piece.try_push(point, budget)? {
+                    return Err(CodecError::BudgetTooSmall);
+                }
             }
             prev = point;
         }
@@ -32,12 +56,24 @@ impl StrokeCodec for Raw {
         Ok(pieces)
     }
 
+    /// Also rejects trailing bytes, and offsets that overflow `i64` from the origin: bytes may
+    /// come from any peer, and decoded points must expand without overflow (ADR 0014).
     fn decode(&self, encoded: &EncodedPoints) -> Result<StrokePoints, CodecError> {
-        Ok(postcard::from_bytes(&encoded.0)?)
+        let (points, rest): (StrokePoints, _) =
+            postcard::take_from_bytes(&encoded.0).map_err(|_| CodecError::Malformed)?;
+        let origin = points.origin;
+        let expands = points.offsets.iter().all(|&[dx, dy]| {
+            origin.x.checked_add(dx.into()).is_some() && origin.y.checked_add(dy.into()).is_some()
+        });
+        if rest.is_empty() && expands {
+            Ok(points)
+        } else {
+            Err(CodecError::Malformed)
+        }
     }
 }
 
-/// A piece being filled, with its serialized size tracked as points are pushed.
+/// A piece being filled; tracks its serialized size as points are pushed.
 struct Piece {
     points: StrokePoints,
     /// Serialized bytes of `points.offsets`, without their length prefix.
@@ -45,62 +81,66 @@ struct Piece {
 }
 
 impl Piece {
-    fn start(origin: WorldPos, budget: usize) -> Result<Self, CodecError> {
-        let mut piece = Self {
+    fn new(origin: WorldPos) -> Self {
+        Self {
             points: StrokePoints {
                 origin,
                 offsets: Vec::new(),
             },
             offsets_size: 0,
-        };
-        piece.push(origin, budget)?;
-        Ok(piece)
+        }
     }
 
-    /// Adds `point` if its offset fits `i32` and the piece still fits `budget`; else leaves the
-    /// piece unchanged.
-    fn push(&mut self, point: WorldPos, budget: usize) -> Result<(), CodecError> {
-        let origin = self.points.origin;
-        let offset = [offset(origin.x, point.x), offset(origin.y, point.y)];
-        let [Some(dx), Some(dy)] = offset else {
-            return Err(CodecError::UnsplittableDelta);
-        };
-        let offsets_size =
-            self.offsets_size + varint_size(zigzag(dx.into())) + varint_size(zigzag(dy.into()));
-        let count = self.points.offsets.len() as u64 + 1;
-        // postcard layout: origin x, y · offsets length · each offset's dx, dy — all varints.
-        let size = varint_size(zigzag(origin.x))
-            + varint_size(zigzag(origin.y))
-            + varint_size(count)
-            + offsets_size;
-        if size > budget {
-            return Err(CodecError::BudgetTooSmall(budget));
+    /// A piece holding just `origin`, or `BudgetTooSmall`.
+    fn start(origin: WorldPos, budget: usize) -> Result<Self, CodecError> {
+        let mut piece = Self::new(origin);
+        if piece.try_push(origin, budget)? {
+            Ok(piece)
+        } else {
+            Err(CodecError::BudgetTooSmall)
         }
-        self.points.offsets.push([dx, dy]);
+    }
+
+    /// Adds `point` if its offset from the origin fits `i32` and the piece still fits `budget`.
+    fn try_push(&mut self, point: WorldPos, budget: usize) -> Result<bool, CodecError> {
+        let Some(offset) = offset(self.points.origin, point) else {
+            return Ok(false);
+        };
+        let offsets_size = self.offsets_size + serialized_size(&offset)?;
+        if self.size_with(self.points.offsets.len() + 1, offsets_size)? > budget {
+            return Ok(false);
+        }
+        self.points.offsets.push(offset);
         self.offsets_size = offsets_size;
-        Ok(())
+        Ok(true)
+    }
+
+    fn size(&self) -> Result<usize, CodecError> {
+        self.size_with(self.points.offsets.len(), self.offsets_size)
+    }
+
+    /// Serialized size with `count` offsets of `offsets_size` bytes: origin, length, offsets.
+    fn size_with(&self, count: usize, offsets_size: usize) -> Result<usize, CodecError> {
+        Ok(serialized_size(&self.points.origin)? + serialized_size(&count)? + offsets_size)
     }
 
     fn finish(self) -> Result<EncodedPoints, CodecError> {
-        Ok(EncodedPoints(postcard::to_allocvec(&self.points)?))
+        postcard::to_allocvec(&self.points)
+            .map(EncodedPoints)
+            .map_err(|_| CodecError::Malformed)
     }
 }
 
-/// `to - from` if it fits `i32`.
-fn offset(from: i64, to: i64) -> Option<i32> {
-    to.checked_sub(from).and_then(|d| i32::try_from(d).ok())
+/// Offset of `to` from `from`, if it fits `i32` on both axes.
+fn offset(from: WorldPos, to: WorldPos) -> Option<[i32; 2]> {
+    let axis = |a: i64, b: i64| b.checked_sub(a).and_then(|d| i32::try_from(d).ok());
+    Some([axis(from.x, to.x)?, axis(from.y, to.y)?])
 }
 
-/// postcard's zigzag mapping of a signed integer: small magnitudes become small varints.
-fn zigzag(v: i64) -> u64 {
-    ((v << 1) ^ (v >> 63)).cast_unsigned()
+/// Bytes postcard writes for `value`; a sequence's length prefix is written like a `usize`.
+///
+/// Sizing and writing these plain types into a `Vec` cannot fail; were it to, `encode` would
+/// report `Malformed` rather than panic.
+fn serialized_size(value: &impl Serialize) -> Result<usize, CodecError> {
+    postcard::serialize_with_flavor(value, Size::default()).map_err(|_| CodecError::Malformed)
 }
-
-/// Bytes of postcard's varint for `v`: 7 bits per byte.
-fn varint_size(v: u64) -> usize {
-    let bits = u64::BITS - (v | 1).leading_zeros();
-    bits.div_ceil(7) as usize
-}
-
-#[cfg(test)]
-mod tests;
