@@ -13,7 +13,7 @@ use crate::StrokeId;
 /// It is the wrapping sum of one hash per element, so the order elements arrive in does not
 /// matter and each insert is O(1). Callers insert each element once.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub(super) struct StateHash(u128);
+pub struct StateHash(u128);
 
 /// Kind of element, hashed with its id so an added id and a tombstoned target differ. The
 /// discriminant is the hashed byte, so changing it changes every peer's hash.
@@ -25,15 +25,15 @@ enum Element {
 }
 
 impl StateHash {
-    pub(super) fn insert_added(&mut self, id: StrokeId) {
+    pub fn insert_added(&mut self, id: StrokeId) {
         self.insert(Element::Added, id);
     }
 
-    pub(super) fn insert_tombstoned(&mut self, target: StrokeId) {
+    pub fn insert_tombstoned(&mut self, target: StrokeId) {
         self.insert(Element::Tombstoned, target);
     }
 
-    pub(super) fn value(self) -> u128 {
+    pub fn value(self) -> u128 {
         self.0
     }
 
