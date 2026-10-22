@@ -75,6 +75,9 @@ Code that meets all of these is **kosher** (`GLOSSARY.md`).
 | docs without code | docs describe effects, guarantees and data in words; signatures live in code (rustdoc cites the contract clause); pseudocode only for algorithms and protocols |
 | property tests | `proptest` for CRDT laws and oracle comparisons |
 | pedantic lints | `clippy::pedantic` on; every `#[allow]` has a one-line reason |
+| tests apart from logic | unit tests in a sibling `foo_test.rs`, declared in `foo.rs` as `#[cfg(test)] #[path = "foo_test.rs"] mod test;`; end-to-end tests are one binary per crate, `tests/e2e/main.rs` with a `support/` module |
+| test API | builders, generators and oracles in the module's `testing.rs` (`cfg(test)`), so test cases stay short; a `testing` cargo feature only when another crate's tests need them (a `wb-core` API change) |
+| constants | protocol constants are `pub const` in the owning crate, citing their ADR, never in a runtime config file; test constants live in `testing.rs` |
 
 ## Definition of done
 
