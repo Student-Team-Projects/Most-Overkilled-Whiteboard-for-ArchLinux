@@ -11,7 +11,8 @@ use super::{CodecError, StrokeCodec};
 use crate::{EncodedPoints, StrokePoints, WorldPos};
 
 /// The oracle codec: no simplification; a piece is its first point as origin plus every point's
-/// offset from it, serialized with postcard.
+/// offset from it, serialized with postcard. The empty stroke is one piece with origin `(0, 0)`
+/// and no offsets.
 #[derive(Debug, Clone, Copy)]
 pub struct Raw;
 
@@ -29,9 +30,9 @@ impl StrokeCodec for Raw {
         }
         let Some((&first, rest)) = points.split_first() else {
             // An empty stroke is one piece without points, so guarantees 1 and 4 still hold.
-            let empty = Piece::new(WorldPos { x: 0, y: 0 });
-            return if empty.size()? <= budget {
-                Ok(vec![empty.finish()?])
+            let empty = Piece::new(WorldPos { x: 0, y: 0 }).finish()?;
+            return if empty.0.len() <= budget {
+                Ok(vec![empty])
             } else {
                 Err(CodecError::BudgetTooSmall)
             };
@@ -113,10 +114,6 @@ impl Piece {
         self.points.offsets.push(offset);
         self.offsets_size = offsets_size;
         Ok(true)
-    }
-
-    fn size(&self) -> Result<usize, CodecError> {
-        self.size_with(self.points.offsets.len(), self.offsets_size)
     }
 
     /// Serialized size with `count` offsets of `offsets_size` bytes: origin, length, offsets.

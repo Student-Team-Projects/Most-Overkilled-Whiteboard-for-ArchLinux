@@ -1,10 +1,11 @@
-//! `Raw` passes the shared `StrokeCodec` suite; the tests below pin its own byte layout.
+//! `Raw` passes the shared `StrokeCodec` suite; the tests below pin its own layout, split points
+//! and strict decoding.
 
 use proptest::prelude::*;
 
 use super::Raw;
 use crate::codec::conformance::stroke_codec_conformance;
-use crate::codec::testing::{BUDGET, at};
+use crate::codec::testing::{BUDGET, at, expand, strategy};
 use crate::codec::{CodecError, StrokeCodec};
 use crate::{EncodedPoints, StrokePoints, WorldPos};
 
@@ -44,7 +45,7 @@ fn empty_stroke_is_one_piece_without_points() {
 /// A one-point stroke fits a budget of exactly its own size; a second point then needs a split
 /// that cannot happen, since every piece needs two points to make progress.
 #[test]
-fn one_point_budget() {
+fn second_point_does_not_fit_a_one_point_budget() {
     let dot = at(-5, 3);
     let size = Raw.encode(&[dot], BUDGET).unwrap()[0].0.len();
     assert!(Raw.encode(&[dot], size).is_ok());
@@ -92,9 +93,7 @@ fn decode_rejects_offsets_that_overflow_i64() {
 
 /// An origin anywhere, from 1-byte varints near zero to 10-byte ones near the `i64` extremes.
 fn origin() -> impl Strategy<Value = WorldPos> {
-    let reach = 1i64 << 30;
-    let coordinate = prop_oneof![-1000..1000i64, (i64::MIN + reach)..=(i64::MAX - reach)];
-    (coordinate.clone(), coordinate).prop_map(|(x, y)| at(x, y))
+    (strategy::coordinate(1), strategy::coordinate(1)).prop_map(|(x, y)| at(x, y))
 }
 
 /// Offsets within ±2³⁰, so consecutive steps fit `i32`; small ones and 5-byte ones.
@@ -116,11 +115,7 @@ proptest! {
             offsets: [[0, 0]].into_iter().chain(offsets).collect(),
         };
         let bytes = postcard::to_allocvec(&whole).unwrap();
-        let points: Vec<WorldPos> = whole
-            .offsets
-            .iter()
-            .map(|&[dx, dy]| at(origin.x + i64::from(dx), origin.y + i64::from(dy)))
-            .collect();
+        let points = expand(&whole);
 
         prop_assert_eq!(Raw.encode(&points, bytes.len()), Ok(vec![EncodedPoints(bytes.clone())]));
         let smaller = Raw.encode(&points, bytes.len() - 1);

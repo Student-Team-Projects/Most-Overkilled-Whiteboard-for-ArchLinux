@@ -8,62 +8,64 @@ use super::testing::{BUDGET, MIN_BUDGET, at, edge_strokes, expand, near_path};
 use super::{CodecError, StrokeCodec};
 use crate::{EncodedPoints, WorldPos};
 
-/// Generates the conformance tests for `$codec`, whose `simplify` keeps every raw point within
-/// `$tolerance` world units of its result.
+/// Generates `mod conformance` with one test per law for `$codec`, whose `simplify` keeps every
+/// raw point within `$tolerance` world units of its result.
 macro_rules! stroke_codec_conformance {
     ($codec:expr, tolerance = $tolerance:expr) => {
-        proptest::proptest! {
-            #[test]
-            fn round_trip_after_simplify(
-                raw in $crate::codec::testing::strategy::stroke_or_empty(),
-                budget in $crate::codec::testing::strategy::any_budget(),
-            ) {
-                $crate::codec::conformance::round_trip_after_simplify(&$codec, &raw, budget)?;
+        mod conformance {
+            use ::proptest::prelude::*;
+
+            use super::*;
+            use $crate::codec::conformance as law;
+            use $crate::codec::testing::strategy;
+
+            proptest! {
+                #[test]
+                fn round_trip_after_simplify(
+                    raw in strategy::stroke_or_empty(),
+                    budget in strategy::any_budget(),
+                ) {
+                    law::round_trip_after_simplify(&$codec, &raw, budget)?;
+                }
+
+                #[test]
+                fn within_tolerance(raw in strategy::stroke_or_empty()) {
+                    law::within_tolerance(&$codec, $tolerance, &raw)?;
+                }
+
+                #[test]
+                fn decode_fuzz(bytes in prop::collection::vec(any::<u8>(), 0..256)) {
+                    law::decode_fuzz(&$codec, bytes);
+                }
+
+                #[test]
+                fn decode_fuzz_on_damaged_pieces(
+                    raw in strategy::stroke(),
+                    cut in any::<prop::sample::Index>(),
+                    position in any::<prop::sample::Index>(),
+                    byte in any::<u8>(),
+                ) {
+                    law::decode_fuzz_on_damaged_pieces(&$codec, &raw, cut, position, byte)?;
+                }
+
+                #[test]
+                fn encode_split_join_and_pieces_fit_budget(
+                    raw in strategy::stroke_or_empty(),
+                    budget in strategy::workable_budget(),
+                ) {
+                    law::encode_split_join_and_pieces_fit_budget(&$codec, &raw, budget)?;
+                }
             }
 
             #[test]
-            fn within_tolerance(raw in $crate::codec::testing::strategy::stroke_or_empty()) {
-                $crate::codec::conformance::within_tolerance(&$codec, $tolerance, &raw)?;
+            fn encode_split_join_on_edge_strokes() {
+                law::encode_split_join_on_edge_strokes(&$codec);
             }
 
             #[test]
-            fn decode_fuzz(bytes in proptest::collection::vec(proptest::prelude::any::<u8>(), 0..256)) {
-                $crate::codec::conformance::decode_fuzz(&$codec, bytes);
+            fn encode_errors_for_too_small_budget_and_unsplittable_delta() {
+                law::encode_errors_for_too_small_budget_and_unsplittable_delta(&$codec);
             }
-
-            #[test]
-            fn decode_fuzz_on_damaged_pieces(
-                raw in $crate::codec::testing::strategy::stroke(),
-                cut in proptest::prelude::any::<proptest::sample::Index>(),
-                at in proptest::prelude::any::<proptest::sample::Index>(),
-                byte in proptest::prelude::any::<u8>(),
-            ) {
-                $crate::codec::conformance::decode_fuzz_on_damaged_pieces(
-                    &$codec, &raw, cut, at, byte,
-                );
-            }
-
-            #[test]
-            fn encode_split_join_and_pieces_fit_budget(
-                raw in $crate::codec::testing::strategy::stroke_or_empty(),
-                budget in $crate::codec::testing::strategy::budget(),
-            ) {
-                $crate::codec::conformance::encode_split_join_and_pieces_fit_budget(
-                    &$codec, &raw, budget,
-                )?;
-            }
-        }
-
-        #[test]
-        fn encode_split_join_on_edge_strokes() {
-            $crate::codec::conformance::encode_split_join_on_edge_strokes(&$codec);
-        }
-
-        #[test]
-        fn encode_errors_for_too_small_budget_and_unsplittable_delta() {
-            $crate::codec::conformance::encode_errors_for_too_small_budget_and_unsplittable_delta(
-                &$codec,
-            );
         }
     };
 }
@@ -71,7 +73,8 @@ macro_rules! stroke_codec_conformance {
 pub(crate) use stroke_codec_conformance;
 
 /// Guarantees 1 and 4 on `encode`'s pieces of `points`: at least one piece, each within
-/// `budget`, neighbours sharing an endpoint, joined back into exactly `points`.
+/// `budget`, each one after the first starting where the previous one ends, joined back into
+/// exactly `points`.
 fn check_pieces(
     codec: &impl StrokeCodec,
     points: &[WorldPos],
@@ -79,18 +82,23 @@ fn check_pieces(
     pieces: &[EncodedPoints],
 ) -> Result<(), TestCaseError> {
     prop_assert!(!pieces.is_empty());
-    let mut joined: Vec<WorldPos> = Vec::new();
+    let mut decoded = Vec::new();
     for piece in pieces {
         prop_assert!(piece.0.len() <= budget);
-        let decoded = expand(&codec.decode(piece)?);
-        match joined.last() {
-            None => joined.extend(decoded),
-            Some(last) => {
-                prop_assert_eq!(Some(last), decoded.first(), "neighbours share an endpoint");
-                joined.extend(decoded.into_iter().skip(1));
-            }
-        }
+        decoded.push(expand(&codec.decode(piece)?));
     }
+    for pair in decoded.windows(2) {
+        let shared = pair[0]
+            .last()
+            .is_some_and(|end| pair[1].first() == Some(end));
+        prop_assert!(shared, "neighbours share an endpoint");
+    }
+    let joined: Vec<WorldPos> = decoded
+        .iter()
+        .enumerate()
+        .flat_map(|(i, piece)| piece.iter().skip(usize::from(i > 0)))
+        .copied()
+        .collect();
     prop_assert_eq!(joined, points);
     Ok(())
 }
@@ -130,28 +138,30 @@ pub(crate) fn within_tolerance(
     Ok(())
 }
 
-/// Guarantee 3: any bytes decode to `Ok` or `Err`, never a panic.
+/// Guarantee 3: any bytes decode to `Ok` or `Err`, never a panic; `Ok` points expand without
+/// overflowing `i64` (ADR 0014), or `expand` would panic in this debug build.
 pub(crate) fn decode_fuzz(codec: &impl StrokeCodec, bytes: Vec<u8>) {
-    let _ = codec.decode(&EncodedPoints(bytes));
+    if let Ok(points) = codec.decode(&EncodedPoints(bytes)) {
+        expand(&points);
+    }
 }
 
-/// Guarantee 3 on bytes close to valid: a real piece cut short at `cut`, and one with the byte
-/// at `at` replaced by `byte`.
+/// Guarantee 3 on bytes close to valid: a real piece cut short at `cut`, and one with the byte at
+/// `position` replaced by `byte`.
 pub(crate) fn decode_fuzz_on_damaged_pieces(
     codec: &impl StrokeCodec,
     raw: &[WorldPos],
     cut: prop::sample::Index,
-    at: prop::sample::Index,
+    position: prop::sample::Index,
     byte: u8,
-) {
-    let Ok(pieces) = codec.encode(&codec.simplify(raw), BUDGET) else {
-        return;
-    };
+) -> Result<(), TestCaseError> {
+    let pieces = codec.encode(&codec.simplify(raw), BUDGET)?;
     let bytes = &pieces[0].0;
-    let _ = codec.decode(&EncodedPoints(bytes[..cut.index(bytes.len())].to_vec()));
+    decode_fuzz(codec, bytes[..cut.index(bytes.len())].to_vec());
     let mut corrupted = bytes.clone();
-    corrupted[at.index(bytes.len())] = byte;
-    let _ = codec.decode(&EncodedPoints(corrupted));
+    corrupted[position.index(bytes.len())] = byte;
+    decode_fuzz(codec, corrupted);
+    Ok(())
 }
 
 /// Guarantees 1 and 4: within `encode`'s preconditions it succeeds, and its pieces fit the
@@ -176,23 +186,35 @@ pub(crate) fn encode_split_join_on_edge_strokes(codec: &impl StrokeCodec) {
     }
 }
 
-/// Guarantee 5: every budget below the smallest that works is `BudgetTooSmall`; a consecutive
-/// step too long for `i32` is `UnsplittableDelta` at any budget, even where offsets from the
-/// first point would fit.
+/// Guarantee 5, and `Err` only as it says:
+/// - every budget below the smallest that works is `BudgetTooSmall`; that smallest budget fits
+///   the stroke exactly as guarantees 1 and 4 require, and is no larger than a single piece;
+/// - a consecutive step too long for `i32` is `UnsplittableDelta` at any budget, even where the
+///   offsets from the first point would fit.
 pub(crate) fn encode_errors_for_too_small_budget_and_unsplittable_delta(codec: &impl StrokeCodec) {
-    for raw in [
+    let fitting = [
+        vec![],
         vec![at(0, 0)],
         vec![at(0, 0), at(10, 10)],
         vec![at(i64::MIN, 5), at(i64::MIN, -5)],
-    ] {
+    ];
+    for raw in fitting {
         let points = codec.simplify(&raw);
         let smallest = (0..=BUDGET)
             .find(|&budget| codec.encode(&points, budget).is_ok())
             .unwrap_or_else(|| panic!("{raw:?} fits no budget up to {BUDGET}"));
+        encode_split_join_and_pieces_fit_budget(codec, &raw, smallest)
+            .unwrap_or_else(|e| panic!("{raw:?} at its smallest budget {smallest}: {e}"));
         for budget in 0..smallest {
             assert_eq!(
                 codec.encode(&points, budget),
                 Err(CodecError::BudgetTooSmall)
+            );
+        }
+        if let Ok([piece]) = codec.encode(&points, BUDGET).as_deref() {
+            assert!(
+                smallest <= piece.0.len(),
+                "{raw:?} fits one piece but needs a larger budget"
             );
         }
     }
@@ -210,7 +232,7 @@ pub(crate) fn encode_errors_for_too_small_budget_and_unsplittable_delta(codec: &
     ];
     for raw in unsplittable {
         let points = codec.simplify(&raw);
-        for budget in [MIN_BUDGET, BUDGET, usize::MAX] {
+        for budget in [0, MIN_BUDGET, BUDGET, usize::MAX] {
             assert_eq!(
                 codec.encode(&points, budget),
                 Err(CodecError::UnsplittableDelta)

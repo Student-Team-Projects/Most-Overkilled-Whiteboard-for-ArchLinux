@@ -1,20 +1,25 @@
 //! Test API for stroke codecs: budgets, generated strokes, edge-case strokes and piece helpers.
 
+#[cfg(test)]
+#[path = "testing_test.rs"]
+mod test;
+
 use crate::{StrokePoints, WorldPos};
 
 /// The real piece budget is about one datagram (`transport.md`: 1200 bytes).
-pub(crate) const BUDGET: usize = 1200;
+pub const BUDGET: usize = 1200;
 
-/// Smallest budget every codec must encode any stroke with: Raw's largest two-point piece is
-/// 33 bytes, so 64 leaves room for any codec's header.
-pub(crate) const MIN_BUDGET: usize = 64;
+/// Smallest budget the suite requires every codec to encode any stroke with; Raw needs at most
+/// 33 bytes for a two-point piece.
+pub const MIN_BUDGET: usize = 64;
 
-pub(crate) fn at(x: i64, y: i64) -> WorldPos {
+/// The world point `(x, y)`.
+pub fn at(x: i64, y: i64) -> WorldPos {
     WorldPos { x, y }
 }
 
 /// The world points of a decoded piece.
-pub(crate) fn expand(piece: &StrokePoints) -> Vec<WorldPos> {
+pub fn expand(piece: &StrokePoints) -> Vec<WorldPos> {
     piece
         .offsets
         .iter()
@@ -29,7 +34,7 @@ pub(crate) fn expand(piece: &StrokePoints) -> Vec<WorldPos> {
 
 /// Strokes at the limits of `encode`'s preconditions: no point, one point, the `i64` extremes,
 /// repeated points, and steps of exactly `i32::MIN` and `i32::MAX`.
-pub(crate) fn edge_strokes() -> Vec<Vec<WorldPos>> {
+pub fn edge_strokes() -> Vec<Vec<WorldPos>> {
     let (min, max) = (i64::MIN, i64::MAX);
     let (step_min, step_max) = (i64::from(i32::MIN), i64::from(i32::MAX));
     vec![
@@ -56,7 +61,7 @@ pub(crate) fn edge_strokes() -> Vec<Vec<WorldPos>> {
 }
 
 /// Whether `point` lies within `tolerance` world units of the polyline `path`.
-pub(crate) fn near_path(point: WorldPos, path: &[WorldPos], tolerance: f64) -> bool {
+pub fn near_path(point: WorldPos, path: &[WorldPos], tolerance: f64) -> bool {
     // Relative to `point`, so f64 stays exact for the small spans between nearby points.
     #[allow(clippy::cast_precision_loss)] // test-only geometry on spans far below 2⁵³
     let rel = |p: WorldPos| ((p.x - point.x) as f64, (p.y - point.y) as f64);
@@ -74,25 +79,29 @@ pub(crate) fn near_path(point: WorldPos, path: &[WorldPos], tolerance: f64) -> b
     })
 }
 
-pub(crate) mod strategy {
+/// Generated strokes and budgets.
+pub mod strategy {
     use proptest::prelude::*;
 
     use super::{BUDGET, MIN_BUDGET, at};
     use crate::WorldPos;
 
-    /// Any coordinate a walk of `steps` full-range `i32` steps can start from without overflow.
-    fn coordinate(steps: usize) -> impl Strategy<Value = i64> {
-        let reach = i64::from(i32::MAX) * i64::try_from(steps).unwrap_or(i64::MAX);
+    /// Most steps in a generated stroke.
+    const MAX_STEPS: u16 = 300;
+
+    /// A coordinate near zero or anywhere up to the `i64` extremes, from which `steps` full-range
+    /// `i32` steps cannot overflow.
+    pub fn coordinate(steps: u16) -> impl Strategy<Value = i64> {
+        let reach = i64::from(i32::MAX) * i64::from(steps);
         prop_oneof![-1000..1000i64, (i64::MIN + reach)..=(i64::MAX - reach)]
     }
 
     /// Strokes within `encode`'s preconditions: random walks whose steps all fit `i32`, from
     /// near the origin or anywhere up to the `i64` extremes. Mostly small steps, so pieces fill
     /// past 128 points; rare full-range steps make offsets overflow `i32` and force splits.
-    pub(crate) fn stroke() -> impl Strategy<Value = Vec<WorldPos>> {
-        const MAX_STEPS: usize = 300;
+    pub fn stroke() -> impl Strategy<Value = Vec<WorldPos>> {
         let step = prop_oneof![99 => -64..64i64, 1 => any::<i32>().prop_map(i64::from)];
-        let steps = prop::collection::vec((step.clone(), step), 0..MAX_STEPS);
+        let steps = prop::collection::vec((step.clone(), step), 0..usize::from(MAX_STEPS));
         (coordinate(MAX_STEPS), coordinate(MAX_STEPS), steps).prop_map(|(x, y, steps)| {
             let mut point = at(x, y);
             let mut points = vec![point];
@@ -105,17 +114,17 @@ pub(crate) mod strategy {
     }
 
     /// Strokes as above, plus the empty stroke.
-    pub(crate) fn stroke_or_empty() -> impl Strategy<Value = Vec<WorldPos>> {
+    pub fn stroke_or_empty() -> impl Strategy<Value = Vec<WorldPos>> {
         prop_oneof![1 => Just(Vec::new()), 9 => stroke()]
     }
 
     /// Any budget, including ones too small for a single piece.
-    pub(crate) fn any_budget() -> impl Strategy<Value = usize> {
+    pub fn any_budget() -> impl Strategy<Value = usize> {
         0..=BUDGET
     }
 
     /// Budgets every codec must encode any stroke with.
-    pub(crate) fn budget() -> impl Strategy<Value = usize> {
+    pub fn workable_budget() -> impl Strategy<Value = usize> {
         MIN_BUDGET..=BUDGET
     }
 }
