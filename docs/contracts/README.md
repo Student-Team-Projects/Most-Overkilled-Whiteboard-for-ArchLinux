@@ -25,6 +25,9 @@ Write each contract in prose; the trait in code is the signature, and rustdoc li
 - `Op` — either `Add(Stroke)` or `Erase { id, target }`; new variants may be added (ADR 0015).
 - `Time` — injected millisecond time; drivers provide it and it is never read from the OS.
 - `Outgoing` — sans-IO destination peer and message.
+
+Wire types (`wb-net`, they hold its `SyncMsg` and `DiscoveryMsg`):
+
 - `Packet` — wire magic, version, and body.
 - `Body` — either a discovery message or a board id paired with a `BoardMsg`.
 - `BoardMsg` — either an operation or a sync message.
