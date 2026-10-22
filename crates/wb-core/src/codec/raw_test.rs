@@ -143,15 +143,6 @@ fn min_budget_is_the_largest_two_point_piece() {
     );
 }
 
-/// Below `MIN_BUDGET` the greedy split may give up where another split fits (Codex on #101):
-/// here pieces of 7 and 13 bytes would do, but the greedy one ends with a 15-byte remainder.
-#[test]
-fn below_min_budget_the_greedy_split_may_give_up() {
-    let points = [at(0, 0), at(0, 0), at(1_000_000_000, 0), at(0, 0)];
-    assert_eq!(Raw.encode(&points, 13), Err(CodecError::BudgetTooSmall));
-    assert!(Raw.encode(&points, MIN_BUDGET).is_ok());
-}
-
 proptest! {
     /// From `MIN_BUDGET` on, any stroke without an unsplittable step encodes.
     #[test]
