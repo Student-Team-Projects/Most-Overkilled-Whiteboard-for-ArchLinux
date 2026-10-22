@@ -2,16 +2,18 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use xxhash_rust::xxh3::Xxh3;
+
 use crate::{Aabb, EncodedPoints, Lamport, Op, OpId, PeerId, Rgba, Stroke, StrokeId};
 
 /// Domain tags so a stroke id and a tombstoned target with the same id hash differently.
-const ADDED: u64 = 1;
-const TOMBSTONED: u64 = 2;
+const ADDED: u8 = 1;
+const TOMBSTONED: u8 = 2;
 
 /// One replica of a board: every stroke ever added plus every erase op (ADR 0001).
 ///
 /// Ordered collections keep iteration deterministic, so the simulator replays exactly.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct Board {
     /// Every stroke ever added, erased or not.
     strokes: BTreeMap<StrokeId, Stroke>,
@@ -25,7 +27,8 @@ pub struct Board {
     next_seq: BTreeMap<PeerId, u64>,
     /// Highest Lamport timestamp seen (guarantee 5).
     max_lamport: u64,
-    /// Wrapping sum of element hashes of the canonical state (guarantee 6).
+    /// Wrapping sum of element hashes of the canonical state: order-independent and updated in
+    /// O(1) per new element (guarantee 6).
     hash: u128,
 }
 
@@ -40,6 +43,7 @@ impl Board {
     ///
     /// The caller passes a `bbox` that covers `points`; the board never decodes them.
     /// Contract: `board.md` → `draw`, guarantee 5.
+    #[must_use = "the op must be broadcast"]
     pub fn draw(
         &mut self,
         me: PeerId,
@@ -64,6 +68,7 @@ impl Board {
     /// Erases `target` by `me`, applies the erase and returns its op.
     ///
     /// Contract: `board.md` → `erase`, guarantees 3 and 5.
+    #[must_use = "the op must be broadcast"]
     pub fn erase(&mut self, me: PeerId, target: StrokeId) -> Op {
         let op = Op::Erase {
             id: self.next_op_id(me),
@@ -97,7 +102,8 @@ impl Board {
         }
     }
 
-    /// Added and unerased strokes in draw order `(lamport, peer)`.
+    /// Added and unerased strokes in draw order `(lamport, peer)`; `seq` breaks ties, which only
+    /// unvalidated foreign ops can create.
     ///
     /// Contract: `board.md` → `visible`, guarantees 3 and 4.
     pub fn visible(&self) -> impl Iterator<Item = &Stroke> {
@@ -127,6 +133,8 @@ impl Board {
 
     fn tombstone(&mut self, id: OpId, target: StrokeId) -> bool {
         self.observe(id);
+        // The target's id is taken even before its Add arrives.
+        self.observe(target);
         self.erases.insert(id, target);
         if !self.tombstones.insert(target) {
             return false;
@@ -140,6 +148,7 @@ impl Board {
     /// Records `id` as used, so `next_op_id` never hands it out again.
     fn observe(&mut self, id: OpId) {
         let next = self.next_seq.entry(id.peer).or_default();
+        // Saturates only on a foreign `seq` of `u64::MAX`, like the Lamport in `draw`.
         *next = (*next).max(id.seq.saturating_add(1));
     }
 
@@ -151,25 +160,17 @@ impl Board {
     }
 }
 
-/// 128-bit hash of one canonical-state element: two `splitmix64` chains with different seeds.
+/// 128-bit hash of one canonical-state element.
 ///
-/// Not cryptographic; a rare collision is healed by anti-entropy range checks (`anti-entropy.md`
-/// guarantee 1). The sum of these over a set is order-independent and updates in O(1).
-fn element_hash(tag: u64, id: OpId) -> u128 {
-    let half = |seed: u64| {
-        [tag, id.peer.0, id.seq]
-            .into_iter()
-            .fold(seed, |h, word| splitmix64(h ^ word))
-    };
-    (u128::from(half(0x243F_6A88_85A3_08D3)) << 64) | u128::from(half(0x1319_8A2E_0370_7344))
-}
-
-/// The `splitmix64` finalizer (Steele et al.): a fast bijective bit mixer on `u64`.
-fn splitmix64(mut z: u64) -> u64 {
-    z = z.wrapping_add(0x9E37_79B9_7F4A_7C15);
-    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
-    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
-    z ^ (z >> 31)
+/// xxh3 is a specified algorithm, so every peer and build computes the same value; std's hashers
+/// promise neither that nor 128 bits. A rare collision is healed by anti-entropy range checks
+/// (`anti-entropy.md` guarantee 1).
+fn element_hash(tag: u8, id: OpId) -> u128 {
+    let mut hasher = Xxh3::new();
+    hasher.update(&[tag]);
+    hasher.update(&id.peer.0.to_le_bytes());
+    hasher.update(&id.seq.to_le_bytes());
+    hasher.digest128()
 }
 
 #[cfg(test)]

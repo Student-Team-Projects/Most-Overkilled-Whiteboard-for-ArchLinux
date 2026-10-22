@@ -7,7 +7,13 @@ use proptest::prelude::*;
 use super::{ADDED, Board, TOMBSTONED, element_hash};
 use crate::{Aabb, EncodedPoints, Lamport, Op, OpId, PeerId, Rgba, Stroke, WorldPos};
 
-const ORIGIN: WorldPos = WorldPos { x: 0, y: 0 };
+/// Most ops a generated universe holds.
+const UNIVERSE: usize = 40;
+
+const BBOX: Aabb = Aabb {
+    min: WorldPos { x: 0, y: 0 },
+    max: WorldPos { x: 0, y: 0 },
+};
 
 /// Op `i` of a generated universe; ids are unique and spread over 3 peers.
 fn op_id(i: u64) -> OpId {
@@ -23,32 +29,29 @@ fn stroke(id: OpId, lamport: u64) -> Stroke {
         lamport: Lamport(lamport),
         color: Rgba([0, 0, 0, 255]),
         width: 16,
-        bbox: Aabb {
-            min: ORIGIN,
-            max: ORIGIN,
-        },
+        bbox: BBOX,
         points: EncodedPoints(Vec::new()),
     }
 }
 
-fn draw(board: &mut Board, me: PeerId) -> Op {
-    let bbox = Aabb {
-        min: ORIGIN,
-        max: ORIGIN,
-    };
-    board.draw(
+fn draw(board: &mut Board, me: PeerId) -> Stroke {
+    let op = board.draw(
         me,
         Rgba([255, 0, 0, 255]),
         32,
         EncodedPoints(vec![1, 2]),
-        bbox,
-    )
+        BBOX,
+    );
+    let Op::Add(stroke) = op else {
+        panic!("draw returns an Add")
+    };
+    stroke
 }
 
 /// A universe of ops with unique ids. Lamports collide on purpose; an erase targets any op id of
-/// the universe, a later one, or one that never exists.
+/// the universe (an Add, an Erase, a later op) or one that never exists.
 fn ops() -> impl Strategy<Value = Vec<Op>> {
-    prop::collection::vec((any::<bool>(), 0..4u64, 0..48u64), 0..40).prop_map(|specs| {
+    prop::collection::vec((any::<bool>(), 0..4u64, 0..48u64), 0..UNIVERSE).prop_map(|specs| {
         (0u64..)
             .zip(specs)
             .map(|(i, (is_add, lamport, target))| {
@@ -70,16 +73,15 @@ fn permutations() -> impl Strategy<Value = (Vec<Op>, Vec<Op>)> {
     ops().prop_flat_map(|ops| (Just(ops.clone()), Just(ops).prop_shuffle()))
 }
 
-/// Three replicas, each holding a random subset of one op universe.
-fn replicas() -> impl Strategy<Value = [Board; 3]> {
-    (ops(), prop::collection::vec(any::<u8>(), 40)).prop_map(|(ops, masks)| {
+/// The ops of three replicas, each a random subset of one universe.
+fn replicas() -> impl Strategy<Value = [Vec<Op>; 3]> {
+    (ops(), prop::collection::vec(any::<u8>(), UNIVERSE)).prop_map(|(ops, masks)| {
         std::array::from_fn(|r| {
-            board_of(
-                ops.iter()
-                    .zip(&masks)
-                    .filter(|(_, mask)| *mask & (1 << r) != 0)
-                    .map(|(op, _)| op),
-            )
+            ops.iter()
+                .zip(&masks)
+                .filter(|(_, mask)| *mask & (1 << r) != 0)
+                .map(|(op, _)| op.clone())
+                .collect()
         })
     })
 }
@@ -92,8 +94,10 @@ fn board_of<'a>(ops: impl IntoIterator<Item = &'a Op>) -> Board {
     board
 }
 
+/// An empty board with `a`, then `b`, merged into it.
 fn merged(a: &Board, b: &Board) -> Board {
-    let mut board = a.clone();
+    let mut board = Board::new();
+    board.merge(a);
     board.merge(b);
     board
 }
@@ -102,26 +106,38 @@ fn picture(board: &Board) -> Vec<Stroke> {
     board.visible().cloned().collect()
 }
 
-/// `state_hash` recomputed from scratch over the canonical state.
-fn canonical_hash(board: &Board) -> u128 {
-    let added = board.strokes.keys().map(|&id| element_hash(ADDED, id));
-    let tombstoned = board
-        .tombstones
-        .iter()
-        .map(|&id| element_hash(TOMBSTONED, id));
+/// The expected `state_hash`, from the ops alone: the added ids plus the erase targets.
+fn canonical_hash<'a>(ops: impl IntoIterator<Item = &'a Op>) -> u128 {
+    let (mut added, mut tombstoned) = (BTreeSet::new(), BTreeSet::new());
+    for op in ops {
+        match op {
+            Op::Add(stroke) => added.insert(stroke.id),
+            Op::Erase { target, .. } => tombstoned.insert(*target),
+        };
+    }
+    let added = added.into_iter().map(|id| element_hash(ADDED, id));
+    let tombstoned = tombstoned
+        .into_iter()
+        .map(|id| element_hash(TOMBSTONED, id));
     added.chain(tombstoned).fold(0, u128::wrapping_add)
 }
 
 proptest! {
-    /// Guarantee 1.
+    /// Guarantee 1, plus a merged board's `state_hash` (guarantee 6).
     #[test]
     fn merge_laws([a, b, c] in replicas()) {
-        prop_assert_eq!(picture(&merged(&a, &b)), picture(&merged(&b, &a)));
+        let (a_ops, b_ops) = (a.clone(), b.clone());
+        let [a, b, c] = [a, b, c].map(|ops| board_of(&ops));
+        let ab = merged(&a, &b);
+        prop_assert_eq!(picture(&ab), picture(&merged(&b, &a)));
         prop_assert_eq!(
-            picture(&merged(&merged(&a, &b), &c)),
+            picture(&merged(&ab, &c)),
             picture(&merged(&a, &merged(&b, &c)))
         );
         prop_assert_eq!(picture(&merged(&a, &a)), picture(&a));
+
+        prop_assert_eq!(ab.state_hash(), merged(&b, &a).state_hash());
+        prop_assert_eq!(ab.state_hash(), canonical_hash(a_ops.iter().chain(&b_ops)));
     }
 
     /// Guarantee 2; `apply` reports exactly when the picture changes.
@@ -133,11 +149,12 @@ proptest! {
             let changed = board.apply(op.clone());
             prop_assert_eq!(changed, picture(&board) != before);
         }
-        prop_assert_eq!(picture(&board), picture(&board_of(&ops)));
+        let settled = picture(&board);
+        prop_assert_eq!(&settled, &picture(&board_of(&ops)));
         for op in ops {
             prop_assert!(!board.apply(op));
         }
-        prop_assert_eq!(picture(&board), picture(&board_of(&shuffled)));
+        prop_assert_eq!(picture(&board), settled);
     }
 
     /// Guarantees 3 and 4: `visible` equals the unerased adds, sorted by `(lamport, peer)`.
@@ -164,26 +181,33 @@ proptest! {
         prop_assert_eq!(picture(&board), expected);
     }
 
-    /// Guarantee 5.
+    /// Guarantee 5: above every Lamport seen, and no id seen as an op or an erase target.
     #[test]
     fn draw_after_merge_is_on_top([a, b, _] in replicas()) {
-        let seen_lamport = a.strokes.values().chain(b.strokes.values()).map(|s| s.lamport).max();
-        let seen_ids: BTreeSet<OpId> = [&a, &b]
-            .into_iter()
-            .flat_map(|board| board.strokes.keys().chain(board.erases.keys()))
-            .copied()
+        let seen = || a.iter().chain(&b);
+        let seen_lamport = seen()
+            .filter_map(|op| match op {
+                Op::Add(stroke) => Some(stroke.lamport),
+                Op::Erase { .. } => None,
+            })
+            .max();
+        let seen_ids: BTreeSet<OpId> = seen()
+            .flat_map(|op| match op {
+                Op::Add(stroke) => vec![stroke.id],
+                Op::Erase { id, target } => vec![*id, *target],
+            })
             .collect();
 
-        let mut board = merged(&a, &b);
+        let mut board = merged(&board_of(&a), &board_of(&b));
         let me = PeerId(1);
-        let Op::Add(first) = draw(&mut board, me) else { panic!("draw returns an Add") };
+        let first = draw(&mut board, me);
         prop_assert!(Some(first.lamport) > seen_lamport);
         prop_assert_eq!(board.visible().last(), Some(&first));
 
         let Op::Erase { id: erase_id, .. } = board.erase(me, first.id) else {
             panic!("erase returns an Erase")
         };
-        let Op::Add(second) = draw(&mut board, me) else { panic!("draw returns an Add") };
+        let second = draw(&mut board, me);
         prop_assert!(second.lamport > first.lamport);
         let mine = [first.id, erase_id, second.id];
         prop_assert_eq!(mine.iter().collect::<BTreeSet<_>>().len(), mine.len());
@@ -193,27 +217,29 @@ proptest! {
     /// Guarantee 6.
     #[test]
     fn state_hash_tracks_canonical_state_and_matches_equal_boards((ops, shuffled) in permutations()) {
-        let board = board_of(&ops);
-        prop_assert_eq!(board.state_hash(), canonical_hash(&board));
-        prop_assert_eq!(board.state_hash(), board_of(&shuffled).state_hash());
+        let mut board = board_of(&ops);
+        let hash = board.state_hash();
+        prop_assert_eq!(hash, canonical_hash(&ops));
+        prop_assert_eq!(hash, board_of(&shuffled).state_hash());
 
-        // Duplicate adds and repeated erases (with new erase OpIds) leave it unchanged.
-        let mut again = board.clone();
-        for stroke in board.strokes.values() {
-            again.apply(Op::Add(stroke.clone()));
+        // Duplicate adds, and a second erase of every target by a new erase op id, change nothing.
+        let mut log = ops.clone();
+        for op in &ops {
+            match op {
+                Op::Add(_) => prop_assert!(!board.apply(op.clone())),
+                Op::Erase { target, .. } => log.push(board.erase(PeerId(7), *target)),
+            }
         }
-        for &target in &board.tombstones {
-            again.erase(PeerId(7), target);
-        }
-        prop_assert_eq!(again.state_hash(), board.state_hash());
+        prop_assert_eq!(board.state_hash(), hash);
 
-        // A new stroke id and a new tombstone each change it.
-        let Op::Add(fresh) = draw(&mut again, PeerId(7)) else { panic!("draw returns an Add") };
-        let with_stroke = again.state_hash();
-        prop_assert_ne!(with_stroke, board.state_hash());
-        again.erase(PeerId(7), fresh.id);
-        prop_assert_ne!(again.state_hash(), with_stroke);
-        prop_assert_eq!(again.state_hash(), canonical_hash(&again));
+        // A new stroke id, then a new tombstone, each change it.
+        let fresh = draw(&mut board, PeerId(7));
+        let with_stroke = board.state_hash();
+        prop_assert_ne!(with_stroke, hash);
+        log.push(board.erase(PeerId(7), fresh.id));
+        log.push(Op::Add(fresh));
+        prop_assert_ne!(board.state_hash(), with_stroke);
+        prop_assert_eq!(board.state_hash(), canonical_hash(&log));
     }
 
     /// Guarantee 7.
@@ -250,6 +276,41 @@ fn erase_before_add() {
     assert_eq!(merged(&only_add, &only_erase).visible().count(), 0);
 }
 
+/// Guarantee 5: an erase target whose Add has not arrived is an id `draw` must not reuse, or the
+/// new stroke would be born erased.
+#[test]
+fn draw_skips_ids_of_erase_targets() {
+    let me = PeerId(1);
+    let target = OpId { peer: me, seq: 2 };
+    let mut board = board_of([&Op::Erase {
+        id: OpId {
+            peer: PeerId(0),
+            seq: 0,
+        },
+        target,
+    }]);
+    for _ in 0..3 {
+        let stroke = draw(&mut board, me);
+        assert_ne!(stroke.id, target);
+        assert_eq!(board.visible().last(), Some(&stroke));
+    }
+}
+
+/// Foreign ops are not validated: counters already at `u64::MAX` saturate instead of panicking.
+#[test]
+fn saturated_foreign_counters_do_not_panic() {
+    let me = PeerId(1);
+    let mut board = board_of([&Op::Add(stroke(
+        OpId {
+            peer: me,
+            seq: u64::MAX,
+        },
+        u64::MAX,
+    ))]);
+    let _ = draw(&mut board, me);
+    let _ = board.erase(me, op_id(0));
+}
+
 /// Guarantee 7: an erase whose target never arrived is kept with its op id and survives `merge`.
 #[test]
 fn retains_erase_op_before_add() {
@@ -277,5 +338,4 @@ fn state_hash_ignores_erase_op_ids() {
 
     let added = board_of([&Op::Add(stroke(target, 1))]);
     assert_ne!(added.state_hash(), by_one.state_hash());
-    assert_eq!(Board::new().state_hash(), 0);
 }
