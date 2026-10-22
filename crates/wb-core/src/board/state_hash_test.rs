@@ -1,12 +1,8 @@
-use super::StateHash;
-use crate::{OpId, PeerId};
+//! Tests for `StateHash`: set semantics, and values every peer must agree on.
 
-fn id(peer: u64, seq: u64) -> OpId {
-    OpId {
-        peer: PeerId(peer),
-        seq,
-    }
-}
+use super::StateHash;
+use crate::OpId;
+use crate::board::testing::id;
 
 /// Inserts each id as added, then as tombstoned.
 fn hash_of(ids: impl IntoIterator<Item = OpId>) -> StateHash {
@@ -53,4 +49,19 @@ fn every_insert_changes_the_value() {
     values.sort_unstable();
     values.dedup();
     assert_eq!(values.len(), 201);
+}
+
+/// Peers compare these values, so the hashed bytes must never change silently: byte order, kind
+/// discriminants and the xxh3 variant are all pinned here. The expected values come from the
+/// reference xxHash (Python `xxhash.xxh3_128`) over `[kind, peer LE, seq LE]`.
+#[test]
+fn values_are_stable() {
+    let (mut added, mut tombstoned) = (StateHash::default(), StateHash::default());
+    added.insert_added(id(1, 2));
+    tombstoned.insert_tombstoned(id(1, 2));
+    assert_eq!(added.value(), 0x3c7b_5609_41c1_e7fa_8416_1e77_2001_0f6a);
+    assert_eq!(
+        tombstoned.value(),
+        0xa8b3_6da9_793e_67eb_2db8_516a_bd89_775e
+    );
 }

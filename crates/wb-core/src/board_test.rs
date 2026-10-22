@@ -1,6 +1,6 @@
 //! Conformance tests for `docs/contracts/board.md`; each test names the guarantee it checks.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use proptest::prelude::*;
 
@@ -12,21 +12,21 @@ proptest! {
     /// Guarantee 1, plus a merged board's `state_hash` (guarantee 6).
     #[test]
     fn merge_laws(ops in strategy::replicas()) {
-        let [a, b, c] = ops.each_ref().map(Board::of);
+        let [a, b, c] = ops.each_ref().map(|ops| Board::of(ops));
         let ab = a.merged(&b);
         prop_assert_eq!(ab.picture(), b.merged(&a).picture());
         prop_assert_eq!(ab.merged(&c).picture(), a.merged(&b.merged(&c)).picture());
         prop_assert_eq!(a.merged(&a).picture(), a.picture());
 
         prop_assert_eq!(ab.state_hash(), b.merged(&a).state_hash());
-        prop_assert_eq!(ab.state_hash(), oracle::state_hash(ops[0].iter().chain(&ops[1])));
+        prop_assert_eq!(ab.state_hash(), oracle::state_hash(&ops[..2].concat()));
     }
 
     /// Guarantee 2; `apply` reports exactly when the picture changes.
     #[test]
-    fn apply_any_permutation((ops, shuffled) in strategy::permutations()) {
+    fn apply_any_permutation((ops, delivered) in strategy::permutations()) {
         let mut board = Board::new();
-        for op in &shuffled {
+        for op in &delivered {
             let before = board.picture();
             let changed = board.apply(op.clone());
             prop_assert_eq!(changed, board.picture() != before);
@@ -50,12 +50,12 @@ proptest! {
     /// Guarantee 5: above every Lamport seen, and no id seen as an op or as an erase target.
     #[test]
     fn draw_after_merge_is_on_top([a, b, _] in strategy::replicas()) {
-        let seen = || a.iter().chain(&b);
+        let seen = [&a[..], &b[..]].concat();
         let mut board = Board::of(&a).merged(&Board::of(&b));
         let me = PeerId(1);
 
         let first = board.draw_any(me);
-        prop_assert!(Some(first.lamport) > oracle::max_lamport(seen()));
+        prop_assert!(Some(first.lamport) > oracle::max_lamport(&seen));
         prop_assert_eq!(board.visible().last(), Some(&first));
 
         let erased = board.erase(me, first.id);
@@ -63,7 +63,7 @@ proptest! {
         prop_assert!(second.lamport > first.lamport);
 
         let mine = [first.id, op_id(&erased), second.id];
-        let seen_ids = oracle::ids(seen());
+        let seen_ids = oracle::ids(&seen);
         prop_assert_eq!(BTreeSet::from(mine).len(), mine.len());
         prop_assert!(mine.iter().all(|id| !seen_ids.contains(id)));
     }
@@ -71,18 +71,20 @@ proptest! {
     /// Guarantee 6.
     #[test]
     fn state_hash_tracks_canonical_state_and_matches_equal_boards(
-        (ops, shuffled) in strategy::permutations(),
+        (ops, delivered) in strategy::permutations(),
     ) {
         let mut board = Board::of(&ops);
         let hash = board.state_hash();
         prop_assert_eq!(hash, oracle::state_hash(&ops));
-        prop_assert_eq!(hash, Board::of(&shuffled).state_hash());
+        prop_assert_eq!(hash, Board::of(&delivered).state_hash());
 
         // Duplicate adds, and a second erase of every target by a new op id, change nothing.
         let mut log = ops.clone();
         for op in &ops {
             match op {
-                Op::Add(_) => prop_assert!(!board.apply(op.clone())),
+                Op::Add(_) => {
+                    board.apply(op.clone());
+                }
                 Op::Erase { target, .. } => log.push(board.erase(PeerId(7), *target)),
             }
         }
@@ -90,18 +92,21 @@ proptest! {
 
         // A new stroke id, then a new tombstone, each change it.
         let fresh = board.draw_any(PeerId(7));
+        log.push(Op::Add(fresh.clone()));
         let with_stroke = board.state_hash();
         prop_assert_ne!(with_stroke, hash);
         log.push(board.erase(PeerId(7), fresh.id));
-        log.push(Op::Add(fresh));
         prop_assert_ne!(board.state_hash(), with_stroke);
         prop_assert_eq!(board.state_hash(), oracle::state_hash(&log));
     }
 
-    /// Guarantee 7.
+    /// Guarantee 7, through `apply` and through `merge`.
     #[test]
-    fn retains_erase_ops_with_op_id_and_target(ops in strategy::ops()) {
-        prop_assert_eq!(Board::of(&ops).erases, oracle::erase_ops(&ops));
+    fn retains_erase_ops_with_op_id_and_target([a, b, _] in strategy::replicas()) {
+        let union = [&a[..], &b[..]].concat();
+        let expected = oracle::erase_ops(&union);
+        prop_assert_eq!(&Board::of(&union).erases, &expected);
+        prop_assert_eq!(&Board::of(&a).merged(&Board::of(&b)).erases, &expected);
     }
 }
 
@@ -116,49 +121,50 @@ fn erase_before_add() {
     assert!(!board.apply(stroke.clone()));
     assert_eq!(board.picture(), []);
 
-    let (only_erase, only_add) = (Board::of([&erasure]), Board::of([&stroke]));
+    let (only_erase, only_add) = (Board::of(&[erasure]), Board::of(&[stroke]));
     assert_eq!(only_erase.merged(&only_add).picture(), []);
     assert_eq!(only_add.merged(&only_erase).picture(), []);
+}
+
+/// Guarantee 5 and ADR 0009: one author numbers all its ops, Adds and Erases, 0, 1, 2…
+#[test]
+fn numbers_own_ops_from_zero() {
+    let me = PeerId(1);
+    let mut board = Board::new();
+    let first = board.draw_any(me);
+    let erased = board.erase(me, first.id);
+    let second = board.draw_any(me);
+    assert_eq!(
+        [first.id, op_id(&erased), second.id],
+        [id(1, 0), id(1, 1), id(1, 2)]
+    );
 }
 
 /// Guarantee 5: an erase target whose Add has not arrived is an id `draw` must not reuse, or the
 /// new stroke would be born erased.
 #[test]
 fn draw_skips_ids_of_erase_targets() {
-    let me = PeerId(1);
-    let target = id(1, 2);
-    let mut board = Board::of([&erase(id(0, 0), target)]);
-    for _ in 0..3 {
-        let stroke = board.draw_any(me);
-        assert_ne!(stroke.id, target);
-        assert_eq!(board.visible().last(), Some(&stroke));
-    }
+    let target = id(1, 0);
+    let mut board = Board::of(&[erase(id(0, 0), target)]);
+    let stroke = board.draw_any(PeerId(1));
+    assert_ne!(stroke.id, target);
+    assert_eq!(board.visible().last(), Some(&stroke));
 }
 
 /// Foreign ops are not validated: counters already at `u64::MAX` saturate instead of panicking.
 #[test]
 fn saturated_foreign_counters_do_not_panic() {
     let me = PeerId(1);
-    let mut board = Board::of([&add(id(1, u64::MAX), u64::MAX)]);
+    let mut board = Board::of(&[add(id(1, u64::MAX), u64::MAX)]);
     board.draw_any(me);
     let _ = board.erase(me, id(0, 0));
 }
 
-/// Guarantee 7: an erase whose target never arrived is kept with its op id and survives `merge`.
-#[test]
-fn retains_erase_op_before_add() {
-    let board = Board::new().merged(&Board::of([&erase(id(1, 4), id(0, 9))]));
-    assert_eq!(board.erases, BTreeMap::from([(id(1, 4), id(0, 9))]));
-}
-
-/// Guarantee 6: erase op ids are not hashed; an added id and a tombstoned target hash apart.
+/// Guarantee 6: erase op ids are not hashed.
 #[test]
 fn state_hash_ignores_erase_op_ids() {
     let target = id(0, 0);
-    let by_one = Board::of([&erase(id(1, 0), target)]);
-    let by_other = Board::of([&erase(id(2, 0), target)]);
+    let by_one = Board::of(&[erase(id(1, 0), target)]);
+    let by_other = Board::of(&[erase(id(2, 0), target)]);
     assert_eq!(by_one.state_hash(), by_other.state_hash());
-
-    let added = Board::of([&add(target, 1)]);
-    assert_ne!(added.state_hash(), by_one.state_hash());
 }

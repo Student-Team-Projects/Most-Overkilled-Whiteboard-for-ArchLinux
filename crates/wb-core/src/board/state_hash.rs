@@ -15,8 +15,10 @@ use crate::StrokeId;
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub(super) struct StateHash(u128);
 
-/// Kind of element, hashed with its id so an added id and a tombstoned target differ.
+/// Kind of element, hashed with its id so an added id and a tombstoned target differ. The
+/// discriminant is the hashed byte, so changing it changes every peer's hash.
 #[derive(Clone, Copy)]
+#[repr(u8)]
 enum Element {
     Added = 1,
     Tombstoned = 2,
@@ -40,6 +42,8 @@ impl StateHash {
     }
 }
 
+/// xxh3-128 of the element's kind byte, then the id's peer and seq as little-endian `u64`s.
+///
 /// xxh3 is a specified algorithm, so every peer and build computes the same value; std's hashers
 /// promise neither that nor 128 bits. A rare collision is healed by anti-entropy range checks
 /// (`anti-entropy.md` guarantee 1).
