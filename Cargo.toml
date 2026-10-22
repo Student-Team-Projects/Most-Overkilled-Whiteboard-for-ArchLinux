@@ -16,6 +16,8 @@ eframe = "=0.36.2"
 egui = "=0.36.2"
 serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
 postcard = { version = "1", features = ["alloc"] }
+proptest = "1"
+thiserror = "2"
 
 [workspace.lints.rust]
 missing_docs = "deny"
