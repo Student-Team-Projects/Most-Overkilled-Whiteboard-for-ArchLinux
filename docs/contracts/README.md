@@ -14,7 +14,7 @@ Write each contract in prose; the trait in code is the signature, and rustdoc li
 ## Shared types (`wb-core`)
 
 - `PeerId` — per-run random peer identifier (ADR 0006).
-- `BoardId` — board identifier.
+- `BoardId` — board identifier: 8 random bytes (ADR 0025 encodes it).
 - `OpId` — operation identifier composed of a peer and its sequence number (ADR 0009); `StrokeId` aliases it and identifies the Add operation for a stroke.
 - `Lamport` — logical timestamp used for draw order (ADR 0008).
 - `WorldPos` — x/y coordinates in signed 64-bit units; one unit is 1/16 px at zoom 1 (ADR 0014).
@@ -55,15 +55,15 @@ Coordinate rule: every coordinate computation is `i64`; `i32` exists only as dec
 
 | Seam | File | Status |
 |---|---|---|
-| `Board` (type, not a trait) | `board.md` | draft |
-| `StrokeCodec` | `stroke-codec.md` | draft |
-| `SpatialIndex` | `spatial-index.md` | draft |
-| `Camera` (type) | `camera.md` | draft |
-| `StrokeRenderer` | `stroke-renderer.md` | draft |
-| `StrokeCache` | `stroke-cache.md` | draft |
-| `Transport` | `transport.md` | draft |
-| `Discovery` | `discovery.md` | draft |
-| `Broadcast` | `broadcast.md` | draft |
-| `AntiEntropy` | `anti-entropy.md` | draft |
+| `Board` (type, not a trait) | `board.md` | agreed |
+| `StrokeCodec` | `stroke-codec.md` | agreed |
+| `SpatialIndex` | `spatial-index.md` | agreed |
+| `Camera` (type) | `camera.md` | agreed |
+| `StrokeRenderer` | `stroke-renderer.md` | agreed |
+| `StrokeCache` | `stroke-cache.md` | agreed |
+| `Transport` | `transport.md` | agreed |
+| `Discovery` | `discovery.md` | agreed |
+| `Broadcast` | `broadcast.md` | agreed |
+| `AntiEntropy` | `anti-entropy.md` | agreed |
 
-All drafts are reviewed and amended by the team in M0, then marked `agreed`.
+All agreed at the 2026-10-20 sync (G24); a change needs all 3 + an ADR line.

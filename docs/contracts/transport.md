@@ -1,6 +1,6 @@
 # Contract: `Transport`
 
-Status: draft · Moves datagrams; nothing else (ADR 0003). Used only by drivers (net thread, sim),
+Status: agreed 2026-10-20 · Moves datagrams; nothing else (ADR 0003). Used only by drivers (net thread, sim),
 never by protocol code. Format → `README.md` here.
 
 ## Operations

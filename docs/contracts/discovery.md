@@ -1,6 +1,6 @@
 # Contract: `Discovery`
 
-Status: draft · Who is out there and which board sessions exist (ADR 0006). Sans-IO.
+Status: agreed 2026-10-20 · Who is out there and which board sessions exist (ADR 0006). Sans-IO.
 Format → `README.md` here.
 
 ## Operations

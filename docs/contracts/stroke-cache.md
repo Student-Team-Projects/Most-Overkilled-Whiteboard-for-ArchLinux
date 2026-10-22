@@ -1,6 +1,6 @@
 # Contract: `StrokeCache`
 
-Status: draft · Unpacked points for the strokes the screen needs (ADR 0014, 0018). Lives in
+Status: agreed 2026-10-20 · Unpacked points for the strokes the screen needs (ADR 0014, 0018). Lives in
 `wb-app`. Format → `README.md` here.
 
 ## Operations
