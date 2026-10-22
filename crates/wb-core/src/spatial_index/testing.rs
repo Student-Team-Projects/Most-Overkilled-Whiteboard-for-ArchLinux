@@ -30,15 +30,18 @@ pub enum Step {
 }
 
 /// The reference every index must agree with: a map from id to bounds, where a box hits an area
-/// when their ranges overlap on both axes.
+/// when their ranges overlap on both axes. `LinearIndex` cannot be its own oracle, so it and the
+/// later `QuadTree` both answer to this model on the same sessions, which also compares them.
 #[derive(Debug, Default)]
 pub struct Model(BTreeMap<StrokeId, Aabb>);
 
 impl Model {
+    /// Inserts `id`, or replaces its bounds.
     pub fn insert(&mut self, id: StrokeId, bbox: Aabb) {
         self.0.insert(id, bbox);
     }
 
+    /// Removes `id` and returns whether it was present.
     pub fn remove(&mut self, id: StrokeId) -> bool {
         self.0.remove(&id).is_some()
     }
@@ -69,14 +72,21 @@ pub mod strategy {
     use super::{Step, aabb, id};
     use crate::Aabb;
 
-    /// Ids drawn from a small pool, so inserts replace and removes hit.
-    const IDS: u64 = 8;
+    /// Ids come from a pool large enough that a `QuadTree` must split its nodes, yet small enough
+    /// that inserts often replace and removes often hit.
+    const IDS: u64 = 64;
     /// Most steps in one session.
-    const STEPS: usize = 64;
+    const STEPS: usize = 256;
 
-    /// Mostly a small grid, where boxes overlap and touch often; sometimes any `i64`.
+    /// Mostly a small grid, where boxes overlap and touch often; sometimes any `i64`, including
+    /// exactly the extremes.
     fn coordinate() -> impl Strategy<Value = i64> {
-        prop_oneof![8 => -8..=8i64, 1 => any::<i64>()]
+        prop_oneof![
+            8 => -8..=8i64,
+            1 => any::<i64>(),
+            1 => Just(i64::MIN),
+            1 => Just(i64::MAX),
+        ]
     }
 
     /// A closed box with `min <= max` on both axes.
@@ -85,9 +95,10 @@ pub mod strategy {
             .prop_map(|[x0, x1, y0, y1]| aabb(x0.min(x1), y0.min(y1), x0.max(x1), y0.max(y1)))
     }
 
+    /// A random session: inserts outweigh removes, so the index grows past what one node holds.
     pub fn session() -> impl Strategy<Value = Vec<Step>> {
         let step = prop_oneof![
-            2 => (0..IDS, bbox()).prop_map(|(n, bbox)| Step::Insert(id(n), bbox)),
+            3 => (0..IDS, bbox()).prop_map(|(n, bbox)| Step::Insert(id(n), bbox)),
             1 => (0..IDS).prop_map(|n| Step::Remove(id(n))),
             2 => bbox().prop_map(Step::Query),
         ];

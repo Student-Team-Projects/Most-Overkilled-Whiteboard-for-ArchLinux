@@ -51,15 +51,24 @@ const KEPT: StrokeId = OpId {
     seq: u64::MAX,
 };
 
-/// `query`'s answer, sorted, after checking it only appended to `out`. A duplicate id stays in
-/// the sorted answer, so comparing it with a set catches duplicates too.
+/// `query`'s answer, sorted, after checking it only appends to `out`: what `out` held stays, and
+/// a second query into the same `out` appends the same ids again. A duplicate id stays in the
+/// sorted answer, so the comparison with the model's duplicate-free answer catches it.
 fn answer(index: &impl SpatialIndex, area: Aabb) -> Vec<StrokeId> {
     let mut out = vec![KEPT];
     index.query(area, &mut out);
+    let first_len = out.len();
+    index.query(area, &mut out);
     assert_eq!(out.first(), Some(&KEPT), "query keeps what `out` held");
-    let mut answer = out.split_off(1);
-    answer.sort_unstable();
-    answer
+    let mut second = out.split_off(first_len);
+    let mut first = out.split_off(1);
+    first.sort_unstable();
+    second.sort_unstable();
+    assert_eq!(
+        first, second,
+        "a query into a non-empty `out` appends the same ids"
+    );
+    first
 }
 
 /// Guarantees 1 and 2: after every step of a random session, `remove` and `query` answer
@@ -96,6 +105,7 @@ pub fn closed_bounds_touching_boxes_intersect(mut index: impl SpatialIndex) {
     index.insert(id(2), aabb(30, 30, 30, 30));
     let hits = [
         aabb(10, 0, 20, 10),
+        aabb(0, 10, 10, 20),
         aabb(-10, -10, 0, 0),
         aabb(5, 5, 5, 5),
         aabb(-5, -5, 15, 15),
@@ -107,6 +117,8 @@ pub fn closed_bounds_touching_boxes_intersect(mut index: impl SpatialIndex) {
         aabb(11, 0, 20, 10),
         aabb(0, 11, 10, 20),
         aabb(11, 11, 20, 20),
+        aabb(-10, -10, -1, 5),
+        aabb(-10, -10, 5, -1),
     ];
     for area in misses {
         assert_eq!(answer(&index, area), [], "{area:?} is one unit away");
@@ -125,6 +137,10 @@ pub fn far_coordinates(mut index: impl SpatialIndex) {
     assert_eq!(answer(&index, aabb(far, far, far, far)), [id(1), id(3)]);
     assert_eq!(answer(&index, aabb(-far, -far, -far, -far)), [id(2), id(3)]);
     assert_eq!(answer(&index, aabb(max, min, max, min)), [id(3), id(4)]);
+    assert_eq!(
+        answer(&index, aabb(max - 1, min + 1, max - 1, min + 1)),
+        [id(3)]
+    );
     assert_eq!(answer(&index, aabb(0, 0, 1, 1)), [id(3)]);
     assert_eq!(
         answer(&index, aabb(min, min, max, max)),

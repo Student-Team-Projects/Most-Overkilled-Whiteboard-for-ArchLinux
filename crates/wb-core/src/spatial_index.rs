@@ -14,8 +14,9 @@ use crate::{Aabb, StrokeId};
 
 /// Finds stroke ids by bounding box.
 ///
-/// Bounds are closed: boxes that share only an edge or a corner intersect. Every `Aabb` has
-/// `min <= max` on both axes, as its definition says.
+/// Bounds are closed: boxes that share only an edge or a corner intersect. Callers pass boxes
+/// with `min <= max` on both axes, which is what an `Aabb`'s min and max mean
+/// (`docs/contracts/README.md`).
 pub trait SpatialIndex {
     /// Inserts `id` with `bbox`, or replaces the bounds of `id` if it is present.
     ///
