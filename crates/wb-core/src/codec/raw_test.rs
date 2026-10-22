@@ -4,12 +4,17 @@
 use proptest::prelude::*;
 
 use super::Raw;
-use crate::codec::conformance::stroke_codec_conformance;
+use crate::codec::conformance::{self as law, stroke_codec_conformance};
 use crate::codec::testing::{BUDGET, at, expand, strategy};
 use crate::codec::{CodecError, StrokeCodec};
 use crate::{EncodedPoints, StrokePoints, WorldPos};
 
 stroke_codec_conformance!(Raw, tolerance = 0.0);
+
+/// The largest two-point piece, from which `Raw` always encodes: a 10-byte varint per origin
+/// axis, a 1-byte length, the first point's `[0, 0]` offset (2 bytes) and a 5-byte varint per
+/// axis of the second offset.
+const MIN_BUDGET: usize = 10 + 10 + 1 + 2 + 5 + 5;
 
 /// Offsets that overflow `i32` from the origin split at the last point that still fits.
 #[test]
@@ -120,5 +125,40 @@ proptest! {
         prop_assert_eq!(Raw.encode(&points, bytes.len()), Ok(vec![EncodedPoints(bytes.clone())]));
         let smaller = Raw.encode(&points, bytes.len() - 1);
         prop_assert!(!matches!(smaller, Ok(pieces) if pieces.len() == 1));
+    }
+}
+
+/// `MIN_BUDGET` is exactly the largest two-point piece: 10-byte origins and 5-byte offsets.
+#[test]
+fn min_budget_is_the_largest_two_point_piece() {
+    let (min, step) = (i64::MIN, i64::from(i32::MAX));
+    let worst = [at(min, min), at(min + step, min + step)];
+    assert_eq!(
+        Raw.encode(&worst, MIN_BUDGET).unwrap()[0].0.len(),
+        MIN_BUDGET
+    );
+    assert_eq!(
+        Raw.encode(&worst, MIN_BUDGET - 1),
+        Err(CodecError::BudgetTooSmall)
+    );
+}
+
+/// Below `MIN_BUDGET` the greedy split may give up where another split fits (Codex on #101):
+/// here pieces of 7 and 13 bytes would do, but the greedy one ends with a 15-byte remainder.
+#[test]
+fn below_min_budget_the_greedy_split_may_give_up() {
+    let points = [at(0, 0), at(0, 0), at(1_000_000_000, 0), at(0, 0)];
+    assert_eq!(Raw.encode(&points, 13), Err(CodecError::BudgetTooSmall));
+    assert!(Raw.encode(&points, MIN_BUDGET).is_ok());
+}
+
+proptest! {
+    /// From `MIN_BUDGET` on, any stroke without an unsplittable step encodes.
+    #[test]
+    fn min_budget_always_suffices(
+        raw in strategy::stroke_or_empty(),
+        budget in MIN_BUDGET..=2 * MIN_BUDGET,
+    ) {
+        law::encode_split_join_and_pieces_fit_budget(&Raw, &raw, budget)?;
     }
 }

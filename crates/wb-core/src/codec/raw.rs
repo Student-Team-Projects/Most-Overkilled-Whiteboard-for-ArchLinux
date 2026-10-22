@@ -13,6 +13,11 @@ use crate::{EncodedPoints, StrokePoints, WorldPos};
 /// The oracle codec: no simplification; a piece is its first point as origin plus every point's
 /// offset from it, serialized with postcard. The empty stroke is one piece with origin `(0, 0)`
 /// and no offsets.
+///
+/// From a budget of 33 bytes, the largest two-point piece, `encode` never returns
+/// `BudgetTooSmall`: every split starts a piece with two points. Below it, the greedy split may
+/// report it although another split would fit; real budgets are about one datagram, so `Raw`
+/// does not search for one.
 #[derive(Debug, Clone, Copy)]
 pub struct Raw;
 
