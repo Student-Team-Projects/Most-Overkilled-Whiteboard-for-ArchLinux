@@ -1,8 +1,4 @@
-//! Layer-0 codec: origin + plain `i32` offsets via postcard (`stroke-codec.md` → Impls).
-
-#[cfg(test)]
-#[path = "raw_test.rs"]
-mod test;
+//! The simplest codec: an origin plus plain `i32` offsets, written with postcard.
 
 use postcard::ser_flavors::Size;
 use serde::Serialize;
@@ -10,8 +6,9 @@ use serde::Serialize;
 use super::{CodecError, StrokeCodec};
 use crate::{EncodedPoints, StrokePoints, WorldPos};
 
-/// The oracle codec: no simplification; a piece is its first point as origin plus every point's
-/// offset from it, serialized with postcard. The empty stroke is one piece with origin `(0, 0)`
+/// The reference codec, which faster codecs are tested against: `simplify` returns the points
+/// unchanged (tolerance 0), and a piece is its first point as the origin plus every point's
+/// offset from it, written with postcard. The empty stroke is one piece with origin `(0, 0)`
 /// and no offsets.
 ///
 /// # Minimum budget
@@ -35,8 +32,8 @@ impl StrokeCodec for Raw {
             return Err(CodecError::UnsplittableDelta);
         }
         let Some((&first, rest)) = points.split_first() else {
-            // An empty stroke is one piece without points, so guarantees 1 and 4 still hold.
-            let empty = Piece::new(WorldPos { x: 0, y: 0 }).finish()?;
+            // An empty stroke is still one piece, with no points, so it round-trips to nothing.
+            let empty = Piece::new(WorldPos::new(0, 0)).finish()?;
             return if empty.0.len() <= budget {
                 Ok(vec![empty])
             } else {
@@ -49,8 +46,8 @@ impl StrokeCodec for Raw {
         let mut prev = first;
         for &point in rest {
             if !piece.try_push(point, budget)? {
-                // Split at the previous point, which both pieces share (ADR 0020). Consecutive
-                // offsets fit `i32`, so only the budget can stop `[prev, point]`.
+                // Split at the previous point, which both pieces share. Consecutive offsets fit
+                // `i32`, so only the budget can stop `[prev, point]`.
                 pieces.push(piece.finish()?);
                 piece = Piece::start(prev, budget)?;
                 if !piece.try_push(point, budget)? {
@@ -64,7 +61,7 @@ impl StrokeCodec for Raw {
     }
 
     /// Also rejects trailing bytes, and offsets that overflow `i64` from the origin: bytes may
-    /// come from any peer, and decoded points must expand without overflow (ADR 0014).
+    /// come from any peer, and decoded points must expand without overflow.
     fn decode(&self, encoded: &EncodedPoints) -> Result<StrokePoints, CodecError> {
         let (points, rest): (StrokePoints, _) =
             postcard::take_from_bytes(&encoded.0).map_err(|_| CodecError::Malformed)?;

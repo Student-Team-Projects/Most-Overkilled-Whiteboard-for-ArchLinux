@@ -1,26 +1,24 @@
-//! `Raw` passes the shared `StrokeCodec` suite; the tests below pin its own layout, split points
-//! and strict decoding.
+//! `Raw` passes the shared `StrokeCodec` suite; the tests below pin its own layout, split points,
+//! minimum budget and strict decoding.
 
 use proptest::prelude::*;
+use wb_core::{CodecError, EncodedPoints, Raw, StrokeCodec, StrokePoints, WorldPos};
 
-use super::Raw;
-use crate::codec::conformance::{self as law, stroke_codec_conformance};
-use crate::codec::testing::{BUDGET, at, expand, strategy};
-use crate::codec::{CodecError, StrokeCodec};
-use crate::{EncodedPoints, StrokePoints, WorldPos};
+use crate::conformance::codec::{self as law, stroke_codec_conformance};
+use crate::support::codec::{expand, strategy};
+use crate::support::config::{BUDGET, LONG_STROKE, RAW_MIN_BUDGET};
 
 stroke_codec_conformance!(Raw, tolerance = 0.0);
-
-/// The largest two-point piece, from which `Raw` always encodes: a 10-byte varint per origin
-/// axis, a 1-byte length, the first point's `[0, 0]` offset (2 bytes) and a 5-byte varint per
-/// axis of the second offset.
-const MIN_BUDGET: usize = 10 + 10 + 1 + 2 + 5 + 5;
 
 /// Offsets that overflow `i32` from the origin split at the last point that still fits.
 #[test]
 fn splits_where_offset_overflows_i32() {
     let max = i64::from(i32::MAX);
-    let points = [at(0, 0), at(max, 0), at(2 * max, 0)];
+    let points = [
+        WorldPos::new(0, 0),
+        WorldPos::new(max, 0),
+        WorldPos::new(2 * max, 0),
+    ];
     let pieces: Vec<StrokePoints> = Raw
         .encode(&points, BUDGET)
         .unwrap()
@@ -38,7 +36,7 @@ fn splits_where_offset_overflows_i32() {
 fn empty_stroke_is_one_piece_without_points() {
     let pieces = Raw.encode(&[], BUDGET).unwrap();
     let empty = StrokePoints {
-        origin: at(0, 0),
+        origin: WorldPos::new(0, 0),
         offsets: Vec::new(),
     };
     assert_eq!(
@@ -51,7 +49,7 @@ fn empty_stroke_is_one_piece_without_points() {
 /// that cannot happen, since every piece needs two points to make progress.
 #[test]
 fn second_point_does_not_fit_a_one_point_budget() {
-    let dot = at(-5, 3);
+    let dot = WorldPos::new(-5, 3);
     let size = Raw.encode(&[dot], BUDGET).unwrap()[0].0.len();
     assert!(Raw.encode(&[dot], size).is_ok());
     assert_eq!(
@@ -75,7 +73,11 @@ fn decode_rejects_huge_length_prefix() {
 
 #[test]
 fn decode_rejects_trailing_bytes() {
-    let mut bytes = Raw.encode(&[at(1, 2)], BUDGET).unwrap().remove(0).0;
+    let mut bytes = Raw
+        .encode(&[WorldPos::new(1, 2)], BUDGET)
+        .unwrap()
+        .remove(0)
+        .0;
     bytes.push(0);
     assert_eq!(
         Raw.decode(&EncodedPoints(bytes)),
@@ -86,7 +88,10 @@ fn decode_rejects_trailing_bytes() {
 /// Such a piece would overflow `i64` when expanded; `encode` never writes one.
 #[test]
 fn decode_rejects_offsets_that_overflow_i64() {
-    for (origin, offset) in [(at(i64::MAX, 0), [1, 0]), (at(0, i64::MIN), [0, -1])] {
+    for (origin, offset) in [
+        (WorldPos::new(i64::MAX, 0), [1, 0]),
+        (WorldPos::new(0, i64::MIN), [0, -1]),
+    ] {
         let piece = StrokePoints {
             origin,
             offsets: vec![offset],
@@ -98,7 +103,7 @@ fn decode_rejects_offsets_that_overflow_i64() {
 
 /// An origin anywhere, from 1-byte varints near zero to 10-byte ones near the `i64` extremes.
 fn origin() -> impl Strategy<Value = WorldPos> {
-    (strategy::coordinate(1), strategy::coordinate(1)).prop_map(|(x, y)| at(x, y))
+    (strategy::coordinate(1), strategy::coordinate(1)).prop_map(|(x, y)| WorldPos::new(x, y))
 }
 
 /// Offsets within ±2³⁰, so consecutive steps fit `i32`; small ones and 5-byte ones.
@@ -113,7 +118,7 @@ proptest! {
     #[test]
     fn fills_budget_exactly(
         origin in origin(),
-        offsets in prop::collection::vec(offset(), 0..300),
+        offsets in prop::collection::vec(offset(), 0..usize::from(LONG_STROKE)),
     ) {
         let whole = StrokePoints {
             origin,
@@ -128,27 +133,30 @@ proptest! {
     }
 }
 
-/// `MIN_BUDGET` is exactly the largest two-point piece: 10-byte origins and 5-byte offsets.
+/// `RAW_MIN_BUDGET` is exactly the largest two-point piece: 10-byte origins and 5-byte offsets.
 #[test]
 fn min_budget_is_the_largest_two_point_piece() {
     let (min, step) = (i64::MIN, i64::from(i32::MAX));
-    let worst = [at(min, min), at(min + step, min + step)];
+    let worst = [
+        WorldPos::new(min, min),
+        WorldPos::new(min + step, min + step),
+    ];
     assert_eq!(
-        Raw.encode(&worst, MIN_BUDGET).unwrap()[0].0.len(),
-        MIN_BUDGET
+        Raw.encode(&worst, RAW_MIN_BUDGET).unwrap()[0].0.len(),
+        RAW_MIN_BUDGET
     );
     assert_eq!(
-        Raw.encode(&worst, MIN_BUDGET - 1),
+        Raw.encode(&worst, RAW_MIN_BUDGET - 1),
         Err(CodecError::BudgetTooSmall)
     );
 }
 
 proptest! {
-    /// From `MIN_BUDGET` on, any stroke without an unsplittable step encodes.
+    /// From `RAW_MIN_BUDGET` on, any stroke without an unsplittable step encodes.
     #[test]
     fn min_budget_always_suffices(
         raw in strategy::stroke_or_empty(),
-        budget in MIN_BUDGET..=2 * MIN_BUDGET,
+        budget in RAW_MIN_BUDGET..=2 * RAW_MIN_BUDGET,
     ) {
         law::encode_split_join_and_pieces_fit_budget(&Raw, &raw, budget)?;
     }
