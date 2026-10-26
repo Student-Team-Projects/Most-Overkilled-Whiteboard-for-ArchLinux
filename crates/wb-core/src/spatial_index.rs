@@ -27,8 +27,8 @@ pub trait SpatialIndex {
     fn query(&self, area: Aabb, out: &mut Vec<StrokeId>);
 }
 
-/// The reference index: every entry in a `Vec`, every query a scan of all of them. Faster
-/// indexes are tested against it.
+/// The reference index: every entry in a `Vec`, every query a scan of all of them. Simple enough
+/// to be obviously right, so faster indexes must answer exactly as it does.
 #[derive(Debug, Default)]
 pub struct LinearIndex {
     entries: Vec<(StrokeId, Aabb)>,

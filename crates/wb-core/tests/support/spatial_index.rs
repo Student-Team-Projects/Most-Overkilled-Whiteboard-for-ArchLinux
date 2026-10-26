@@ -20,8 +20,7 @@ pub enum Step {
 
 /// The reference every index must agree with: a map from id to bounds, where a box hits an area
 /// when their closed ranges share a point on both axes. `LinearIndex` cannot be compared with
-/// itself, so it and every faster index answer to this model on the same sessions, which also
-/// compares them with each other.
+/// itself, so it and every faster index answer to this independent model instead.
 #[derive(Debug, Default)]
 pub struct Model(BTreeMap<StrokeId, Aabb>);
 
@@ -81,7 +80,7 @@ fn stroke_id() -> impl Strategy<Value = StrokeId> {
     (0..ID_POOL).prop_map(|seq| StrokeId::new(PeerId(0), seq))
 }
 
-/// A random session: inserts outweigh removes, so the index grows past what one tree node holds.
+/// A random session: inserts outweigh removes, so the index holds dozens of strokes at once.
 pub fn session() -> impl Strategy<Value = Vec<Step>> {
     let step = prop_oneof![
         3 => (stroke_id(), bbox()).prop_map(|(id, bbox)| Step::Insert(id, bbox)),
