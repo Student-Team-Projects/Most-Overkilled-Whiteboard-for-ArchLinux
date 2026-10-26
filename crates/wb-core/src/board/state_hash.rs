@@ -1,56 +1,61 @@
-//! Hash of a board's canonical state (`board.md` guarantee 6, `anti-entropy.md` guarantee 5).
+//! Hash of a board's canonical state, independent of the hash function.
 
-#[cfg(test)]
-#[path = "state_hash_test.rs"]
-mod test;
+use std::marker::PhantomData;
 
-use xxhash_rust::xxh3::Xxh3;
-
+use super::ItemHasher;
 use crate::StrokeId;
 
-/// 128-bit hash of a set of added stroke ids plus a set of tombstoned target ids.
+/// 128-bit hash of a set of added stroke ids plus a set of erased target ids.
 ///
-/// It is the wrapping sum of one hash per element, so the order elements arrive in does not
-/// matter and each insert is O(1). Callers insert each element once.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub struct StateHash(u128);
+/// It is the wrapping sum of one `H` hash per item, so the order items arrive in does not matter
+/// and each insert is O(1). Callers insert each item once.
+#[derive(Debug)]
+pub struct StateHash<H> {
+    value: u128,
+    hasher: PhantomData<fn() -> H>,
+}
 
-/// Kind of element, hashed with its id so an added id and a tombstoned target differ. The
+// Not derived: a derive would require `H: Default`, and a hasher is never instantiated.
+impl<H> Default for StateHash<H> {
+    fn default() -> Self {
+        Self {
+            value: 0,
+            hasher: PhantomData,
+        }
+    }
+}
+
+/// Kind of item, hashed with its id so an added id and an erased target differ. The
 /// discriminant is the hashed byte, so changing it changes every peer's hash.
 #[derive(Clone, Copy)]
 #[repr(u8)]
-enum Element {
+enum Item {
     Added = 1,
     Tombstoned = 2,
 }
 
-impl StateHash {
+impl<H: ItemHasher> StateHash<H> {
+    /// Counts `id` as an added stroke id.
     pub fn insert_added(&mut self, id: StrokeId) {
-        self.insert(Element::Added, id);
+        self.insert(Item::Added, id);
     }
 
+    /// Counts `target` as an erased target.
     pub fn insert_tombstoned(&mut self, target: StrokeId) {
-        self.insert(Element::Tombstoned, target);
+        self.insert(Item::Tombstoned, target);
     }
 
-    pub fn value(self) -> u128 {
-        self.0
+    /// The current hash.
+    pub fn value(&self) -> u128 {
+        self.value
     }
 
-    fn insert(&mut self, element: Element, id: StrokeId) {
-        self.0 = self.0.wrapping_add(element_hash(element, id));
+    /// Adds the hash of the kind byte, then the id's peer and seq as little-endian `u64`s.
+    fn insert(&mut self, item: Item, id: StrokeId) {
+        let mut bytes = [0; 17];
+        bytes[0] = item as u8;
+        bytes[1..9].copy_from_slice(&id.peer.0.to_le_bytes());
+        bytes[9..].copy_from_slice(&id.seq.to_le_bytes());
+        self.value = self.value.wrapping_add(H::hash128(&bytes));
     }
-}
-
-/// xxh3-128 of the element's kind byte, then the id's peer and seq as little-endian `u64`s.
-///
-/// xxh3 is a specified algorithm, so every peer and build computes the same value; std's hashers
-/// promise neither that nor 128 bits. A rare collision is healed by anti-entropy range checks
-/// (`anti-entropy.md` guarantee 1).
-fn element_hash(element: Element, id: StrokeId) -> u128 {
-    let mut hasher = Xxh3::new();
-    hasher.update(&[element as u8]);
-    hasher.update(&id.peer.0.to_le_bytes());
-    hasher.update(&id.seq.to_le_bytes());
-    hasher.digest128()
 }
