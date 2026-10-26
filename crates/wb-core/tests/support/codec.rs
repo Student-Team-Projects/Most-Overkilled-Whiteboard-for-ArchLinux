@@ -116,8 +116,13 @@ pub mod strategy {
         0..=BUDGET
     }
 
-    /// Budgets from `min_budget`, the codec's documented minimum, up to the real one.
+    /// Budgets from `min_budget`, the budget from which a codec promises `encode` succeeds, up
+    /// to the real one; `min_budget` must not exceed [`BUDGET`].
     pub fn workable_budget(min_budget: usize) -> impl Strategy<Value = usize> {
+        assert!(
+            min_budget <= BUDGET,
+            "min_budget {min_budget} exceeds {BUDGET}"
+        );
         min_budget..=BUDGET
     }
 }

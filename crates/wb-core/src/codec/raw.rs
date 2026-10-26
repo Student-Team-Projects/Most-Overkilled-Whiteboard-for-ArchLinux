@@ -9,7 +9,8 @@ use crate::{EncodedPoints, StrokePoints, WorldPos};
 /// The reference codec, which faster codecs are tested against: `simplify` returns the points
 /// unchanged (tolerance 0), and a piece is its first point as the origin plus every point's
 /// offset from it, written with postcard. The empty stroke is one piece with origin `(0, 0)`
-/// and no offsets.
+/// and no offsets. `decode` rejects any piece whose offsets would overflow `i64` when added to
+/// its origin, so decoded points always expand safely.
 ///
 /// # Minimum budget
 ///

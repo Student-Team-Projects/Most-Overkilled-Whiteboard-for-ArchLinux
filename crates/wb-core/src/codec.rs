@@ -40,14 +40,12 @@ pub trait StrokeCodec {
     /// # Errors
     ///
     /// - [`CodecError::UnsplittableDelta`] if two consecutive points are further apart than an
-    ///   `i32` offset reaches on some axis, whatever the budget: there is no point between them
-    ///   to split at.
-    /// - Otherwise [`CodecError::BudgetTooSmall`] if a piece cannot fit `budget`. Each codec
-    ///   documents the budget from which this never happens.
+    ///   `i32` offset reaches on some axis, so the stroke cannot be split at an existing point.
+    /// - [`CodecError::BudgetTooSmall`] if `budget` is smaller than the smallest single-piece
+    ///   encoding.
     fn encode(&self, points: &[WorldPos], budget: usize) -> Result<Vec<EncodedPoints>, CodecError>;
 
-    /// Decodes one piece. Never panics, whatever the bytes; the decoded offsets always expand to
-    /// points without overflowing `i64`.
+    /// Decodes one piece. Never panics, whatever the bytes.
     ///
     /// # Errors
     ///

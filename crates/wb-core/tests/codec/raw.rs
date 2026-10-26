@@ -4,7 +4,7 @@
 use proptest::prelude::*;
 use wb_core::{CodecError, EncodedPoints, Raw, StrokeCodec, StrokePoints, WorldPos};
 
-use crate::conformance::codec::{self as law, stroke_codec_conformance};
+use crate::conformance::codec::stroke_codec_conformance;
 use crate::support::codec::{expand, strategy};
 use crate::support::config::{BUDGET, LONG_STROKE, NEAR_ZERO, RAW_MIN_BUDGET, WIDE_OFFSET};
 
@@ -101,6 +101,31 @@ fn decode_rejects_offsets_that_overflow_i64() {
     }
 }
 
+/// Every single-byte change of a piece at the `i64` extremes, where overflow is one byte away,
+/// either fails to decode or decodes to offsets that expand without overflowing `i64`.
+#[test]
+fn decode_never_yields_offsets_that_overflow_i64() {
+    let (min, max) = (i64::MIN, i64::MAX);
+    let extremes = [
+        vec![WorldPos::new(max, max)],
+        vec![WorldPos::new(min, min)],
+        vec![WorldPos::new(max, min), WorldPos::new(max - 1, min + 1)],
+    ];
+    for raw in extremes {
+        for piece in Raw.encode(&raw, BUDGET).unwrap() {
+            for position in 0..piece.0.len() {
+                for byte in u8::MIN..=u8::MAX {
+                    let mut corrupted = piece.0.clone();
+                    corrupted[position] = byte;
+                    if let Ok(points) = Raw.decode(&EncodedPoints(corrupted)) {
+                        assert!(expand(&points).is_some(), "{points:?} overflows i64");
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// An origin anywhere, from 1-byte varints near zero to 10-byte ones near the `i64` extremes.
 fn origin() -> impl Strategy<Value = WorldPos> {
     (strategy::coordinate(1), strategy::coordinate(1)).prop_map(|(x, y)| WorldPos::new(x, y))
@@ -149,15 +174,4 @@ fn min_budget_is_the_largest_two_point_piece() {
         Raw.encode(&worst, RAW_MIN_BUDGET - 1),
         Err(CodecError::BudgetTooSmall)
     );
-}
-
-proptest! {
-    /// From `RAW_MIN_BUDGET` on, any stroke without an unsplittable step encodes.
-    #[test]
-    fn min_budget_always_suffices(
-        raw in strategy::stroke_or_empty(),
-        budget in RAW_MIN_BUDGET..=2 * RAW_MIN_BUDGET,
-    ) {
-        law::encode_split_join_and_pieces_fit_budget(&Raw, &raw, budget)?;
-    }
 }
