@@ -30,6 +30,14 @@ pub struct OpId {
     pub seq: u64,
 }
 
+impl OpId {
+    /// Builds the id of operation number `seq` authored by `peer`.
+    #[must_use]
+    pub const fn new(peer: PeerId, seq: u64) -> Self {
+        Self { peer, seq }
+    }
+}
+
 /// Identifier of a stroke's Add operation.
 pub type StrokeId = OpId;
 
@@ -42,6 +50,14 @@ pub struct WorldPos {
     pub y: i64,
 }
 
+impl WorldPos {
+    /// Builds the position at `x`, `y` world units.
+    #[must_use]
+    pub const fn new(x: i64, y: i64) -> Self {
+        Self { x, y }
+    }
+}
+
 /// Axis-aligned bounding box in world coordinates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Aabb {
@@ -49,6 +65,14 @@ pub struct Aabb {
     pub min: WorldPos,
     /// Maximum coordinates of the bounds.
     pub max: WorldPos,
+}
+
+impl Aabb {
+    /// Builds the box spanning `min` to `max`; the caller keeps `min <= max` on both axes.
+    #[must_use]
+    pub const fn new(min: WorldPos, max: WorldPos) -> Self {
+        Self { min, max }
+    }
 }
 
 /// Opaque codec bytes containing an i64 origin and packed deltas.
@@ -127,26 +151,17 @@ mod tests {
 
     #[test]
     fn postcard_round_trip() -> Result<(), postcard::Error> {
-        let id = OpId {
-            peer: PeerId(42),
-            seq: 7,
-        };
+        let id = OpId::new(PeerId(42), 7);
         let add = Op::Add(Stroke {
             id,
             lamport: Lamport(19),
             color: Rgba([12, 34, 56, 200]),
             width: 32,
-            bbox: Aabb {
-                min: WorldPos { x: -160, y: -32 },
-                max: WorldPos { x: 320, y: 640 },
-            },
+            bbox: Aabb::new(WorldPos::new(-160, -32), WorldPos::new(320, 640)),
             points: EncodedPoints(vec![0, 127, 128, 255]),
         });
         let erase = Op::Erase {
-            id: OpId {
-                peer: PeerId(43),
-                seq: 8,
-            },
+            id: OpId::new(PeerId(43), 8),
             target: id,
         };
         let original = (
