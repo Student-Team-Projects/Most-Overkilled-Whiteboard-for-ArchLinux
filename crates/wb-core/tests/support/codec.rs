@@ -4,13 +4,18 @@ use wb_core::{StrokePoints, WorldPos};
 
 use super::config::LONG_STROKE;
 
-/// The world points of a decoded piece: its origin plus each offset.
-pub fn expand(piece: &StrokePoints) -> Vec<WorldPos> {
+/// The world points of a decoded piece, its origin plus each offset; `None` if one overflows
+/// `i64`.
+pub fn expand(piece: &StrokePoints) -> Option<Vec<WorldPos>> {
     let origin = piece.origin;
     piece
         .offsets
         .iter()
-        .map(|&[dx, dy]| WorldPos::new(origin.x + i64::from(dx), origin.y + i64::from(dy)))
+        .map(|&[dx, dy]| {
+            let x = origin.x.checked_add(i64::from(dx))?;
+            let y = origin.y.checked_add(i64::from(dy))?;
+            Some(WorldPos::new(x, y))
+        })
         .collect()
 }
 
@@ -67,14 +72,15 @@ pub mod strategy {
     use proptest::prelude::*;
     use wb_core::WorldPos;
 
-    use crate::support::config::{BUDGET, LONG_STROKE, MIN_BUDGET, NEAR_ZERO};
+    use crate::support::config::{BUDGET, LONG_STROKE, NEAR_ZERO};
 
     /// A coordinate near zero or anywhere up to the `i64` extremes, from which `steps` full-range
     /// `i32` steps cannot overflow.
     pub fn coordinate(steps: u16) -> impl Strategy<Value = i64> {
         let reach = i64::from(i32::MAX) * i64::from(steps);
+        let near_zero = i64::from(NEAR_ZERO);
         prop_oneof![
-            -NEAR_ZERO..NEAR_ZERO,
+            -near_zero..near_zero,
             (i64::MIN + reach)..=(i64::MAX - reach)
         ]
     }
@@ -84,7 +90,7 @@ pub mod strategy {
     /// past 127 points; rare full-range steps make offsets overflow `i32` and force splits.
     pub fn stroke() -> impl Strategy<Value = Vec<WorldPos>> {
         let step = prop_oneof![
-            99 => -NEAR_ZERO..NEAR_ZERO,
+            99 => (-NEAR_ZERO..NEAR_ZERO).prop_map(i64::from),
             1 => any::<i32>().prop_map(i64::from),
         ];
         let steps = prop::collection::vec((step.clone(), step), 0..usize::from(LONG_STROKE));
@@ -110,8 +116,8 @@ pub mod strategy {
         0..=BUDGET
     }
 
-    /// Budgets with which every codec must encode any stroke.
-    pub fn workable_budget() -> impl Strategy<Value = usize> {
-        MIN_BUDGET..=BUDGET
+    /// Budgets from `min_budget`, the codec's documented minimum, up to the real one.
+    pub fn workable_budget(min_budget: usize) -> impl Strategy<Value = usize> {
+        min_budget..=BUDGET
     }
 }

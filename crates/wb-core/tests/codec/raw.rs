@@ -6,9 +6,9 @@ use wb_core::{CodecError, EncodedPoints, Raw, StrokeCodec, StrokePoints, WorldPo
 
 use crate::conformance::codec::{self as law, stroke_codec_conformance};
 use crate::support::codec::{expand, strategy};
-use crate::support::config::{BUDGET, LONG_STROKE, RAW_MIN_BUDGET};
+use crate::support::config::{BUDGET, LONG_STROKE, NEAR_ZERO, RAW_MIN_BUDGET, WIDE_OFFSET};
 
-stroke_codec_conformance!(Raw, tolerance = 0.0);
+stroke_codec_conformance!(Raw, tolerance = 0.0, min_budget = RAW_MIN_BUDGET);
 
 /// Offsets that overflow `i32` from the origin split at the last point that still fits.
 #[test]
@@ -106,9 +106,9 @@ fn origin() -> impl Strategy<Value = WorldPos> {
     (strategy::coordinate(1), strategy::coordinate(1)).prop_map(|(x, y)| WorldPos::new(x, y))
 }
 
-/// Offsets within ±2³⁰, so consecutive steps fit `i32`; small ones and 5-byte ones.
+/// Offsets near zero, or wide ones that need 5 bytes yet keep consecutive steps within `i32`.
 fn offset() -> impl Strategy<Value = [i32; 2]> {
-    let axis = prop_oneof![-64..64i32, (1 - (1 << 30))..(1 << 30)];
+    let axis = prop_oneof![-NEAR_ZERO..NEAR_ZERO, (1 - WIDE_OFFSET)..WIDE_OFFSET];
     [axis.clone(), axis]
 }
 
@@ -125,7 +125,7 @@ proptest! {
             offsets: [[0, 0]].into_iter().chain(offsets).collect(),
         };
         let bytes = postcard::to_allocvec(&whole).unwrap();
-        let points = expand(&whole);
+        let points = expand(&whole).unwrap();
 
         prop_assert_eq!(Raw.encode(&points, bytes.len()), Ok(vec![EncodedPoints(bytes.clone())]));
         let smaller = Raw.encode(&points, bytes.len() - 1);

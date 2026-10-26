@@ -6,12 +6,13 @@ use proptest::prelude::*;
 use wb_core::{CodecError, EncodedPoints, StrokeCodec, WorldPos};
 
 use crate::support::codec::{edge_strokes, expand, near_path};
-use crate::support::config::{BUDGET, LONG_STROKE, MIN_BUDGET};
+use crate::support::config::{BUDGET, LONG_STROKE, WIDE_OFFSET};
 
 /// Generates `mod conformance` with one test per law for `$codec`, whose `simplify` keeps every
-/// raw point within `$tolerance` world units of its result.
+/// raw point within `$tolerance` world units of its result, and whose `encode` never returns
+/// `BudgetTooSmall` from a budget of `$min_budget` bytes.
 macro_rules! stroke_codec_conformance {
-    ($codec:expr, tolerance = $tolerance:expr) => {
+    ($codec:expr, tolerance = $tolerance:expr, min_budget = $min_budget:expr) => {
         mod conformance {
             use ::proptest::prelude::*;
 
@@ -36,37 +37,45 @@ macro_rules! stroke_codec_conformance {
 
                 #[test]
                 fn decode_fuzz(bytes in prop::collection::vec(any::<u8>(), 0..FUZZ_LEN)) {
-                    law::decode_fuzz(&$codec, bytes);
+                    law::decode_fuzz(&$codec, bytes)?;
                 }
 
                 #[test]
                 fn decode_fuzz_on_damaged_pieces(
                     raw in strategy::stroke(),
+                    which in any::<prop::sample::Index>(),
                     cut in any::<prop::sample::Index>(),
                     position in any::<prop::sample::Index>(),
                     byte in any::<u8>(),
                 ) {
-                    law::decode_fuzz_on_damaged_pieces(&$codec, &raw, cut, position, byte)?;
+                    law::decode_fuzz_on_damaged_pieces(
+                        &$codec, &raw, [which, cut, position], byte,
+                    )?;
                 }
 
                 #[test]
                 fn encode_split_join_and_pieces_fit_budget(
                     raw in strategy::stroke_or_empty(),
-                    budget in strategy::workable_budget(),
+                    budget in strategy::workable_budget($min_budget),
                 ) {
                     law::encode_split_join_and_pieces_fit_budget(&$codec, &raw, budget)?;
                 }
             }
 
             #[test]
+            fn decode_fuzz_on_every_byte_of_extreme_pieces() -> Result<(), TestCaseError> {
+                law::decode_fuzz_on_every_byte_of_extreme_pieces(&$codec)
+            }
+
+            #[test]
             fn encode_split_join_on_edge_strokes() -> Result<(), TestCaseError> {
-                law::encode_split_join_on_edge_strokes(&$codec)
+                law::encode_split_join_on_edge_strokes(&$codec, $min_budget)
             }
 
             #[test]
             fn encode_errors_for_too_small_budget_and_unsplittable_delta()
             -> Result<(), TestCaseError> {
-                law::encode_errors_for_too_small_budget_and_unsplittable_delta(&$codec)
+                law::encode_errors_for_too_small_budget_and_unsplittable_delta(&$codec, $min_budget)
             }
         }
     };
@@ -88,7 +97,9 @@ fn check_pieces(
     let mut decoded = Vec::new();
     for piece in pieces {
         prop_assert!(piece.0.len() <= budget);
-        decoded.push(expand(&codec.decode(piece)?));
+        let points = expand(&codec.decode(piece)?)
+            .ok_or_else(|| TestCaseError::fail("decoded offsets overflow i64"))?;
+        decoded.push(points);
     }
     for pair in decoded.windows(2) {
         let shared = pair[0]
@@ -141,29 +152,53 @@ pub fn within_tolerance(
     Ok(())
 }
 
-/// Guarantee 3: any bytes decode to `Ok` or `Err`, never a panic; `Ok` points expand without
-/// overflowing `i64`, or `expand` would panic in this debug build.
-pub fn decode_fuzz(codec: &impl StrokeCodec, bytes: Vec<u8>) {
+/// Guarantee 3: any bytes decode to `Ok` or `Err`, never a panic; `Ok` offsets expand to points
+/// without overflowing `i64`.
+pub fn decode_fuzz(codec: &impl StrokeCodec, bytes: Vec<u8>) -> Result<(), TestCaseError> {
     if let Ok(points) = codec.decode(&EncodedPoints(bytes)) {
-        expand(&points);
+        prop_assert!(expand(&points).is_some(), "{points:?} overflows i64");
     }
+    Ok(())
 }
 
-/// Guarantee 3 on bytes close to valid: a real piece cut short at `cut`, and one with the byte at
-/// `position` replaced by `byte`.
+/// Guarantee 3 on bytes close to valid: the piece picked by `which`, cut short at `cut`, and
+/// with the byte at `position` replaced by `byte`.
 pub fn decode_fuzz_on_damaged_pieces(
     codec: &impl StrokeCodec,
     raw: &[WorldPos],
-    cut: prop::sample::Index,
-    position: prop::sample::Index,
+    [which, cut, position]: [prop::sample::Index; 3],
     byte: u8,
 ) -> Result<(), TestCaseError> {
     let pieces = codec.encode(&codec.simplify(raw), BUDGET)?;
-    let bytes = &pieces[0].0;
-    decode_fuzz(codec, bytes[..cut.index(bytes.len())].to_vec());
+    let bytes = &which.get(&pieces).0;
+    decode_fuzz(codec, bytes[..cut.index(bytes.len())].to_vec())?;
     let mut corrupted = bytes.clone();
     corrupted[position.index(bytes.len())] = byte;
-    decode_fuzz(codec, corrupted);
+    decode_fuzz(codec, corrupted)
+}
+
+/// Guarantee 3 where overflow is one byte away: every single-byte change of pieces whose points
+/// sit at the `i64` extremes.
+pub fn decode_fuzz_on_every_byte_of_extreme_pieces(
+    codec: &impl StrokeCodec,
+) -> Result<(), TestCaseError> {
+    let (min, max) = (i64::MIN, i64::MAX);
+    let extremes = [
+        vec![WorldPos::new(max, max)],
+        vec![WorldPos::new(min, min)],
+        vec![WorldPos::new(max, min), WorldPos::new(max - 1, min + 1)],
+    ];
+    for raw in extremes {
+        for piece in codec.encode(&codec.simplify(&raw), BUDGET)? {
+            for position in 0..piece.0.len() {
+                for byte in u8::MIN..=u8::MAX {
+                    let mut corrupted = piece.0.clone();
+                    corrupted[position] = byte;
+                    decode_fuzz(codec, corrupted)?;
+                }
+            }
+        }
+    }
     Ok(())
 }
 
@@ -179,10 +214,13 @@ pub fn encode_split_join_and_pieces_fit_budget(
     check_pieces(codec, &points, budget, &pieces)
 }
 
-/// Guarantees 1 and 4 on strokes at the limits, at the smallest and the real budget.
-pub fn encode_split_join_on_edge_strokes(codec: &impl StrokeCodec) -> Result<(), TestCaseError> {
+/// Guarantees 1 and 4 on strokes at the limits, at the codec's minimum and the real budget.
+pub fn encode_split_join_on_edge_strokes(
+    codec: &impl StrokeCodec,
+    min_budget: usize,
+) -> Result<(), TestCaseError> {
     for raw in edge_strokes() {
-        for budget in [MIN_BUDGET, BUDGET] {
+        for budget in [min_budget, BUDGET] {
             encode_split_join_and_pieces_fit_budget(codec, &raw, budget)
                 .map_err(|e| TestCaseError::fail(format!("{raw:?} at budget {budget}: {e}")))?;
         }
@@ -197,6 +235,7 @@ pub fn encode_split_join_on_edge_strokes(codec: &impl StrokeCodec) -> Result<(),
 ///   offsets from the first point would fit.
 pub fn encode_errors_for_too_small_budget_and_unsplittable_delta(
     codec: &impl StrokeCodec,
+    min_budget: usize,
 ) -> Result<(), TestCaseError> {
     let fitting = [
         vec![],
@@ -236,17 +275,17 @@ pub fn encode_errors_for_too_small_budget_and_unsplittable_delta(
         ],
         vec![
             WorldPos::new(0, 0),
-            WorldPos::new(-(1 << 30), 0),
-            WorldPos::new(1 << 30, 0),
+            WorldPos::new(-i64::from(WIDE_OFFSET), 0),
+            WorldPos::new(i64::from(WIDE_OFFSET), 0),
         ],
         (0..i64::from(LONG_STROKE))
             .map(|i| WorldPos::new(i, 0))
-            .chain([WorldPos::new(1 << 40, 0)])
+            .chain([WorldPos::new(2 * too_far, 0)])
             .collect(),
     ];
     for raw in unsplittable {
         let points = codec.simplify(&raw);
-        for budget in [0, MIN_BUDGET, BUDGET, usize::MAX] {
+        for budget in [0, min_budget, BUDGET, usize::MAX] {
             prop_assert_eq!(
                 codec.encode(&points, budget),
                 Err(CodecError::UnsplittableDelta)
