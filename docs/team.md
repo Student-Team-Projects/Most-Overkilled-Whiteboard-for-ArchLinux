@@ -23,7 +23,8 @@ Board rules: `docs/board.md`.
 - Each feature gets a short spec in `docs/features/<slug>/spec.md` before code, with at least one
   Mermaid diagram (style and examples → `docs/design/`).
 - **Contracts are shared property:** changing a seam trait or anything in `wb-core`'s public API
-  needs agreement from all 3 and an ADR line. That is where feature teams collide — keep it explicit.
+  needs agreement from all 3 and an ADR line (new constructors excepted, `RULES.md` R4). That is where feature
+  teams collide — keep it explicit.
 
 ## Git flow
 
@@ -64,17 +65,7 @@ Benchmarks: method: G20 (#20), M4.
 
 ## Code standards
 
-Code that meets all of these is **kosher** (`GLOSSARY.md`).
-
-| Rule | Detail |
-|---|---|
-| understood, not just passing | every line is reviewed and understood by its stakeholder; no AI slop — if you can't explain it, it doesn't merge |
-| lean | the smallest code that keeps the contract; no speculative abstraction |
-| no panics in libs | no `unwrap`/`expect`/`panic!` outside tests and `wb-app` `main`; errors are `thiserror` enums |
-| documented API | `#![deny(missing_docs)]` in library crates; seam methods cite their contract clause |
-| docs without code | docs describe effects, guarantees and data in words; signatures live in code (rustdoc cites the contract clause); pseudocode only for algorithms and protocols |
-| property tests | `proptest` for CRDT laws and oracle comparisons |
-| pedantic lints | `clippy::pedantic` on; every `#[allow]` has a one-line reason |
+See [RULES.md](../RULES.md).
 
 ## Definition of done
 
