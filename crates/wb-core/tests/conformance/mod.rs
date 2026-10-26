@@ -1,3 +1,3 @@
-//! One conformance suite per seam; each runs on every impl of its seam.
+//! One conformance suite per seam, run on every implementation.
 
 mod spatial_index;
