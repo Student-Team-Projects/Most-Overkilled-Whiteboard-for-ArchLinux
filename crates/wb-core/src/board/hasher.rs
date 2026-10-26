@@ -15,7 +15,7 @@ pub trait ItemHasher {
 }
 
 /// XXH3-128, the default `ItemHasher`: fast, and specified, so every peer computes the same value.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug)]
 pub struct Xxh3;
 
 impl ItemHasher for Xxh3 {

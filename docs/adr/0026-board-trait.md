@@ -11,6 +11,8 @@ Status: proposed · 2026-10-27 · T09 review (#98)
   erase ops + tombstones, ADR 0001) is the layer-0 impl and the oracle; it takes the state-hash
   item hasher as a type parameter, XXH3-128 by default. `erase_ops` is new: it exposes the
   retained erase ops of guarantee 7, which anti-entropy resends and the suite must observe.
+  Guarantee 5 now also says new op ids skip every id seen, erase targets included, as the impl
+  already did.
 - **Why:** one documented interface holds the replicated state's guarantees; a later impl (e.g.
   a faster index of visible strokes) can be swapped in and must pass the same generic
   conformance suite (`tests/conformance/board.rs`), as for every other seam.

@@ -19,7 +19,8 @@ trait; the laws below are its contract and its shared property suite. Format →
 2. `apply` is idempotent; applying a set of ops in any order gives the same `visible`.
 3. Erase wins: once `Erase(target)` is applied, `target` is never visible, even if its `Add` arrives later.
 4. `visible` is sorted by `(lamport, peer)` (ADR 0008).
-5. `draw` gives a Lamport greater than every Lamport this board has seen; OpIds from one `me` never repeat.
+5. `draw` gives a Lamport greater than every Lamport this board has seen; OpIds from one `me` never repeat
+   and never reuse an id this board has seen as an op or as an erase target.
 6. Inserting a stroke id or newly tombstoning a target updates `state_hash` in O(1); duplicate adds and repeated erases leave it unchanged. Erase OpIds are not hashed. Equal canonical state has equal hashes.
 7. The board retains every erase op with its OpId and target, even before the target's Add arrives;
    anti-entropy resends them (`docs/contracts/anti-entropy.md`).
@@ -45,5 +46,6 @@ trait; the laws below are its contract and its shared property suite. Format →
 | `erase_before_add` | 3 |
 | `visible_is_sorted` | 4 |
 | `draw_after_merge_is_on_top` | 5 |
+| `draw_skips_ids_of_erase_targets` | 5 |
 | `state_hash_tracks_canonical_state_and_matches_equal_boards` (including two erases of one target) | 6 |
 | `retains_erase_ops_with_op_id_and_target` (including erase before add) | 7 |

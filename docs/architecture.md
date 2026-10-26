@@ -89,7 +89,7 @@ Rule: `wb-core` knows nothing about IO, egui or sockets; sockets and threads liv
 
 | Seam | Layer 0 (simple) | Later layer (fast) |
 |---|---|---|
-| `Board` | `TombstoneBoard`: ordered sets of strokes and tombstones | — |
+| `Board` | `TombstoneBoard`: ordered maps of strokes, erase ops and tombstones | — |
 | `SpatialIndex` | `Vec` + linear scan | quadtree |
 | `StrokeRenderer` | egui painter, every visible stroke, every frame | cached chunk meshes → chunk textures (wgpu) |
 | `StrokeCache` | `DecodeAll`: unpack once on arrival, keep all | `ChunkWorkingSet`: resident chunks + margin, byte budget |

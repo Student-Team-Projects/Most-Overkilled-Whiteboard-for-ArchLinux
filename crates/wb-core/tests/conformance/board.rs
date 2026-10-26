@@ -3,9 +3,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use proptest::prelude::*;
-use wb_core::{Board, Op, OpId, PeerId};
+use wb_core::{Board, Op, OpId};
 
 use crate::support::board::{BoardExt, OpExt, OpIdExt, oracle};
+use crate::support::config::ME;
 
 /// Guarantee 1, plus equal `state_hash` for merged boards with equal state (guarantee 6).
 fn merge_laws<B: Board>(ops: &[Vec<Op>; 3]) -> Result<(), TestCaseError> {
@@ -68,14 +69,12 @@ fn visible_is_sorted<B: Board>(ops: &[Op]) -> Result<(), TestCaseError> {
 fn draw_after_merge_is_on_top<B: Board>(a: &[Op], b: &[Op]) -> Result<(), TestCaseError> {
     let seen = [a, b].concat();
     let mut board = B::of(a).merged(&B::of(b));
-    let me = PeerId(1);
-
-    let first = board.draw_any(me);
+    let first = board.draw_any(ME);
     prop_assert!(Some(first.lamport) > oracle::max_lamport(&seen));
     prop_assert_eq!(board.visible().last(), Some(&first));
 
-    let erased = board.erase(me, first.id);
-    let second = board.draw_any(me);
+    let erased = board.erase(ME, first.id);
+    let second = board.draw_any(ME);
     prop_assert!(second.lamport > first.lamport);
 
     let mine = [first.id, erased.id(), second.id];
@@ -88,9 +87,9 @@ fn draw_after_merge_is_on_top<B: Board>(a: &[Op], b: &[Op]) -> Result<(), TestCa
 /// Guarantee 5: an erase target whose Add has not arrived is an id `draw` must not reuse, or the
 /// new stroke would be born erased.
 fn draw_skips_ids_of_erase_targets<B: Board>() {
-    let target = OpId::of(1, 0);
+    let target = OpId::new(ME, 0);
     let mut board = B::of(&[Op::erase(OpId::of(0, 0), target)]);
-    let stroke = board.draw_any(PeerId(1));
+    let stroke = board.draw_any(ME);
     assert_ne!(stroke.id, target);
     assert_eq!(board.visible().last(), Some(&stroke));
 }
@@ -113,17 +112,17 @@ fn state_hash_tracks_canonical_state_and_matches_equal_boards<B: Board>(
             Op::Add(_) => {
                 board.apply(op.clone());
             }
-            Op::Erase { target, .. } => log.push(board.erase(PeerId(7), *target)),
+            Op::Erase { target, .. } => log.push(board.erase(ME, *target)),
         }
     }
     prop_assert_eq!(board.state_hash(), hash);
 
     // A new stroke id, then a new tombstone, each change it.
-    let fresh = board.draw_any(PeerId(7));
+    let fresh = board.draw_any(ME);
     log.push(Op::Add(fresh.clone()));
     let with_stroke = board.state_hash();
     prop_assert_ne!(with_stroke, hash);
-    log.push(board.erase(PeerId(7), fresh.id));
+    log.push(board.erase(ME, fresh.id));
     prop_assert_ne!(board.state_hash(), with_stroke);
     prop_assert_eq!(
         board.state_hash(),

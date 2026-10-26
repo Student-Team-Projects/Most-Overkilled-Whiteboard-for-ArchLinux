@@ -17,5 +17,8 @@ pub const PEERS: u64 = 3;
 pub const LAMPORTS: u64 = 4;
 /// Erase targets range over ids `0..TARGETS`: a full universe plus ids that never exist.
 pub const TARGETS: u64 = 48;
+/// The local author in tests that draw or erase; generated ops use it too, so its new ids
+/// must skip theirs.
+pub const ME: PeerId = PeerId(1);
 /// Author of the erases in a canonical op list; no generated op uses it.
 pub const CANONICAL_ERASER: PeerId = PeerId(u64::MAX);

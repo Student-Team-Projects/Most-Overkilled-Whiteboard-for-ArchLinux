@@ -1,9 +1,10 @@
 //! `TombstoneBoard` beyond the `Board` suite: op numbering, foreign counters, and the state hash.
 
 use proptest::prelude::*;
-use wb_core::{Board, Op, OpId, PeerId, TombstoneBoard};
+use wb_core::{Board, Op, OpId, TombstoneBoard};
 
 use crate::support::board::{BoardExt, CountingHasher, OpExt, OpIdExt, oracle, strategy};
+use crate::support::config::ME;
 
 /// `TombstoneBoard` with its default hasher: a type alias applies the default type parameter,
 /// a path in an expression (`TombstoneBoard::of`) does not.
@@ -12,25 +13,25 @@ type Plain = TombstoneBoard;
 /// ADR 0009: one author numbers all its ops, Adds and Erases, 0, 1, 2…
 #[test]
 fn numbers_own_ops_from_zero() {
-    let me = PeerId(1);
     let mut board = TombstoneBoard::new();
-    let first = board.draw_any(me);
-    let erased = board.erase(me, first.id);
-    let second = board.draw_any(me);
+    let first = board.draw_any(ME);
+    let erased = board.erase(ME, first.id);
+    let second = board.draw_any(ME);
     assert_eq!(
         [first.id, erased.id(), second.id],
-        [OpId::of(1, 0), OpId::of(1, 1), OpId::of(1, 2)]
+        [OpId::new(ME, 0), OpId::new(ME, 1), OpId::new(ME, 2)]
     );
 }
 
 /// Foreign ops are not validated: counters already at `u64::MAX` saturate instead of panicking.
 #[test]
 fn saturated_foreign_counters_do_not_panic() {
-    let me = PeerId(1);
-    let mut board = Plain::of(&[Op::add(OpId::of(1, u64::MAX), u64::MAX)]);
-    let stroke = board.draw_any(me);
+    let mut board = Plain::of(&[Op::add(OpId::new(ME, u64::MAX), u64::MAX)]);
+    let stroke = board.draw_any(ME);
     assert_eq!(stroke.lamport.0, u64::MAX);
-    let _ = board.erase(me, OpId::of(0, 0));
+    // The saturated seq hands out the foreign id again (not guaranteed: unvalidated input).
+    assert_eq!(stroke.id, OpId::new(ME, u64::MAX));
+    let _ = board.erase(ME, OpId::of(0, 0));
 }
 
 proptest! {
