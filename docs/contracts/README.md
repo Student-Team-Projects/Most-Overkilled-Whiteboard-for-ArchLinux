@@ -58,7 +58,7 @@ Coordinate rule: every coordinate computation is `i64`; `i32` exists only as dec
 
 | Seam | File | Status |
 |---|---|---|
-| `Board` (type, not a trait) | `board.md` | agreed |
+| `Board` | `board.md` | agreed; trait proposed (ADR 0026) |
 | `StrokeCodec` | `stroke-codec.md` | agreed |
 | `SpatialIndex` | `spatial-index.md` | agreed |
 | `Camera` (type) | `camera.md` | agreed |

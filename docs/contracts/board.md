@@ -1,7 +1,7 @@
 # Contract: `Board`
 
-Status: agreed 2026-10-20 · The replicated board state (ADR 0001, 0008). A concrete type, not a trait — but the
-laws below are its contract and its property tests. Format → `README.md` here.
+Status: agreed 2026-10-20, trait proposed (ADR 0026) · The replicated board state (ADR 0001, 0008). A seam
+trait; the laws below are its contract and its shared property suite. Format → `README.md` here.
 
 ## Operations
 
@@ -11,6 +11,7 @@ laws below are its contract and its property tests. Format → `README.md` here.
 - `merge` — accepts another replica of the same board and unions its state. Does not report errors.
 - `visible` — accepts no inputs and yields added, unerased strokes in draw order. Does not report errors.
 - `state_hash` — accepts no inputs and returns the incrementally maintained 128-bit hash of canonical state: all stroke ids ever added plus tombstoned target ids.
+- `erase_ops` — accepts no inputs and yields every retained erase op as its OpId and target, each once. Does not report errors.
 
 ## Guarantees
 
@@ -28,6 +29,12 @@ laws below are its contract and its property tests. Format → `README.md` here.
 - Decoding: `Board` never looks inside `EncodedPoints` (ADR 0014).
 - Ordering between independently drawn split pieces: a concurrent stroke may be ordered between pieces at crossings (ADR 0020).
 - Validation of foreign ops (no auth, README) · memory ever shrinking (tombstones stay, backlog P3).
+
+## Impls
+
+| Layer | Impl |
+|---|---|
+| 0 | `TombstoneBoard`: ordered maps of strokes, erase ops and tombstones; state hash = wrapping sum of per-item XXH3-128 — **the oracle** |
 
 ## Conformance tests (proptest)
 
