@@ -1,5 +1,4 @@
-//! `Board`: the CRDT laws, drawing, and the state hash.
+//! `TombstoneBoard`: op numbering, saturated counters and the exact state hash values.
 
 mod draw;
-mod laws;
 mod state_hash;

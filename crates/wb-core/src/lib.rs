@@ -3,7 +3,7 @@
 mod board;
 mod types;
 
-pub use board::Board;
+pub use board::{Board, TombstoneBoard};
 
 pub use types::{
     Aabb, BoardId, EncodedPoints, Lamport, Op, OpId, Outgoing, PeerId, Rgba, Stroke, StrokeId,

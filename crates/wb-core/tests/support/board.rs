@@ -54,7 +54,7 @@ impl OpExt for Op {
 }
 
 /// Shorthands for building and comparing boards.
-pub trait BoardExt {
+pub trait BoardExt: Board {
     /// A board with `ops` applied in order.
     fn of(ops: &[Op]) -> Self;
     /// A new board with `self`, then `other`, merged into it.
@@ -65,9 +65,9 @@ pub trait BoardExt {
     fn draw_any(&mut self, me: PeerId) -> Stroke;
 }
 
-impl BoardExt for Board {
+impl<B: Board> BoardExt for B {
     fn of(ops: &[Op]) -> Self {
-        let mut board = Board::new();
+        let mut board = Self::default();
         for op in ops {
             board.apply(op.clone());
         }
@@ -75,7 +75,7 @@ impl BoardExt for Board {
     }
 
     fn merged(&self, other: &Self) -> Self {
-        let mut board = Board::new();
+        let mut board = Self::default();
         board.merge(self);
         board.merge(other);
         board
