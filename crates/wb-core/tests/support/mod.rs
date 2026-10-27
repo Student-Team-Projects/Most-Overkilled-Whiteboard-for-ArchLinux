@@ -1,4 +1,4 @@
-//! Builders, generators and parameters shared by tests; no tests here.
+//! Everything the tests share that is not a test: builders, generators and named parameters.
 
 pub mod board;
 pub mod config;

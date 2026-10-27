@@ -1,4 +1,4 @@
-//! The one `wb-core` test binary; each module is a feature or a seam suite.
+//! Every `wb-core` test, in one binary; this file only lists the modules.
 
 mod board;
 mod conformance;

@@ -1,3 +1,3 @@
-//! One suite per seam, run on every impl.
+//! One conformance suite per seam, run on every implementation.
 
 mod board;
