@@ -2,7 +2,7 @@
 
 One file per seam: the effect every implementation must have. Written and agreed **before** any impl.
 Seam list and layers → `docs/architecture.md` · decisions → `docs/adr/`.
-Write each contract in prose; the trait in code is the signature, and rustdoc links back to the contract clause.
+Write each contract in prose; the trait in code is the signature, documented per `RULES.md` R1.
 
 ## Rules
 
