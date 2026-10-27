@@ -10,4 +10,6 @@ Status: proposed · 2026-10-27 · T09 review (#98)
   same suite.
 - **Consequences:** the generic conformance suite runs on every impl. `merge(&Self)` and the
   `impl Iterator` return of `visible` make it unusable as `dyn Board`, which no caller needs.
+  The trait has no way to read retained erase ops yet, so guarantee 7 is tested on
+  `TombstoneBoard` only; anti-entropy will add that read with its own ADR.
   Amends the agreed `board.md` contract, so it needs all 3.
