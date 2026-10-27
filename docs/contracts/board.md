@@ -1,7 +1,7 @@
 # Contract: `Board`
 
-Status: agreed 2026-10-20 · The replicated board state (ADR 0001, 0008). A concrete type, not a trait — but the
-laws below are its contract and its property tests. Format → `README.md` here.
+Status: agreed 2026-10-20 · The replicated board state (ADR 0001, 0008). A seam trait (ADR 0026); the laws
+below are its contract and its property tests. Format → `README.md` here.
 
 ## Operations
 
@@ -28,6 +28,12 @@ laws below are its contract and its property tests. Format → `README.md` here.
 - Decoding: `Board` never looks inside `EncodedPoints` (ADR 0014).
 - Ordering between independently drawn split pieces: a concurrent stroke may be ordered between pieces at crossings (ADR 0020).
 - Validation of foreign ops (no auth, README) · memory ever shrinking (tombstones stay, backlog P3).
+
+## Impls
+
+| Layer | Impl |
+|---|---|
+| 0 | `TombstoneBoard`: every stroke ever added, every erase op and a tombstone set — **the oracle** |
 
 ## Conformance tests (proptest)
 
