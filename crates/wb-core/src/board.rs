@@ -160,6 +160,9 @@ mod tests {
     const ERASE: OpId = OpId::new(PeerId(1), 0);
     const ERASE_AGAIN: OpId = OpId::new(PeerId(2), 0);
     const ORIGIN: WorldPos = WorldPos::new(0, 0);
+    const LAMPORT: Lamport = Lamport(1);
+    const COLOR: Rgba = Rgba([0, 0, 0, 255]);
+    const WIDTH: u32 = 1;
 
     #[test]
     fn retains_erase_ops_with_op_id_and_target() {
@@ -177,9 +180,9 @@ mod tests {
 
         merged.apply(Op::Add(Stroke {
             id: TARGET,
-            lamport: Lamport(1),
-            color: Rgba([0, 0, 0, 255]),
-            width: 1,
+            lamport: LAMPORT,
+            color: COLOR,
+            width: WIDTH,
             bbox: Aabb::new(ORIGIN, ORIGIN),
             points: EncodedPoints(Vec::new()),
         }));

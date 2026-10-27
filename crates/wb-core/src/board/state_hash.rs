@@ -4,10 +4,8 @@ use xxhash_rust::xxh3::xxh3_128;
 
 use crate::StrokeId;
 
-/// 128-bit hash of a set of added stroke ids plus a set of erased target ids.
-///
-/// It is the wrapping sum of one hash per item, so the order items arrive in does not matter
-/// and each insert is O(1). Callers insert each item once.
+/// Wrapping sum of one hash per added stroke id and per erased target; callers insert each item
+/// once.
 #[derive(Debug, Default)]
 pub struct StateHash(u128);
 
@@ -36,7 +34,7 @@ impl StateHash {
         self.0
     }
 
-    /// Adds the hash of the kind byte, then the id's peer and seq as little-endian `u64`s.
+    /// Adds the hash of `[kind, peer as u64 LE, seq as u64 LE]` to the sum.
     fn insert(&mut self, item: Item, id: StrokeId) {
         let mut bytes = [0; 17];
         bytes[0] = item as u8;
