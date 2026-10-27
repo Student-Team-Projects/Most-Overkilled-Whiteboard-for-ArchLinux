@@ -1,89 +1,188 @@
-//! The replicated board state: the `Board` trait and its impls.
+//! The replicated board state.
 
-mod hasher;
 mod state_hash;
-mod tombstone_board;
 
-pub use hasher::{ItemHasher, Xxh3};
-pub use tombstone_board::TombstoneBoard;
+use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{Aabb, EncodedPoints, Op, OpId, PeerId, Rgba, Stroke, StrokeId};
+use state_hash::StateHash;
+
+use crate::{Aabb, EncodedPoints, Lamport, Op, OpId, PeerId, Rgba, Stroke, StrokeId};
 
 /// One peer's replica of a shared board: every stroke ever added, and every erase.
 ///
-/// Peers exchange the ops that `draw` and `erase` return and feed them to `apply` in any order,
-/// any number of times; replicas that have seen the same ops show the same picture. A replica
-/// never decodes stroke points, and no method fails or panics. `Default` is the empty board.
-///
-/// # Guarantees
-///
-/// 1. `merge` is commutative, associative and idempotent: merging the same replicas in any order
-///    or grouping, any number of times, gives the same `visible` picture.
-/// 2. `apply` is idempotent, and applying a set of ops in any order gives the same `visible`
-///    picture.
-/// 3. Erase wins: once an erase of a stroke is applied, that stroke is never visible, even when
-///    its Add arrives later.
-/// 4. `visible` yields strokes sorted by `(lamport, peer)`, so every replica stacks overlapping
-///    strokes the same way.
-/// 5. `draw` gives a Lamport timestamp greater than every one this replica has seen, so a new
-///    stroke lies on top of everything its author could see. Op ids that `draw` and `erase` hand
-///    out for one author never repeat, and never reuse an id this replica has seen as an op or as
-///    an erase target.
-/// 6. `state_hash` is a 128-bit hash of the canonical state: the ids of all strokes ever added
-///    plus the ids of all erased targets. A new stroke id or a newly erased target updates it in
-///    O(1); a duplicate Add or another erase of an erased target leaves it unchanged; erase op
-///    ids are not hashed. Replicas with equal canonical state have equal hashes.
-/// 7. Every erase op is kept with its op id and target, even when the target's Add has not
-///    arrived, so anti-entropy can resend it (`erase_ops`).
-///
-/// # Not guaranteed
-///
-/// - Anything about the points: `EncodedPoints` stay opaque bytes.
-/// - The order of independently drawn pieces of one split stroke: a concurrent stroke may be
-///   stacked between them where they cross.
-/// - Validation of foreign ops: there is no authentication, and a malformed op (a reused id, a
-///   counter at `u64::MAX`) is stored as it comes.
-/// - Memory ever shrinking: erased strokes and erase ops stay forever.
-///
-/// See also: `docs/contracts/board.md`, ADR 0001, 0008, 0009, 0026.
-pub trait Board: Default {
-    /// Draws a new stroke by `me` on top of everything this replica has seen, applies it, and
-    /// returns its Add op for broadcast.
+/// Ops can arrive in any order and any number of times; replicas that saw the same ops show the
+/// same picture. The board never decodes stroke points, and nothing fails or panics.
+#[derive(Debug, Default)]
+pub struct Board {
+    strokes: BTreeMap<StrokeId, Stroke>,
+    order: BTreeSet<(Lamport, StrokeId)>,
+    erases: BTreeMap<OpId, StrokeId>,
+    tombstones: BTreeSet<StrokeId>,
+    next_seq: BTreeMap<PeerId, u64>,
+    max_lamport: u64,
+    hash: StateHash,
+}
+
+impl Board {
+    /// An empty board.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Draws a stroke by `me`, applies it and returns its Add op for broadcast.
     ///
-    /// The stroke gets the next unused op id of `me` and a Lamport timestamp above every one seen.
-    /// The caller passes a `bbox` that covers `points`; the board never checks it.
+    /// Its Lamport is above every one this board has seen, so it lies on top, and its op id is
+    /// one this board has never seen, as an op or as an erase target. `bbox` must cover `points`;
+    /// it is not checked.
     #[must_use = "the op must be broadcast"]
-    fn draw(
+    pub fn draw(
         &mut self,
         me: PeerId,
         color: Rgba,
         width: u32,
         points: EncodedPoints,
         bbox: Aabb,
-    ) -> Op;
+    ) -> Op {
+        let op = Op::Add(Stroke {
+            id: self.next_op_id(me),
+            // Saturates only after an unvalidated foreign op with Lamport `u64::MAX`.
+            lamport: Lamport(self.max_lamport.saturating_add(1)),
+            color,
+            width,
+            bbox,
+            points,
+        });
+        self.apply(op.clone());
+        op
+    }
 
-    /// Erases `target` by `me`, applies the erase, and returns its op for broadcast.
+    /// Erases `target` by `me`, applies the erase and returns its op for broadcast.
     ///
-    /// The erase gets the next unused op id of `me`. `target` need not have arrived yet.
+    /// The erase gets an op id this board has never seen. `target` need not have arrived yet.
     #[must_use = "the op must be broadcast"]
-    fn erase(&mut self, me: PeerId, target: StrokeId) -> Op;
+    pub fn erase(&mut self, me: PeerId, target: StrokeId) -> Op {
+        let op = Op::Erase {
+            id: self.next_op_id(me),
+            target,
+        };
+        self.apply(op.clone());
+        op
+    }
 
     /// Applies any op, local or remote, and returns whether the visible picture changed.
     ///
-    /// A duplicate op changes nothing and returns `false`.
-    fn apply(&mut self, op: Op) -> bool;
+    /// Idempotent and order-independent. An erase hides its target for good, even if the
+    /// target's Add arrives later.
+    pub fn apply(&mut self, op: Op) -> bool {
+        match op {
+            Op::Add(stroke) => self.add(stroke),
+            Op::Erase { id, target } => self.tombstone(id, target),
+        }
+    }
 
-    /// Unions `other`, a replica of the same board, into this one: afterwards this replica holds
-    /// every stroke and erase that either held.
-    fn merge(&mut self, other: &Self);
+    /// Unions `other`, a replica of the same board, into this one.
+    ///
+    /// Commutative, associative and idempotent.
+    pub fn merge(&mut self, other: &Self) {
+        for (id, stroke) in &other.strokes {
+            if !self.strokes.contains_key(id) {
+                self.add(stroke.clone());
+            }
+        }
+        for (&id, &target) in &other.erases {
+            self.tombstone(id, target);
+        }
+    }
 
-    /// Strokes that were added and not erased, bottom first: sorted by `(lamport, peer)`.
-    fn visible(&self) -> impl Iterator<Item = &Stroke>;
+    /// Strokes added and not erased, bottom first: sorted by `(lamport, peer)`.
+    pub fn visible(&self) -> impl Iterator<Item = &Stroke> {
+        // Ties in `(lamport, peer)`, which only unvalidated foreign ops create, break by `seq`.
+        self.order.iter().filter_map(|(_, id)| self.strokes.get(id))
+    }
 
-    /// The 128-bit hash of the canonical state, maintained as ops arrive (guarantee 6).
+    /// A 128-bit hash of every stroke id ever added plus every erased target.
+    ///
+    /// Independent of op order, updated in O(1) per new item, unchanged by duplicate adds and
+    /// repeated erases; boards with equal state have equal hashes.
     #[must_use]
-    fn state_hash(&self) -> u128;
+    pub fn state_hash(&self) -> u128 {
+        self.hash.value()
+    }
 
-    /// Every erase op held, as `(op id, target)`, each exactly once, in no promised order.
-    fn erase_ops(&self) -> impl Iterator<Item = (OpId, StrokeId)>;
+    fn add(&mut self, stroke: Stroke) -> bool {
+        let id = stroke.id;
+        self.observe(id);
+        self.max_lamport = self.max_lamport.max(stroke.lamport.0);
+        if self.strokes.contains_key(&id) {
+            return false;
+        }
+        let key = (stroke.lamport, id);
+        self.strokes.insert(id, stroke);
+        self.hash.insert_added(id);
+        !self.tombstones.contains(&id) && self.order.insert(key)
+    }
+
+    fn tombstone(&mut self, id: OpId, target: StrokeId) -> bool {
+        self.observe(id);
+        // Taken before its Add arrives, or `draw` could reuse it and be born erased.
+        self.observe(target);
+        self.erases.insert(id, target);
+        if !self.tombstones.insert(target) {
+            return false;
+        }
+        self.hash.insert_tombstoned(target);
+        self.strokes
+            .get(&target)
+            .is_some_and(|stroke| self.order.remove(&(stroke.lamport, target)))
+    }
+
+    fn observe(&mut self, id: OpId) {
+        let next = self.next_seq.entry(id.peer).or_default();
+        // Saturates only on a foreign `seq` of `u64::MAX`.
+        *next = (*next).max(id.seq.saturating_add(1));
+    }
+
+    fn next_op_id(&self, me: PeerId) -> OpId {
+        OpId::new(me, self.next_seq.get(&me).copied().unwrap_or_default())
+    }
+}
+
+// Reads the private erase map: kept erase ops are not part of the public API.
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use super::Board;
+    use crate::{Aabb, EncodedPoints, Lamport, Op, OpId, PeerId, Rgba, Stroke, WorldPos};
+
+    const TARGET: OpId = OpId::new(PeerId(0), 0);
+    const ERASE: OpId = OpId::new(PeerId(1), 0);
+    const ERASE_AGAIN: OpId = OpId::new(PeerId(2), 0);
+    const ORIGIN: WorldPos = WorldPos::new(0, 0);
+
+    #[test]
+    fn retains_erase_ops_with_op_id_and_target() {
+        let expected = BTreeMap::from([(ERASE, TARGET), (ERASE_AGAIN, TARGET)]);
+
+        let mut erased = Board::new();
+        for (&id, &target) in &expected {
+            erased.apply(Op::Erase { id, target });
+        }
+        assert_eq!(erased.erases, expected, "erase before add, through apply");
+
+        let mut merged = Board::new();
+        merged.merge(&erased);
+        assert_eq!(merged.erases, expected, "erase before add, through merge");
+
+        merged.apply(Op::Add(Stroke {
+            id: TARGET,
+            lamport: Lamport(1),
+            color: Rgba([0, 0, 0, 255]),
+            width: 1,
+            bbox: Aabb::new(ORIGIN, ORIGIN),
+            points: EncodedPoints(Vec::new()),
+        }));
+        assert_eq!(merged.erases, expected, "after the add");
+    }
 }

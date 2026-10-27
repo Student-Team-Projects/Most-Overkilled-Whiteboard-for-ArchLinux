@@ -1,6 +1,6 @@
 //! What a board built from some ops must hold, computed from the ops alone.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use wb_core::{Lamport, Op, OpId, Stroke};
 
@@ -15,7 +15,12 @@ fn strokes(ops: &[Op]) -> impl Iterator<Item = &Stroke> {
 }
 
 fn erase_targets(ops: &[Op]) -> BTreeSet<OpId> {
-    erase_ops(ops).into_values().collect()
+    ops.iter()
+        .filter_map(|op| match op {
+            Op::Erase { target, .. } => Some(*target),
+            Op::Add(_) => None,
+        })
+        .collect()
 }
 
 /// Unerased strokes sorted by `(lamport, peer, seq)`.
@@ -39,16 +44,6 @@ pub fn canonical(ops: &[Op]) -> Vec<Op> {
         .zip(erase_targets(ops))
         .map(|(seq, target)| Op::erase(OpId::new(CANONICAL_ERASER, seq), target));
     adds.chain(erases).collect()
-}
-
-/// Every erase op: its id → its target.
-pub fn erase_ops(ops: &[Op]) -> BTreeMap<OpId, OpId> {
-    ops.iter()
-        .filter_map(|op| match op {
-            Op::Erase { id, target } => Some((*id, *target)),
-            Op::Add(_) => None,
-        })
-        .collect()
 }
 
 /// Every id the ops use: op ids and erase targets.

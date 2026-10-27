@@ -1,9 +1,9 @@
-//! Builders for ops and boards, and a hasher that makes `state_hash` countable.
+//! Builders for ops and boards.
 
 pub mod oracle;
 pub mod strategy;
 
-use wb_core::{Board, EncodedPoints, ItemHasher, Lamport, Op, OpId, PeerId, Stroke};
+use wb_core::{Board, EncodedPoints, Lamport, Op, OpId, PeerId, Stroke};
 
 use super::config::{BBOX, COLOR, WIDTH};
 
@@ -53,8 +53,8 @@ impl OpExt for Op {
     }
 }
 
-/// Shorthands for building and comparing boards of any impl.
-pub trait BoardExt: Board {
+/// Shorthands for building and comparing boards.
+pub trait BoardExt {
     /// A board with `ops` applied in order.
     fn of(ops: &[Op]) -> Self;
     /// A new board with `self`, then `other`, merged into it.
@@ -65,9 +65,9 @@ pub trait BoardExt: Board {
     fn draw_any(&mut self, me: PeerId) -> Stroke;
 }
 
-impl<B: Board> BoardExt for B {
+impl BoardExt for Board {
     fn of(ops: &[Op]) -> Self {
-        let mut board = Self::default();
+        let mut board = Board::new();
         for op in ops {
             board.apply(op.clone());
         }
@@ -75,7 +75,7 @@ impl<B: Board> BoardExt for B {
     }
 
     fn merged(&self, other: &Self) -> Self {
-        let mut board = Self::default();
+        let mut board = Board::new();
         board.merge(self);
         board.merge(other);
         board
@@ -90,14 +90,5 @@ impl<B: Board> BoardExt for B {
             Op::Add(stroke) => stroke,
             Op::Erase { .. } => unreachable!("draw returns an Add"),
         }
-    }
-}
-
-/// Hashes every item to 1, so a board's `state_hash` is the number of items it hashed.
-pub struct CountingHasher;
-
-impl ItemHasher for CountingHasher {
-    fn hash128(_: &[u8]) -> u128 {
-        1
     }
 }

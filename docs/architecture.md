@@ -79,7 +79,7 @@ oracle on random inputs, and must show a benchmark win, before it replaces layer
 
 | Crate | Contents | Depends on |
 |---|---|---|
-| `wb-core` | geometry, `Stroke`, `StrokeId`, `Board` seam (CRDT state + `merge`), ops, pages, `StrokeCodec` + postcard format, `SpatialIndex` seam | serde, postcard, xxhash-rust |
+| `wb-core` | geometry, `Stroke`, `StrokeId`, `Board` CRDT state + `merge`, ops, pages, `StrokeCodec` + postcard format, `SpatialIndex` seam | serde, postcard, xxhash-rust |
 | `wb-net` | sans-IO protocol, `Transport` seam + UDP/Sim drivers, discovery, broadcast, anti-entropy, deterministic sim module and `wb-sim` binary | core |
 | `wb-app` | the binary: eframe window, tools, menu + connect modal, threads, save/load, join flow, `Camera`, `StrokeRenderer` + `StrokeCache`, chunks, PDF export | core, net, eframe/egui |
 
@@ -89,7 +89,6 @@ Rule: `wb-core` knows nothing about IO, egui or sockets; sockets and threads liv
 
 | Seam | Layer 0 (simple) | Later layer (fast) |
 |---|---|---|
-| `Board` | `TombstoneBoard`: ordered maps of strokes, erase ops and tombstones | — |
 | `SpatialIndex` | `Vec` + linear scan | quadtree |
 | `StrokeRenderer` | egui painter, every visible stroke, every frame | cached chunk meshes → chunk textures (wgpu) |
 | `StrokeCache` | `DecodeAll`: unpack once on arrival, keep all | `ChunkWorkingSet`: resident chunks + margin, byte budget |
