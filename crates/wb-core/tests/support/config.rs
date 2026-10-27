@@ -1,7 +1,7 @@
 //! Named parameters of the tests.
 
-/// Stroke ids in a generated session come from a pool this big: large enough that a session holds
-/// dozens of strokes at once, small enough that inserts often replace and removes often hit.
+/// Distinct stroke ids in a generated session: few enough that inserts often replace and removes
+/// often hit.
 pub const ID_POOL: u64 = 64;
 
 /// Most steps in one generated session.
