@@ -131,7 +131,7 @@ fn origin() -> impl Strategy<Value = WorldPos> {
     (strategy::coordinate(1), strategy::coordinate(1)).prop_map(|(x, y)| WorldPos::new(x, y))
 }
 
-/// Offsets near zero, or wide ones that need 5 bytes yet keep consecutive steps within `i32`.
+/// Offsets near zero, or wide ones that mostly need 5 bytes yet keep consecutive steps within `i32`.
 fn offset() -> impl Strategy<Value = [i32; 2]> {
     let axis = prop_oneof![-NEAR_ZERO..NEAR_ZERO, (1 - WIDE_OFFSET)..WIDE_OFFSET];
     [axis.clone(), axis]

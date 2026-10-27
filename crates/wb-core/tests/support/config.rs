@@ -15,7 +15,7 @@ pub const LONG_STROKE: u16 = 300;
 /// 1-byte varint.
 pub const NEAR_ZERO: i32 = 64;
 
-/// Generated wide offsets lie within `±WIDE_OFFSET`: each needs a 5-byte varint, yet the step
+/// Generated wide offsets lie within `±WIDE_OFFSET`: most need a 5-byte varint, yet the step
 /// between two of them still fits `i32`.
 pub const WIDE_OFFSET: i32 = 1 << 30;
 
