@@ -1,21 +1,20 @@
 //! `StrokeCodec` laws, generic over the codec; `stroke_codec_conformance!` runs them on one.
 
 use proptest::prelude::*;
-use wb_core::{CodecError, EncodedPoints, StrokeCodec, WorldPos};
+use wb_core::{CodecError, EncodedPoints, Raw, StrokeCodec, WorldPos};
 
 use crate::support::codec::{edge_strokes, expand, near_path};
-use crate::support::config::{BUDGET, LONG_STROKE, WIDE_OFFSET};
+use crate::support::config::{BUDGET, LONG_STROKE, RAW_MIN_BUDGET, WIDE_OFFSET};
 
 /// Generates one test per law for `$codec`. `$tolerance` is its `simplify` tolerance in world
 /// units; `$min_budget` a budget from which `encode` must succeed on every stroke whose
 /// steps fit `i32`.
 macro_rules! stroke_codec_conformance {
-    ($codec:expr, tolerance = $tolerance:expr, min_budget = $min_budget:expr) => {
-        mod conformance {
+    ($name:ident, $codec:expr, tolerance = $tolerance:expr, min_budget = $min_budget:expr) => {
+        mod $name {
             use ::proptest::prelude::*;
 
             use super::*;
-            use $crate::conformance::codec as law;
             use $crate::support::codec::strategy;
             use $crate::support::config::FUZZ_LEN;
 
@@ -25,17 +24,17 @@ macro_rules! stroke_codec_conformance {
                     raw in strategy::stroke_or_empty(),
                     budget in strategy::any_budget(),
                 ) {
-                    law::round_trip_after_simplify(&$codec, &raw, budget)?;
+                    super::round_trip_after_simplify(&$codec, &raw, budget)?;
                 }
 
                 #[test]
                 fn within_tolerance(raw in strategy::stroke_or_empty()) {
-                    law::within_tolerance(&$codec, $tolerance, &raw)?;
+                    super::within_tolerance(&$codec, $tolerance, &raw)?;
                 }
 
                 #[test]
                 fn decode_fuzz(bytes in prop::collection::vec(any::<u8>(), 0..FUZZ_LEN)) {
-                    law::decode_fuzz(&$codec, bytes);
+                    super::decode_fuzz(&$codec, bytes);
                 }
 
                 #[test]
@@ -46,7 +45,7 @@ macro_rules! stroke_codec_conformance {
                     position in any::<prop::sample::Index>(),
                     byte in any::<u8>(),
                 ) {
-                    law::decode_fuzz_on_damaged_pieces(
+                    super::decode_fuzz_on_damaged_pieces(
                         &$codec, &raw, [which, cut, position], byte,
                     )?;
                 }
@@ -56,26 +55,28 @@ macro_rules! stroke_codec_conformance {
                     raw in strategy::stroke_or_empty(),
                     budget in strategy::workable_budget($min_budget),
                 ) {
-                    law::encode_split_join_and_pieces_fit_budget(&$codec, &raw, budget)?;
+                    super::encode_split_join_and_pieces_fit_budget(&$codec, &raw, budget)?;
                 }
             }
 
             #[test]
             fn encode_split_join_on_edge_strokes() -> Result<(), TestCaseError> {
-                law::encode_split_join_on_edge_strokes(&$codec, $min_budget)
+                super::encode_split_join_on_edge_strokes(&$codec, $min_budget)
             }
 
             #[test]
             fn encode_errors_for_too_small_budget_and_unsplittable_delta()
             -> Result<(), TestCaseError> {
-                law::encode_errors_for_too_small_budget_and_unsplittable_delta(&$codec, $min_budget)
+                super::encode_errors_for_too_small_budget_and_unsplittable_delta(
+                    &$codec,
+                    $min_budget,
+                )
             }
         }
     };
 }
 
-// A `macro_rules!` macro can be re-exported by path only up to `pub(crate)`.
-pub(crate) use stroke_codec_conformance;
+stroke_codec_conformance!(raw, Raw, tolerance = 0.0, min_budget = RAW_MIN_BUDGET);
 
 fn check_pieces_fit_and_join(
     codec: &impl StrokeCodec,

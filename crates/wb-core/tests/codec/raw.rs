@@ -1,13 +1,10 @@
-//! `Raw`: the conformance suite plus its own layout, split points, minimum budget and decoding.
+//! `Raw`'s own tests: layout, split points, minimum budget and decoding.
 
 use proptest::prelude::*;
 use wb_core::{CodecError, EncodedPoints, Raw, StrokeCodec, StrokePoints, WorldPos};
 
-use crate::conformance::codec::stroke_codec_conformance;
 use crate::support::codec::{expand, strategy};
 use crate::support::config::{BUDGET, LONG_STROKE, NEAR_ZERO, RAW_MIN_BUDGET, WIDE_OFFSET};
-
-stroke_codec_conformance!(Raw, tolerance = 0.0, min_budget = RAW_MIN_BUDGET);
 
 #[test]
 fn splits_at_the_last_point_whose_offset_fits_i32() {
