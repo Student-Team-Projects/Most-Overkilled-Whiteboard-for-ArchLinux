@@ -1,6 +1,4 @@
-//! The `StrokeCodec` conformance suite: every law is a function generic over the codec, and
-//! `stroke_codec_conformance!` turns each into a test for one codec. Each law names the
-//! contract guarantee it checks.
+//! `StrokeCodec` laws, generic over the codec; `stroke_codec_conformance!` runs them on one.
 
 use proptest::prelude::*;
 use wb_core::{CodecError, EncodedPoints, StrokeCodec, WorldPos};
@@ -8,9 +6,9 @@ use wb_core::{CodecError, EncodedPoints, StrokeCodec, WorldPos};
 use crate::support::codec::{edge_strokes, expand, near_path};
 use crate::support::config::{BUDGET, LONG_STROKE, WIDE_OFFSET};
 
-/// Generates `mod conformance` with one test per law for `$codec`. Test parameters: `$tolerance`
-/// is the codec's `simplify` tolerance in world units, and `$min_budget` the budget in bytes from
-/// which the codec promises that `encode` succeeds on every stroke without an unsplittable step.
+/// Generates one test per law for `$codec`. `$tolerance` is its `simplify` tolerance in world
+/// units; `$min_budget` a budget from which `encode` must succeed on every stroke whose
+/// steps fit `i32`.
 macro_rules! stroke_codec_conformance {
     ($codec:expr, tolerance = $tolerance:expr, min_budget = $min_budget:expr) => {
         mod conformance {
@@ -79,10 +77,7 @@ macro_rules! stroke_codec_conformance {
 // A `macro_rules!` macro can be re-exported by path only up to `pub(crate)`.
 pub(crate) use stroke_codec_conformance;
 
-/// Guarantees 1 and 4 on `encode`'s pieces of `points`: at least one piece, each within
-/// `budget`, each one after the first starting where the previous one ends, joined back into
-/// exactly `points`.
-fn check_pieces(
+fn check_pieces_fit_and_join(
     codec: &impl StrokeCodec,
     points: &[WorldPos],
     budget: usize,
@@ -112,7 +107,7 @@ fn check_pieces(
     Ok(())
 }
 
-/// Guarantee 1, at any budget: `Ok` round-trips, and the only `Err` is a too-small budget.
+/// At any budget the only error is a too-small budget.
 pub fn round_trip_after_simplify(
     codec: &impl StrokeCodec,
     raw: &[WorldPos],
@@ -120,7 +115,7 @@ pub fn round_trip_after_simplify(
 ) -> Result<(), TestCaseError> {
     let points = codec.simplify(raw);
     match codec.encode(&points, budget) {
-        Ok(pieces) => check_pieces(codec, &points, budget, &pieces),
+        Ok(pieces) => check_pieces_fit_and_join(codec, &points, budget, &pieces),
         Err(error) => {
             prop_assert_eq!(error, CodecError::BudgetTooSmall);
             Ok(())
@@ -128,8 +123,6 @@ pub fn round_trip_after_simplify(
     }
 }
 
-/// Guarantee 2: endpoints kept, every raw point within `tolerance` world units of the result;
-/// an empty stroke simplifies to an empty one.
 pub fn within_tolerance(
     codec: &impl StrokeCodec,
     tolerance: f64,
@@ -147,13 +140,12 @@ pub fn within_tolerance(
     Ok(())
 }
 
-/// Guarantee 3: any bytes decode to `Ok` or `Err`, never a panic.
 pub fn decode_fuzz(codec: &impl StrokeCodec, bytes: Vec<u8>) {
     let _ = codec.decode(&EncodedPoints(bytes));
 }
 
-/// Guarantee 3 on bytes close to valid: the piece picked by `which`, cut short at `cut`, and
-/// with the byte at `position` replaced by `byte`.
+/// Decodes one of `raw`'s pieces cut short at `cut`, and the same piece with the byte at
+/// `position` replaced by `byte`.
 pub fn decode_fuzz_on_damaged_pieces(
     codec: &impl StrokeCodec,
     raw: &[WorldPos],
@@ -175,8 +167,6 @@ pub fn decode_fuzz_on_damaged_pieces(
     Ok(())
 }
 
-/// Guarantees 1 and 4: within `encode`'s preconditions it succeeds, and its pieces fit the
-/// budget, share endpoints and join back to the simplified stroke.
 pub fn encode_split_join_and_pieces_fit_budget(
     codec: &impl StrokeCodec,
     raw: &[WorldPos],
@@ -184,10 +174,9 @@ pub fn encode_split_join_and_pieces_fit_budget(
 ) -> Result<(), TestCaseError> {
     let points = codec.simplify(raw);
     let pieces = codec.encode(&points, budget)?;
-    check_pieces(codec, &points, budget, &pieces)
+    check_pieces_fit_and_join(codec, &points, budget, &pieces)
 }
 
-/// Guarantees 1 and 4 on strokes at the limits, at the codec's minimum and the real budget.
 pub fn encode_split_join_on_edge_strokes(
     codec: &impl StrokeCodec,
     min_budget: usize,
@@ -201,11 +190,9 @@ pub fn encode_split_join_on_edge_strokes(
     Ok(())
 }
 
-/// Guarantee 5, and `Err` only as it says:
-/// - every budget below the smallest that works is `BudgetTooSmall`; that smallest budget fits
-///   the stroke exactly as guarantees 1 and 4 require, and is no larger than a single piece;
-/// - a consecutive step too long for `i32` is `UnsplittableDelta` at any budget, even where the
-///   offsets from the first point would fit.
+/// Every budget below the smallest that works is `BudgetTooSmall`, and that smallest is no
+/// larger than the stroke's single piece. A step too long for `i32` is `UnsplittableDelta` at
+/// any budget, even where the offsets from the first point would fit.
 pub fn encode_errors_for_too_small_budget_and_unsplittable_delta(
     codec: &impl StrokeCodec,
     min_budget: usize,

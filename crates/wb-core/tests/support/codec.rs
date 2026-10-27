@@ -4,8 +4,7 @@ use wb_core::{StrokePoints, WorldPos};
 
 use super::config::LONG_STROKE;
 
-/// The world points of a decoded piece, its origin plus each offset; `None` if one overflows
-/// `i64`.
+/// The world points of a decoded piece; `None` if one overflows `i64`.
 pub fn expand(piece: &StrokePoints) -> Option<Vec<WorldPos>> {
     let origin = piece.origin;
     piece
@@ -19,8 +18,7 @@ pub fn expand(piece: &StrokePoints) -> Option<Vec<WorldPos>> {
         .collect()
 }
 
-/// Strokes at the limits of `encode`'s preconditions: no point, one point, the `i64` extremes,
-/// repeated points, and steps of exactly `i32::MIN` and `i32::MAX`.
+/// Strokes at the limits of `encode`'s preconditions.
 pub fn edge_strokes() -> Vec<Vec<WorldPos>> {
     let at = WorldPos::new;
     let (min, max) = (i64::MIN, i64::MAX);
@@ -85,9 +83,8 @@ pub mod strategy {
         ]
     }
 
-    /// Strokes within `encode`'s preconditions: random walks whose steps all fit `i32`, from
-    /// near the origin or anywhere up to the `i64` extremes. Mostly small steps, so pieces fill
-    /// past 127 points; rare full-range steps make offsets overflow `i32` and force splits.
+    /// Random walks whose steps all fit `i32`. Mostly small steps, so pieces pass 127 points;
+    /// rare full-range ones make offsets from a piece's origin overflow `i32` and force splits.
     pub fn stroke() -> impl Strategy<Value = Vec<WorldPos>> {
         let step = prop_oneof![
             99 => (-NEAR_ZERO..NEAR_ZERO).prop_map(i64::from),
@@ -106,18 +103,14 @@ pub mod strategy {
         })
     }
 
-    /// Strokes as above, plus the empty stroke.
     pub fn stroke_or_empty() -> impl Strategy<Value = Vec<WorldPos>> {
         prop_oneof![1 => Just(Vec::new()), 9 => stroke()]
     }
 
-    /// Any budget, including ones too small for a single piece.
     pub fn any_budget() -> impl Strategy<Value = usize> {
         0..=BUDGET
     }
 
-    /// Budgets from `min_budget`, the budget from which a codec promises `encode` succeeds, up
-    /// to the real one; `min_budget` must not exceed [`BUDGET`].
     pub fn workable_budget(min_budget: usize) -> impl Strategy<Value = usize> {
         assert!(
             min_budget <= BUDGET,

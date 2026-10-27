@@ -3,9 +3,9 @@
 /// The real piece budget in bytes: about one datagram.
 pub const BUDGET: usize = 1200;
 
-/// The largest two-point `Raw` piece in bytes, from which `Raw` always encodes: a 10-byte varint
-/// per origin axis, a 1-byte length, the first point's `[0, 0]` offset (2 bytes) and a 5-byte
-/// varint per axis of the second offset.
+/// The largest two-point `Raw` piece in bytes, from which `Raw` never returns `BudgetTooSmall`:
+/// a 10-byte varint per origin axis, a 1-byte length, the first point's `[0, 0]` offset (2 bytes)
+/// and a 5-byte varint per axis of the second offset.
 pub const RAW_MIN_BUDGET: usize = 10 + 10 + 1 + 2 + 5 + 5;
 
 /// Points in a long test stroke: past 127, so postcard needs a 2-byte length prefix.
@@ -19,5 +19,5 @@ pub const NEAR_ZERO: i32 = 64;
 /// between two of them still fits `i32`.
 pub const WIDE_OFFSET: i32 = 1 << 30;
 
-/// Most random bytes fed to `decode`.
+/// Exclusive upper bound on the length of random bytes fed to `decode`.
 pub const FUZZ_LEN: usize = 256;

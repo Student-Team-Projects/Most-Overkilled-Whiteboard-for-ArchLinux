@@ -1,4 +1,4 @@
-//! Stroke codec tests beyond the shared conformance suite.
+//! Stroke codec tests beyond the conformance suite.
 
 mod near_path;
 mod raw;

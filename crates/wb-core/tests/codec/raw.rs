@@ -1,5 +1,4 @@
-//! `Raw` passes the shared `StrokeCodec` suite; the tests below pin its own layout, split points,
-//! minimum budget and strict decoding.
+//! `Raw`: the conformance suite plus its own layout, split points, minimum budget and decoding.
 
 use proptest::prelude::*;
 use wb_core::{CodecError, EncodedPoints, Raw, StrokeCodec, StrokePoints, WorldPos};
@@ -10,9 +9,8 @@ use crate::support::config::{BUDGET, LONG_STROKE, NEAR_ZERO, RAW_MIN_BUDGET, WID
 
 stroke_codec_conformance!(Raw, tolerance = 0.0, min_budget = RAW_MIN_BUDGET);
 
-/// Offsets that overflow `i32` from the origin split at the last point that still fits.
 #[test]
-fn splits_where_offset_overflows_i32() {
+fn splits_at_the_last_point_whose_offset_fits_i32() {
     let max = i64::from(i32::MAX);
     let points = [
         WorldPos::new(0, 0),
@@ -45,10 +43,9 @@ fn empty_stroke_is_one_piece_without_points() {
     );
 }
 
-/// A one-point stroke fits a budget of exactly its own size; a second point then needs a split
-/// that cannot happen, since every piece needs two points to make progress.
+/// A split piece repeats the shared point, so it needs room for two points.
 #[test]
-fn second_point_does_not_fit_a_one_point_budget() {
+fn two_points_at_a_one_point_budget_is_budget_too_small() {
     let dot = WorldPos::new(-5, 3);
     let size = Raw.encode(&[dot], BUDGET).unwrap()[0].0.len();
     assert!(Raw.encode(&[dot], size).is_ok());
@@ -58,7 +55,6 @@ fn second_point_does_not_fit_a_one_point_budget() {
     );
 }
 
-/// A length prefix far beyond the bytes present is an `Err`, not a huge allocation or a panic.
 #[test]
 fn decode_rejects_huge_length_prefix() {
     // Origin (0, 0), then a varint length of 2⁶³ and no offsets.
@@ -85,7 +81,6 @@ fn decode_rejects_trailing_bytes() {
     );
 }
 
-/// Such a piece would overflow `i64` when expanded; `encode` never writes one.
 #[test]
 fn decode_rejects_offsets_that_overflow_i64() {
     for (origin, offset) in [
@@ -101,10 +96,8 @@ fn decode_rejects_offsets_that_overflow_i64() {
     }
 }
 
-/// Every single-byte change of a piece at the `i64` extremes, where overflow is one byte away,
-/// either fails to decode or decodes to offsets that expand without overflowing `i64`.
 #[test]
-fn decode_never_yields_offsets_that_overflow_i64() {
+fn decode_of_any_byte_change_at_i64_extremes_never_overflows() {
     let (min, max) = (i64::MIN, i64::MAX);
     let extremes = [
         vec![WorldPos::new(max, max)],
@@ -126,22 +119,18 @@ fn decode_never_yields_offsets_that_overflow_i64() {
     }
 }
 
-/// An origin anywhere, from 1-byte varints near zero to 10-byte ones near the `i64` extremes.
 fn origin() -> impl Strategy<Value = WorldPos> {
     (strategy::coordinate(1), strategy::coordinate(1)).prop_map(|(x, y)| WorldPos::new(x, y))
 }
 
-/// Offsets near zero, or wide ones that mostly need 5 bytes yet keep consecutive steps within `i32`.
 fn offset() -> impl Strategy<Value = [i32; 2]> {
     let axis = prop_oneof![-NEAR_ZERO..NEAR_ZERO, (1 - WIDE_OFFSET)..WIDE_OFFSET];
     [axis.clone(), axis]
 }
 
 proptest! {
-    /// A piece fills the budget to the byte: the size `Raw` tracks equals postcard's output,
-    /// including length prefixes past 127 points and 10-byte origins.
     #[test]
-    fn fills_budget_exactly(
+    fn tracked_size_matches_postcard_to_the_byte(
         origin in origin(),
         offsets in prop::collection::vec(offset(), 0..usize::from(LONG_STROKE)),
     ) {
@@ -158,7 +147,6 @@ proptest! {
     }
 }
 
-/// `RAW_MIN_BUDGET` is exactly the largest two-point piece: 10-byte origins and 5-byte offsets.
 #[test]
 fn min_budget_is_the_largest_two_point_piece() {
     let (min, step) = (i64::MIN, i64::from(i32::MAX));

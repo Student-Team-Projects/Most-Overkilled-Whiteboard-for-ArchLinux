@@ -1,4 +1,4 @@
-//! Stroke codecs: turn a stroke's world points into compact bytes and back.
+//! The `StrokeCodec` trait and its codecs.
 
 mod raw;
 
@@ -6,43 +6,23 @@ pub use raw::Raw;
 
 use crate::{EncodedPoints, StrokePoints, WorldPos};
 
-/// Turns a stroke's world points into encoded pieces and back.
-///
-/// The author first calls [`simplify`](Self::simplify), then [`encode`](Self::encode)s its
-/// result. A stroke too large for one piece is split into several; each fits the byte budget on
-/// its own, and each piece after the first starts with the last point of the one before it.
-///
-/// Every codec keeps these guarantees:
-///
-/// - **Exact round trip after `simplify`.** When `encode` succeeds, decoding every piece,
-///   expanding each to origin plus offset, and joining them while dropping the point each piece
-///   repeats from the one before gives back exactly the points that were encoded.
-/// - `simplify` keeps the first and the last point, and every raw point lies within the codec's
-///   tolerance of the simplified path.
-/// - `decode` never panics, whatever the bytes.
-/// - A successful `encode` returns at least one piece.
-///
-/// Points that did not go through `simplify` may come back changed, and no compression ratio is
-/// promised. Codecs are not interchangeable on the wire: peers must use the same one, so changing
-/// the codec changes the protocol version.
-///
-/// See also: `docs/contracts/stroke-codec.md`.
+/// Turns a stroke's world points into byte pieces and back. Codecs are not interchangeable on
+/// the wire: every peer must use the same one.
 pub trait StrokeCodec {
-    /// Returns the lossy author-side reduction of `raw`: the first and last point are kept, and
-    /// every raw point lies within the codec's tolerance of the result. Empty in, empty out.
+    /// Returns a lossy reduction of `raw` to encode instead of it. Keeps the first and last
+    /// point, and every raw point lies within the codec's tolerance of the result.
     fn simplify(&self, raw: &[WorldPos]) -> Vec<WorldPos>;
 
-    /// Encodes `points` into one or more pieces of at most `budget` bytes each.
-    ///
-    /// The stroke is split where the budget or an `i32` offset from a piece's origin requires it;
-    /// the two pieces at a split share the point there.
+    /// Encodes `points` into at least one piece of at most `budget` bytes. Pieces split where the
+    /// budget or an `i32` offset requires it, and each piece after the first starts with the last
+    /// point of the one before. When `points` came from [`simplify`](Self::simplify), decoding the
+    /// pieces and dropping those repeated points gives them back exactly; other input may change.
     ///
     /// # Errors
     ///
-    /// - [`CodecError::UnsplittableDelta`] if two consecutive points are further apart than an
-    ///   `i32` offset reaches on some axis, so the stroke cannot be split at an existing point.
-    /// - [`CodecError::BudgetTooSmall`] if `budget` is smaller than the smallest single-piece
-    ///   encoding.
+    /// - [`CodecError::UnsplittableDelta`] if two consecutive points are too far apart for an
+    ///   `i32` offset.
+    /// - [`CodecError::BudgetTooSmall`] if `budget` is too small for a piece.
     fn encode(&self, points: &[WorldPos], budget: usize) -> Result<Vec<EncodedPoints>, CodecError>;
 
     /// Decodes one piece. Never panics, whatever the bytes.

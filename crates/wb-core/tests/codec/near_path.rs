@@ -1,5 +1,4 @@
-//! `near_path` decides whether a codec's `simplify` stays within its tolerance, so it is checked
-//! against exact cases.
+//! The `near_path` test helper against exact cases.
 
 use wb_core::WorldPos;
 
@@ -13,15 +12,14 @@ fn on_a_vertex_or_inside_a_segment() {
 }
 
 #[test]
-fn off_a_segment_by_its_perpendicular_distance() {
+fn beside_a_segment_measures_the_perpendicular_distance() {
     let path = [WorldPos::new(0, 0), WorldPos::new(10, 0)];
     assert!(near_path(WorldPos::new(5, 1), &path, 1.0));
     assert!(!near_path(WorldPos::new(5, 1), &path, 0.99));
 }
 
-/// Past a segment's end the distance is to the endpoint, not to the infinite line.
 #[test]
-fn past_the_end_of_a_segment() {
+fn past_the_end_of_a_segment_measures_to_the_endpoint() {
     let path = [WorldPos::new(0, 0), WorldPos::new(10, 0)];
     assert!(!near_path(WorldPos::new(12, 0), &path, 1.0));
     assert!(near_path(WorldPos::new(12, 0), &path, 2.0));
