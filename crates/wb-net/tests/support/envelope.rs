@@ -38,6 +38,31 @@ fn op() -> impl Strategy<Value = Op> {
     prop_oneof![add, erase]
 }
 
+/// Encoded datagram of a sync message for `board`.
+#[must_use]
+pub fn board_datagram(board: BoardId) -> Vec<u8> {
+    let body = Body::Board {
+        board,
+        msg: BoardMsg::Sync(vec![1, 2, 3]),
+    };
+    TestPacket::new(body).encode().unwrap_or_default()
+}
+
+/// Encoded datagram of a discovery message.
+#[must_use]
+pub fn discovery_datagram() -> Vec<u8> {
+    TestPacket::new(Body::Discovery(vec![4, 5]))
+        .encode()
+        .unwrap_or_default()
+}
+
+/// Any datagram an inbox may get: valid packets for random boards, and random bytes.
+pub fn datagram() -> impl Strategy<Value = Vec<u8>> {
+    let valid = packet().prop_map(|packet| packet.encode().unwrap_or_default());
+    let garbage = prop::collection::vec(any::<u8>(), 0..=MAX_PAYLOAD);
+    prop_oneof![valid, garbage]
+}
+
 /// Any packet of every shape: discovery, a board op, or board sync traffic.
 pub fn packet() -> impl Strategy<Value = TestPacket> {
     let bytes = || prop::collection::vec(any::<u8>(), 0..=MAX_PAYLOAD);

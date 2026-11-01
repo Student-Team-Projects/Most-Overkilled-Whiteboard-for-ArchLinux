@@ -1,5 +1,15 @@
 //! Named test parameters.
 
+use wb_core::BoardId;
+
+/// The board the inbox under test is on.
+pub const OURS: BoardId = BoardId([1; 8]);
+/// Some other board.
+pub const OTHER: BoardId = BoardId([2; 8]);
+
+/// Random inbox runs feed at most this many datagrams.
+pub const MAX_DATAGRAMS: usize = 32;
+
 /// Generated stroke points and sync payloads have at most this many bytes, so every generated
 /// packet fits in one datagram.
 pub const MAX_PAYLOAD: usize = 64;

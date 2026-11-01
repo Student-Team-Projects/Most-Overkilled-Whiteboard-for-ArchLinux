@@ -57,8 +57,8 @@ pub enum EncodeError {
     Serialize,
 }
 
-/// Why `Packet::decode` dropped a datagram. Checked in this order, so garbage never reaches
-/// postcard.
+/// Why a datagram was dropped. `Packet::decode` checks the first three in this order, so
+/// garbage never reaches postcard; `Inbox` adds `ForeignBoard`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
 pub enum Reject {
     /// The datagram does not start with `MAGIC`: not our protocol.
@@ -74,6 +74,48 @@ pub enum Reject {
     /// `Body`: truncated, corrupt, or with bytes left over.
     #[error("undecodable body")]
     Undecodable,
+    /// A valid board message for board `got`, not ours.
+    #[error("message for a foreign board")]
+    ForeignBoard {
+        /// Board the message was for.
+        got: BoardId,
+    },
+}
+
+/// A `Reject` without its data, to count drops by kind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Reason {
+    /// See `Reject::WrongMagic`.
+    WrongMagic,
+    /// See `Reject::UnknownVersion`.
+    UnknownVersion,
+    /// See `Reject::Undecodable`.
+    Undecodable,
+    /// See `Reject::ForeignBoard`.
+    ForeignBoard,
+}
+
+impl Reason {
+    /// Every reason, in `Reject` order.
+    pub const ALL: [Self; 4] = [
+        Self::WrongMagic,
+        Self::UnknownVersion,
+        Self::Undecodable,
+        Self::ForeignBoard,
+    ];
+}
+
+impl Reject {
+    /// The kind of this reject, without its data.
+    #[must_use]
+    pub const fn reason(&self) -> Reason {
+        match self {
+            Self::WrongMagic => Reason::WrongMagic,
+            Self::UnknownVersion { .. } => Reason::UnknownVersion,
+            Self::Undecodable => Reason::Undecodable,
+            Self::ForeignBoard { .. } => Reason::ForeignBoard,
+        }
+    }
 }
 
 impl<D, S> Packet<D, S> {
@@ -109,7 +151,8 @@ impl<D: DeserializeOwned, S: DeserializeOwned> Packet<D, S> {
     ///
     /// # Errors
     ///
-    /// The first `Reject` reason that applies, checked in its listed order.
+    /// The first `Reject` reason that applies, checked in its listed order; never `ForeignBoard`,
+    /// since a packet does not know which board the reader is on.
     pub fn decode(datagram: &[u8]) -> Result<Self, Reject> {
         let Some(rest) = datagram.strip_prefix(&MAGIC) else {
             return Err(Reject::WrongMagic);
