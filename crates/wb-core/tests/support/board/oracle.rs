@@ -42,7 +42,7 @@ pub fn canonical(ops: &[Op]) -> Vec<Op> {
     let adds = adds.map(|stroke| Op::Add(stroke.clone()));
     let erases = (0..)
         .zip(erase_targets(ops))
-        .map(|(seq, target)| Op::erase(OpId::new(CANONICAL_ERASER, seq), target));
+        .map(|(seq, target)| Op::erasure(OpId::new(CANONICAL_ERASER, seq), target));
     adds.chain(erases).collect()
 }
 

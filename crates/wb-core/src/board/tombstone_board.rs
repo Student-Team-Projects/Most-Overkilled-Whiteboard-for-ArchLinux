@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use super::Board;
 use super::state_hash::StateHash;
-use crate::{Aabb, EncodedPoints, Lamport, Op, OpId, PeerId, Rgba, Stroke, StrokeId};
+use crate::{Lamport, Op, OpId, PeerId, Stamp, Stroke, StrokeId};
 
 /// Keeps every stroke ever added and every erase, and hides the erased strokes.
 #[derive(Debug, Default)]
@@ -40,7 +40,7 @@ impl TombstoneBoard {
 
     fn tombstone(&mut self, id: OpId, target: StrokeId) -> bool {
         self.observe(id);
-        // Taken before its Add arrives, or `draw` could reuse it and be born erased.
+        // Taken before its Add arrives, or `stamp` could reuse it and be born erased.
         self.observe(target);
         self.erases.insert(id, target);
         if !self.tombstones.insert(target) {
@@ -57,41 +57,18 @@ impl TombstoneBoard {
         // Saturates only on a foreign `seq` of `u64::MAX`.
         *next = (*next).max(id.seq.saturating_add(1));
     }
-
-    fn next_op_id(&self, me: PeerId) -> OpId {
-        OpId::new(me, self.next_seq.get(&me).copied().unwrap_or_default())
-    }
 }
 
 impl Board for TombstoneBoard {
-    fn draw(
-        &mut self,
-        me: PeerId,
-        color: Rgba,
-        width: u32,
-        points: EncodedPoints,
-        bbox: Aabb,
-    ) -> Op {
-        let op = Op::Add(Stroke {
-            id: self.next_op_id(me),
-            // Saturates only after an unvalidated foreign op with Lamport `u64::MAX`.
-            lamport: Lamport(self.max_lamport.saturating_add(1)),
-            color,
-            width,
-            bbox,
-            points,
-        });
-        self.apply(op.clone());
-        op
-    }
-
-    fn erase(&mut self, me: PeerId, target: StrokeId) -> Op {
-        let op = Op::Erase {
-            id: self.next_op_id(me),
-            target,
-        };
-        self.apply(op.clone());
-        op
+    fn stamp(&mut self, me: PeerId) -> Stamp {
+        let id = OpId::new(me, self.next_seq.get(&me).copied().unwrap_or_default());
+        self.observe(id);
+        // Saturates only after an unvalidated foreign op with Lamport `u64::MAX`.
+        self.max_lamport = self.max_lamport.saturating_add(1);
+        Stamp {
+            id,
+            lamport: Lamport(self.max_lamport),
+        }
     }
 
     fn apply(&mut self, op: Op) -> bool {

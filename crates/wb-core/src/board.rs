@@ -5,33 +5,20 @@ mod tombstone_board;
 
 pub use tombstone_board::TombstoneBoard;
 
-use crate::{Aabb, EncodedPoints, Op, PeerId, Rgba, Stroke, StrokeId};
+use crate::{Op, PeerId, Stamp, Stroke};
 
 /// One peer's replica of a shared board.
 ///
-/// Ops can arrive in any order and any number of times; replicas that saw the same ops show the
-/// same picture. The board never decodes stroke points, and nothing fails or panics.
+/// Every op goes in through `apply`, local or remote. Ops can arrive in any order and any number
+/// of times; replicas that saw the same ops show the same picture. The board never decodes
+/// stroke points, and nothing fails or panics.
 pub trait Board: Default {
-    /// Draws a stroke by `me`, applies it and returns its Add op for broadcast.
+    /// Reserves a fresh op id for `me` and a Lamport above every one this board has seen.
     ///
-    /// Its Lamport is above every one this board has seen, so it lies on top, and its op id is
-    /// one this board has never seen, as an op or as an erase target. `bbox` must cover `points`;
-    /// it is not checked.
-    #[must_use = "the op must be broadcast"]
-    fn draw(
-        &mut self,
-        me: PeerId,
-        color: Rgba,
-        width: u32,
-        points: EncodedPoints,
-        bbox: Aabb,
-    ) -> Op;
-
-    /// Erases `target` by `me`, applies the erase and returns its op for broadcast.
-    ///
-    /// The erase gets an op id this board has never seen. `target` need not have arrived yet.
-    #[must_use = "the op must be broadcast"]
-    fn erase(&mut self, me: PeerId, target: StrokeId) -> Op;
+    /// Build the local op from it with `Op::add` or `Op::erase`, then `apply` it. A stamp is
+    /// never handed out twice, even if its op is never applied. Its id is one this board has
+    /// never seen, as an op or as an erase target; its Lamport puts a new stroke on top.
+    fn stamp(&mut self, me: PeerId) -> Stamp;
 
     /// Applies any op, local or remote, and returns whether the visible picture changed.
     ///

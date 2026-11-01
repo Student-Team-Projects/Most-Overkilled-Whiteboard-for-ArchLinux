@@ -5,12 +5,7 @@ use proptest::prelude::*;
 use wb_core::{Op, OpId};
 
 use super::{OpExt, OpIdExt};
-use crate::support::config::{LAMPORTS, PEERS, TARGETS, UNIVERSE};
-
-/// Universe op `i` has id `(i % PEERS, i)`.
-fn universe_id(i: u64) -> OpId {
-    OpId::of(i % PEERS, i)
-}
+use crate::support::config::{LAMPORTS, TARGETS, UNIVERSE};
 
 /// A universe of ops, in id order.
 pub fn ops() -> impl Strategy<Value = Vec<Op>> {
@@ -20,9 +15,9 @@ pub fn ops() -> impl Strategy<Value = Vec<Op>> {
             .zip(specs)
             .map(|(i, (is_add, lamport, target))| {
                 if is_add {
-                    Op::add(universe_id(i), lamport)
+                    Op::stroke(OpId::universe(i), lamport)
                 } else {
-                    Op::erase(universe_id(i), universe_id(target))
+                    Op::erasure(OpId::universe(i), OpId::universe(target))
                 }
             })
             .collect()

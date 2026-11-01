@@ -129,6 +129,47 @@ pub enum Op {
     },
 }
 
+impl Op {
+    /// Builds the Add of a new stroke with the id and Lamport of `stamp`.
+    ///
+    /// `bbox` must cover `points`; it is not checked.
+    #[must_use]
+    pub const fn add(
+        stamp: Stamp,
+        color: Rgba,
+        width: u32,
+        points: EncodedPoints,
+        bbox: Aabb,
+    ) -> Self {
+        Self::Add(Stroke {
+            id: stamp.id,
+            lamport: stamp.lamport,
+            color,
+            width,
+            bbox,
+            points,
+        })
+    }
+
+    /// Builds the erase of `target` with the id of `stamp`; an erase has no Lamport.
+    #[must_use]
+    pub const fn erase(stamp: Stamp, target: StrokeId) -> Self {
+        Self::Erase {
+            id: stamp.id,
+            target,
+        }
+    }
+}
+
+/// A fresh op id and Lamport for one local op, reserved by a board.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Stamp {
+    /// Id of the new op.
+    pub id: OpId,
+    /// Lamport of the new op, above every one the board had seen.
+    pub lamport: Lamport,
+}
+
 /// Injected milliseconds supplied by a driver, never read from the OS.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Time(

@@ -32,8 +32,8 @@ macro_rules! board_conformance {
                 }
 
                 #[test]
-                fn draw_after_merge_is_on_top(ops in strategy::replicas()) {
-                    super::draw_after_merge_is_on_top::<$board>(&ops)?;
+                fn stamp_after_merge_is_on_top(ops in strategy::replicas()) {
+                    super::stamp_after_merge_is_on_top::<$board>(&ops)?;
                 }
 
                 #[test]
@@ -52,8 +52,13 @@ macro_rules! board_conformance {
             }
 
             #[test]
-            fn draw_skips_ids_of_erase_targets() {
-                super::draw_skips_ids_of_erase_targets::<$board>();
+            fn stamp_skips_ids_of_erase_targets() {
+                super::stamp_skips_ids_of_erase_targets::<$board>();
+            }
+
+            #[test]
+            fn unapplied_stamps_never_repeat() {
+                super::unapplied_stamps_never_repeat::<$board>();
             }
         }
     };
@@ -94,8 +99,8 @@ fn apply_any_permutation<B: Board>(ops: &[Op], delivered: &[Op]) -> Result<(), T
 }
 
 fn erase_before_add<B: Board>() {
-    let stroke = Op::add(OpId::of(0, 0), 1);
-    let erasure = Op::erase(OpId::of(0, 1), OpId::of(0, 0));
+    let stroke = Op::stroke(OpId::of(0, 0), 1);
+    let erasure = Op::erasure(OpId::of(0, 1), OpId::of(0, 0));
 
     let mut board = B::default();
     assert!(!board.apply(erasure.clone()));
@@ -114,7 +119,7 @@ fn visible_is_sorted<B: Board>(ops: &[Op]) -> Result<(), TestCaseError> {
     Ok(())
 }
 
-fn draw_after_merge_is_on_top<B: Board>([a, b, _]: &[Vec<Op>; 3]) -> Result<(), TestCaseError> {
+fn stamp_after_merge_is_on_top<B: Board>([a, b, _]: &[Vec<Op>; 3]) -> Result<(), TestCaseError> {
     let seen = [&a[..], &b[..]].concat();
     let mut board = B::of(a).merged(&B::of(b));
     let first = board.draw_any(ME);
@@ -132,14 +137,23 @@ fn draw_after_merge_is_on_top<B: Board>([a, b, _]: &[Vec<Op>; 3]) -> Result<(), 
     Ok(())
 }
 
-/// An erase target whose Add has not arrived is an id `draw` must not reuse, or the new stroke
+/// An erase target whose Add has not arrived is an id `stamp` must not reuse, or the new stroke
 /// would be born erased.
-fn draw_skips_ids_of_erase_targets<B: Board>() {
+fn stamp_skips_ids_of_erase_targets<B: Board>() {
     let target = OpId::new(ME, 0);
-    let mut board = B::of(&[Op::erase(OpId::of(0, 0), target)]);
+    let mut board = B::of(&[Op::erasure(OpId::of(0, 0), target)]);
     let stroke = board.draw_any(ME);
     assert_ne!(stroke.id, target);
     assert_eq!(board.visible().last(), Some(&stroke));
+}
+
+/// A stamp whose op is dropped is still spent: the next one has a new id and a higher Lamport.
+fn unapplied_stamps_never_repeat<B: Board>() {
+    let mut board = B::default();
+    let first = board.stamp(ME);
+    let second = board.stamp(ME);
+    assert_ne!(first.id, second.id);
+    assert!(second.lamport > first.lamport);
 }
 
 fn state_hash_tracks_canonical_state_and_matches_equal_boards<B: Board>(

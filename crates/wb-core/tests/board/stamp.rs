@@ -1,6 +1,6 @@
-//! Op ids `TombstoneBoard` hands out: numbered from zero, and saturated by foreign counters.
+//! Stamps `TombstoneBoard` hands out: numbered from zero, and saturated by foreign counters.
 
-use wb_core::{Board, Op, OpId, TombstoneBoard};
+use wb_core::{Op, OpId, TombstoneBoard};
 
 use crate::support::board::{BoardExt, OpExt, OpIdExt};
 use crate::support::config::ME;
@@ -19,7 +19,7 @@ fn numbers_own_ops_from_zero() {
 
 #[test]
 fn saturated_foreign_counters_do_not_panic() {
-    let mut board = TombstoneBoard::of(&[Op::add(OpId::new(ME, u64::MAX), u64::MAX)]);
+    let mut board = TombstoneBoard::of(&[Op::stroke(OpId::new(ME, u64::MAX), u64::MAX)]);
     let stroke = board.draw_any(ME);
     assert_eq!(stroke.lamport.0, u64::MAX);
     // Foreign ops are not validated, so the saturated seq hands out the foreign id again.

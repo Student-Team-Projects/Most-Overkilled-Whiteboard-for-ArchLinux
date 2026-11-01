@@ -108,8 +108,9 @@ deterministic sim module are two drivers of the same code.
 
 1. Pointer down/move → points collected in screen space → camera inverse → `i64` world space.
 2. Pointer up → codec simplifies and encodes into one or more pieces (ADR 0005, 0014; stays
-   encoded in memory). For each piece: compute its bounding box → `Board::draw` assigns the `OpId`
-   (ADR 0009) and Lamport timestamp (ADR 0008) → insert into the spatial index → broadcast.
+   encoded in memory). For each piece: compute its bounding box → `Board::stamp` reserves the `OpId`
+   (ADR 0009) and Lamport timestamp (ADR 0008) → `Op::add` → `Board::apply` → insert into the
+   spatial index → broadcast.
 3. Anti-entropy heals anything broadcast lost (ADR 0003).
 4. Remote op → net → main → `Board::apply` → index + invalidate the affected area.
 5. Drawing and erasing read unpacked points only through `StrokeCache` (ADR 0018).
