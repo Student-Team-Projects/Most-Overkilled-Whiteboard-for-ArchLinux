@@ -1,7 +1,7 @@
 //! The simplest index: a linear scan over every stored box.
 
 use super::SpatialIndex;
-use crate::{Aabb, StrokeId};
+use crate::{Aabb, Intersects, StrokeId};
 
 /// Keeps every box in a `Vec` and answers each query by scanning all of them.
 #[derive(Debug, Default)]
@@ -37,11 +37,7 @@ impl SpatialIndex for LinearIndex {
         let hits = self
             .entries
             .iter()
-            .filter(|(_, bbox)| intersects(*bbox, area));
+            .filter(|(_, bbox)| bbox.intersects(&area));
         out.extend(hits.map(|(id, _)| *id));
     }
-}
-
-fn intersects(a: Aabb, b: Aabb) -> bool {
-    a.min.x <= b.max.x && b.min.x <= a.max.x && a.min.y <= b.max.y && b.min.y <= a.max.y
 }

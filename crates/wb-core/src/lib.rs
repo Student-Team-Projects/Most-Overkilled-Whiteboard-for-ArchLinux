@@ -6,6 +6,6 @@ mod types;
 pub use spatial_index::{LinearIndex, SpatialIndex};
 
 pub use types::{
-    Aabb, BoardId, EncodedPoints, Lamport, Op, OpId, Outgoing, PeerId, Rgba, Stroke, StrokeId,
-    StrokePoints, Time, WorldPos,
+    Aabb, BoardId, EncodedPoints, Intersects, Lamport, Op, OpId, Outgoing, PeerId, Rgba, Stroke,
+    StrokeId, StrokePoints, Time, WorldPos,
 };

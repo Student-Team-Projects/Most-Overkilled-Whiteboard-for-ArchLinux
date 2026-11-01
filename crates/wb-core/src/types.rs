@@ -75,6 +75,25 @@ impl Aabb {
     }
 }
 
+/// A shape that can tell whether it overlaps a `Rhs` shape.
+///
+/// Implementations are symmetric: `a.intersects(&b) == b.intersects(&a)`.
+pub trait Intersects<Rhs: ?Sized = Self> {
+    /// Whether `self` and `other` share at least one point.
+    fn intersects(&self, other: &Rhs) -> bool;
+}
+
+impl Intersects for Aabb {
+    /// Boxes are closed, so sharing only an edge or a corner counts as intersecting. Both boxes
+    /// must have `min <= max` on both axes.
+    fn intersects(&self, other: &Self) -> bool {
+        self.min.x <= other.max.x
+            && other.min.x <= self.max.x
+            && self.min.y <= other.max.y
+            && other.min.y <= self.max.y
+    }
+}
+
 /// Opaque codec bytes containing an i64 origin and packed deltas.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EncodedPoints(
@@ -148,6 +167,18 @@ pub struct Outgoing<M> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const UNIT: i64 = 16;
+
+    #[test]
+    fn aabb_intersects_on_shared_corner_not_on_gap() {
+        let unit = |x, y| Aabb::new(WorldPos::new(x, y), WorldPos::new(x + UNIT, y + UNIT));
+        let base = unit(0, 0);
+        assert!(base.intersects(&unit(UNIT, UNIT)), "shared corner");
+        assert!(unit(UNIT, 0).intersects(&base), "shared edge, reversed");
+        assert!(!base.intersects(&unit(UNIT + 1, 0)), "gap on x");
+        assert!(!base.intersects(&unit(0, -UNIT - 1)), "gap on y");
+    }
 
     #[test]
     fn postcard_round_trip() -> Result<(), postcard::Error> {
