@@ -12,3 +12,6 @@ pub const GRID: i64 = 8;
 
 /// A coordinate far from the origin, 2⁶², for the checks that the world has no fixed bounds.
 pub const FAR: i64 = 1 << 62;
+
+/// Side of the unit boxes in the `Intersects` tests.
+pub const UNIT: i64 = 16;

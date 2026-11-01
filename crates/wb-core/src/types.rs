@@ -168,18 +168,6 @@ pub struct Outgoing<M> {
 mod tests {
     use super::*;
 
-    const UNIT: i64 = 16;
-
-    #[test]
-    fn aabb_intersects_on_shared_corner_not_on_gap() {
-        let unit = |x, y| Aabb::new(WorldPos::new(x, y), WorldPos::new(x + UNIT, y + UNIT));
-        let base = unit(0, 0);
-        assert!(base.intersects(&unit(UNIT, UNIT)), "shared corner");
-        assert!(unit(UNIT, 0).intersects(&base), "shared edge, reversed");
-        assert!(!base.intersects(&unit(UNIT + 1, 0)), "gap on x");
-        assert!(!base.intersects(&unit(0, -UNIT - 1)), "gap on y");
-    }
-
     #[test]
     fn postcard_round_trip() -> Result<(), postcard::Error> {
         let id = OpId::new(PeerId(42), 7);
