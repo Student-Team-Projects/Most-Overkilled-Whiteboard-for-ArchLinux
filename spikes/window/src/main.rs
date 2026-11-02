@@ -6,24 +6,28 @@ mod tool;
 
 use eframe::egui;
 
-use canvas::Canvas;
+use canvas::StackedPageCanvas;
 use tool::ToolState;
 
-const TOOLBAR_WIDTH_PX: f32 = 200.0;
+const TOOLBAR_WIDTH_PX: f32 = 56.0;
 const TOOLTIP_DELAY_SECONDS: f32 = 0.2;
+const INITIAL_WINDOW_SIZE: [f32; 2] = [1280.0, 800.0];
 
 #[derive(Debug, Default)]
 struct App {
     tools: ToolState,
-    canvas: Canvas,
+    canvas: StackedPageCanvas,
 }
 
 impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        egui::Panel::top("actions").show(ui, tool::action_bar_not_wired_yet);
         egui::Panel::left("toolbar")
             .resizable(false)
             .exact_size(TOOLBAR_WIDTH_PX)
-            .show(ui, |ui| self.tools.toolbar(ui));
+            .show(ui, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| self.tools.toolbar(ui));
+            });
         egui::Panel::bottom("pages").show(ui, |ui| self.canvas.page_bar(ui));
         egui::CentralPanel::no_frame().show(ui, |ui| self.canvas.ui(ui, &self.tools));
     }
@@ -39,7 +43,10 @@ fn show_tooltips_while_pointer_moves(context: &egui::Context) {
 fn main() -> eframe::Result {
     eframe::run_native(
         "Window spike (T27)",
-        eframe::NativeOptions::default(),
+        eframe::NativeOptions {
+            viewport: egui::ViewportBuilder::default().with_inner_size(INITIAL_WINDOW_SIZE),
+            ..Default::default()
+        },
         Box::new(|creation_context| {
             show_tooltips_while_pointer_moves(&creation_context.egui_ctx);
             Ok(Box::<App>::default())
