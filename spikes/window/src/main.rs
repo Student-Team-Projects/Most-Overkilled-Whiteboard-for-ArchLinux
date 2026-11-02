@@ -1,5 +1,6 @@
 //! T27 spike: an eframe window with a toolbar and a freehand canvas on stand-in types.
 
+mod camera;
 mod canvas;
 mod stand_in;
 mod tool;
