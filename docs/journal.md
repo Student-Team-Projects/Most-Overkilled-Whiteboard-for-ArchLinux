@@ -8,6 +8,14 @@ Sync-entry format — heading `## YYYY-MM-DD — sync`, then one line each; link
 - **Decided:** one line each, with the ADR or issue link.
 - **Next week:** person → issues they own.
 
+## 2026-10-20 — sync
+
+- **Present:** Kacper, Mateusz, Filip.
+- **Landed:** #64 #65 #68 #77 #80 #81 #83 #85 #89 #91 #92.
+- **Blocked:** nothing beyond G24 → T08, unblocked today.
+- **Decided:** all 10 contracts agreed (G24 #24), each owner reads their share by Fri 23.10 (T45 #93); ADR 0025, 0024 and 0006 confirmed; `BoardId` = 8 bytes.
+- **Next week:** Kacper → #32 #50 #70 #71 #78 #86 · Mateusz → #66 #33 #36 #87 · Filip → #51 #52 #53 #67 #35.
+
 ## 2026-10-15 — debt payout
 
 - Aligned seam milestones and discovery scope with ADR 0019; clarified spatial coordinates and renderer invalidation wording.

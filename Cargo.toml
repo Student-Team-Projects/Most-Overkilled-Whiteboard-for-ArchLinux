@@ -14,6 +14,8 @@ wb-core = { path = "crates/wb-core" }
 wb-net = { path = "crates/wb-net" }
 eframe = "=0.36.2"
 egui = "=0.36.2"
+serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
+postcard = { version = "1", features = ["alloc"] }
 
 [workspace.lints.rust]
 missing_docs = "deny"

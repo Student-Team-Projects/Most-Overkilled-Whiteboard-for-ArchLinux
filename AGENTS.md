@@ -14,7 +14,8 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 | decisions | `docs/adr/` |
 | journal | `docs/journal.md` |
 | words | `GLOSSARY.md` |
-| team workflow, code standards, definition of done | `docs/team.md` |
+| team workflow, definition of done | `docs/team.md` |
+| code rules | `RULES.md` |
 | **backlog** | **GitHub Issues + Project board** (ADR 0011) — see `docs/agents/issue-tracker.md` |
 
 ## Backlog rules (ADR 0011)
@@ -27,12 +28,9 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 
 ## Code rules
 
-- Code above a seam relies only on what its contract in `docs/contracts/` states.
-- Changing a contract or `wb-core`'s public API needs all 3 humans + an ADR — stop and ask.
-- Lean, minimal diffs: every line must be explainable by the human who owns the PR.
-  No speculative abstraction, no drive-by refactors.
-- Full standards (no panics in libs, pedantic clippy, docs, proptest) → `docs/team.md`.
-- `spikes/` is prep code outside the workspace (`docs/team.md` → Spikes); never add it to `[workspace]`.
+- Follow `RULES.md` for all code changes.
+- Changing a contract or `wb-core`'s public API needs all 3 humans + an ADR — stop and ask; additive constructors on `wb-core` types need no ADR (R4).
+- For `spikes/` workspace boundaries, see `docs/team.md` → Spikes.
 
 ## PR reviews
 

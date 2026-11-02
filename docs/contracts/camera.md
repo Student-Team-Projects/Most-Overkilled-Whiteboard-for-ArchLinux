@@ -1,6 +1,6 @@
 # Contract: `Camera`
 
-Status: draft · World ↔ screen transform for pan and zoom. A concrete type (an affine matrix).
+Status: agreed 2026-10-20 · World ↔ screen transform for pan and zoom. A concrete type (an affine matrix).
 Format → `README.md` here.
 
 ## Operations

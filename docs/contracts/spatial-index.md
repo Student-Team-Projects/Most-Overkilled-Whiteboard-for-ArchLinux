@@ -1,6 +1,6 @@
 # Contract: `SpatialIndex`
 
-Status: draft · "Which strokes are in this area?" — used by the eraser and the renderer.
+Status: agreed 2026-10-20 · "Which strokes are in this area?" — used by the eraser and the renderer.
 Format → `README.md` here.
 
 ## Operations

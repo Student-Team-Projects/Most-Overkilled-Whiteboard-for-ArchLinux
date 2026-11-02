@@ -28,7 +28,7 @@ Closes #
 ## Checklist
 
 <!-- docs/team.md → Definition of done. Tick what applies; strike through (~~…~~) what does not, with a reason. -->
-- [ ] Code is kosher (`docs/team.md` → Code standards)
+- [ ] Code is kosher (`RULES.md`)
 - [ ] Tests for the logic; seam impls pass the shared seam suite
 - [ ] A fast impl passes the oracle comparison and has a benchmark showing the win
 - [ ] Contract clause touched: none <!-- or e.g. `board.md` guarantee 3; rule: AGENTS.md → Code rules -->

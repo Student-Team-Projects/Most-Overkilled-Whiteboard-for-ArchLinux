@@ -1,6 +1,6 @@
 # Contract: `Board`
 
-Status: draft · The replicated board state (ADR 0001, 0008). A concrete type, not a trait — but the
+Status: agreed 2026-10-20 · The replicated board state (ADR 0001, 0008). A concrete type, not a trait — but the
 laws below are its contract and its property tests. Format → `README.md` here.
 
 ## Operations

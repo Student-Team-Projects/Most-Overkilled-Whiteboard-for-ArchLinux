@@ -13,7 +13,7 @@ labels: task
 
 ## Acceptance criteria
 - [ ]
-- [ ] Code is kosher (`docs/team.md` → Code standards)
+- [ ] Code is kosher (`RULES.md`)
 
 ## Context
 
