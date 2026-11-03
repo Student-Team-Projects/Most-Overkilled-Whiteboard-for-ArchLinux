@@ -1,4 +1,4 @@
-use eframe::egui::Color32;
+use crate::stand_in::Rgba;
 
 pub const WORLD_UNITS_PER_PIXEL: u16 = 16;
 
@@ -14,11 +14,12 @@ pub const DEFAULT_STROKE_WIDTH_PX: u16 = 4;
 pub const PRESET_STROKE_WIDTHS_PX: [u16; 3] = [2, 4, 8];
 pub const MIN_STROKE_WIDTH_PX: u16 = 1;
 pub const MAX_STROKE_WIDTH_PX: u16 = 32;
-pub const NAMED_PRESET_COLORS: [(Color32, &str); 4] = [
-    (Color32::BLACK, "Black"),
-    (Color32::from_rgb(220, 40, 40), "Red"),
-    (Color32::from_rgb(30, 90, 220), "Blue"),
-    (Color32::from_rgb(30, 150, 60), "Green"),
+pub const DEFAULT_STROKE_COLOR: Rgba = Rgba([0, 0, 0, 255]);
+pub const NAMED_PRESET_COLORS: [(Rgba, &str); 4] = [
+    (DEFAULT_STROKE_COLOR, "Black"),
+    (Rgba([220, 40, 40, 255]), "Red"),
+    (Rgba([30, 90, 220, 255]), "Blue"),
+    (Rgba([30, 150, 60, 255]), "Green"),
 ];
 
 pub const INITIAL_WINDOW_SIZE: [f32; 2] = [1280.0, 800.0];

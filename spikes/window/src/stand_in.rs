@@ -10,9 +10,18 @@ pub struct Aabb {
     pub max: WorldPos,
 }
 
+impl Aabb {
+    pub fn contains(self, point: WorldPos) -> bool {
+        (self.min.x..=self.max.x).contains(&point.x) && (self.min.y..=self.max.y).contains(&point.y)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Rgba(pub [u8; 4]);
+
 #[derive(Clone, Debug)]
 pub struct StandInStroke {
-    pub unmultiplied_rgba: [u8; 4],
+    pub color: Rgba,
     pub width_in_world_units: u32,
     pub points: Vec<WorldPos>,
 }

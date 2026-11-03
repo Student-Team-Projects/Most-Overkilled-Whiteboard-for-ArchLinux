@@ -1,35 +1,46 @@
 //! T27 spike: an eframe window with a toolbar and a freehand canvas on stand-in types.
 
-mod canvas;
+mod camera;
 mod config;
+mod controller;
+mod model;
 mod page_layout;
 mod stand_in;
-mod tool;
 mod view;
 
 use eframe::egui;
 
-use canvas::StackedPageCanvas;
 use config::{INITIAL_WINDOW_SIZE, TOOLBAR_WIDTH_PX, TOOLTIP_DELAY_SECONDS};
-use tool::ToolState;
+use model::Model;
 
 #[derive(Debug, Default)]
 struct App {
-    tools: ToolState,
-    canvas: StackedPageCanvas,
+    model: Model,
 }
 
 impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        egui::Panel::top("actions").show(ui, tool::action_bar_not_wired_yet);
-        egui::Panel::left("toolbar")
+        egui::Panel::top("actions").show(ui, view::action_bar::show_not_wired_yet);
+        let toolbar_commands = egui::Panel::left("toolbar")
             .resizable(false)
             .exact_size(TOOLBAR_WIDTH_PX)
             .show(ui, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| self.tools.toolbar(ui));
-            });
-        egui::Panel::bottom("pages").show(ui, |ui| self.canvas.page_bar(ui));
-        egui::CentralPanel::no_frame().show(ui, |ui| self.canvas.ui(ui, &self.tools));
+                egui::ScrollArea::vertical()
+                    .show(ui, |ui| view::toolbar::show(ui, &self.model.tools))
+                    .inner
+            })
+            .inner;
+        let page_bar_command = egui::Panel::bottom("pages")
+            .show(ui, |ui| view::page_bar::show(ui, &self.model))
+            .inner;
+        for command in toolbar_commands.into_iter().chain(page_bar_command) {
+            controller::apply(&mut self.model, command);
+        }
+        egui::CentralPanel::no_frame().show(ui, |ui| {
+            let (input, canvas) = view::canvas::allocate(ui);
+            controller::handle_canvas_input(&mut self.model, &input);
+            view::canvas::paint(&canvas, &self.model);
+        });
     }
 }
 
