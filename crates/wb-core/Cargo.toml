@@ -7,11 +7,12 @@ publish.workspace = true
 autotests = false
 
 [dependencies]
+postcard.workspace = true
 serde.workspace = true
+thiserror.workspace = true
 xxhash-rust.workspace = true
 
 [dev-dependencies]
-postcard.workspace = true
 proptest.workspace = true
 
 [[test]]

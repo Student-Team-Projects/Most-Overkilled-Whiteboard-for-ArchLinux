@@ -1,10 +1,12 @@
 //! Geometry and board state for the whiteboard.
 
 mod board;
+mod codec;
 mod spatial_index;
 mod types;
 
 pub use board::{Board, TombstoneBoard};
+pub use codec::{CodecError, Raw, StrokeCodec};
 pub use spatial_index::{LinearIndex, SpatialIndex};
 
 pub use types::{
