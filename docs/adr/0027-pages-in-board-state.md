@@ -1,4 +1,4 @@
-# 0026 — Pages are board state; the board mode is fixed at creation
+# 0027 — Pages are board state; the board mode is fixed at creation
 
 Status: proposed · 2026-11-02 · for G25 · needs all 3
 

@@ -75,6 +75,25 @@ impl Aabb {
     }
 }
 
+/// A shape that can tell whether it overlaps a `Rhs` shape.
+///
+/// Implementations are symmetric: `a.intersects(&b) == b.intersects(&a)`.
+pub trait Intersects<Rhs: ?Sized = Self> {
+    /// Whether `self` and `other` share at least one point.
+    fn intersects(&self, other: &Rhs) -> bool;
+}
+
+impl Intersects for Aabb {
+    /// Boxes are closed, so sharing only an edge or a corner counts as intersecting. Both boxes
+    /// must have `min <= max` on both axes.
+    fn intersects(&self, other: &Self) -> bool {
+        self.min.x <= other.max.x
+            && other.min.x <= self.max.x
+            && self.min.y <= other.max.y
+            && other.min.y <= self.max.y
+    }
+}
+
 /// Opaque codec bytes containing an i64 origin and packed deltas.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EncodedPoints(
@@ -127,6 +146,47 @@ pub enum Op {
         /// Identifier of the stroke to erase.
         target: StrokeId,
     },
+}
+
+impl Op {
+    /// Builds the Add of a new stroke with the id and Lamport of `stamp`.
+    ///
+    /// `bbox` must cover `points`; it is not checked.
+    #[must_use]
+    pub const fn add(
+        stamp: Stamp,
+        color: Rgba,
+        width: u32,
+        points: EncodedPoints,
+        bbox: Aabb,
+    ) -> Self {
+        Self::Add(Stroke {
+            id: stamp.id,
+            lamport: stamp.lamport,
+            color,
+            width,
+            bbox,
+            points,
+        })
+    }
+
+    /// Builds the erase of `target` with the id of `stamp`; an erase has no Lamport.
+    #[must_use]
+    pub const fn erase(stamp: Stamp, target: StrokeId) -> Self {
+        Self::Erase {
+            id: stamp.id,
+            target,
+        }
+    }
+}
+
+/// A fresh op id and Lamport for one local op, reserved by a board.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Stamp {
+    /// Id of the new op.
+    pub id: OpId,
+    /// Lamport of the new op, above every one the board had seen.
+    pub lamport: Lamport,
 }
 
 /// Injected milliseconds supplied by a driver, never read from the OS.

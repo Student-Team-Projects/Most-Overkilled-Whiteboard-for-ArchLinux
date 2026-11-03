@@ -1,4 +1,4 @@
-# 0027 — Stroke colours are opaque: no alpha
+# 0028 — Stroke colours are opaque: no alpha
 
 Status: proposed · 2026-11-02 · needs all 3
 

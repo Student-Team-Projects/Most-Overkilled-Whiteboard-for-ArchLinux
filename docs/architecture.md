@@ -79,7 +79,7 @@ oracle on random inputs, and must show a benchmark win, before it replaces layer
 
 | Crate | Contents | Depends on |
 |---|---|---|
-| `wb-core` | geometry, `Stroke`, `StrokeId`, `Board` CRDT state + `merge`, ops, pages, `StrokeCodec` + postcard format, `SpatialIndex` seam | serde, postcard |
+| `wb-core` | geometry, `Stroke`, `StrokeId`, `Board` CRDT state + `merge`, ops, pages, `StrokeCodec` + postcard format, `SpatialIndex` seam | serde, postcard, thiserror, xxhash-rust |
 | `wb-net` | sans-IO protocol, `Transport` seam + UDP/Sim drivers, discovery, broadcast, anti-entropy, deterministic sim module and `wb-sim` binary | core |
 | `wb-app` | the binary: eframe window, tools, menu + connect modal, threads, save/load, join flow, `Camera`, `StrokeRenderer` + `StrokeCache`, chunks, PDF export | core, net, eframe/egui |
 
@@ -108,8 +108,9 @@ deterministic sim module are two drivers of the same code.
 
 1. Pointer down/move → points collected in screen space → camera inverse → `i64` world space.
 2. Pointer up → codec simplifies and encodes into one or more pieces (ADR 0005, 0014; stays
-   encoded in memory). For each piece: compute its bounding box → `Board::draw` assigns the `OpId`
-   (ADR 0009) and Lamport timestamp (ADR 0008) → insert into the spatial index → broadcast.
+   encoded in memory). For each piece: compute its bounding box → `Board::stamp` reserves the `OpId`
+   (ADR 0009) and Lamport timestamp (ADR 0008) → `Op::add` → `Board::apply` → insert into the
+   spatial index → broadcast.
 3. Anti-entropy heals anything broadcast lost (ADR 0003).
 4. Remote op → net → main → `Board::apply` → index + invalidate the affected area.
 5. Drawing and erasing read unpacked points only through `StrokeCache` (ADR 0018).

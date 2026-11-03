@@ -23,8 +23,9 @@ sequenceDiagram
     App->>Codec: simplify + encode, once, author only
     Codec-->>App: one or more encoded pieces
     loop each piece
-        App->>Board: draw(me, color, width, piece, bbox)
-        Board-->>App: Op::Add with its own OpId + Lamport
+        App->>Board: stamp(me)
+        Board-->>App: fresh OpId + Lamport
+        App->>Board: apply(Op::add(stamp, color, width, piece, bbox))
         App->>Index: insert(id, bbox)
         App->>Net: op via channel
     end
@@ -43,7 +44,7 @@ sequenceDiagram
 |---|---|---|
 | screen → world | all coordinates `i64`, 1 unit = 1/16 px | ADR 0014, `docs/contracts/camera.md` |
 | simplify + encode | lossy, once, at the author; every peer stores identical bytes | ADR 0005, `docs/contracts/stroke-codec.md` |
-| `Board::draw` | assigns `OpId` and Lamport; strokes stay encoded | ADR 0008, 0009, `docs/contracts/board.md` |
+| `Board::stamp` + `apply` | reserves `OpId` and Lamport; one write path; strokes stay encoded | ADR 0008, 0009, `docs/contracts/board.md` |
 | Broadcast | best-effort; no delivery promise | ADR 0003, `docs/contracts/broadcast.md` |
 | remote apply | idempotent, any order | ADR 0001, `docs/contracts/board.md` |
 | `StrokeCache::get` | unpacked points only through the cache | ADR 0018, `docs/contracts/stroke-cache.md` |
