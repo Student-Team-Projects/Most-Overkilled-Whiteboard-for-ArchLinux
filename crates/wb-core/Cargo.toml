@@ -10,6 +10,7 @@ autotests = false
 postcard.workspace = true
 serde.workspace = true
 thiserror.workspace = true
+xxhash-rust.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
