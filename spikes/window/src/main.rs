@@ -1,17 +1,15 @@
 //! T27 spike: an eframe window with a toolbar and a freehand canvas on stand-in types.
 
 mod canvas;
+mod config;
 mod stand_in;
 mod tool;
 
 use eframe::egui;
 
 use canvas::StackedPageCanvas;
+use config::{INITIAL_WINDOW_SIZE, TOOLBAR_WIDTH_PX, TOOLTIP_DELAY_SECONDS};
 use tool::ToolState;
-
-const TOOLBAR_WIDTH_PX: f32 = 56.0;
-const TOOLTIP_DELAY_SECONDS: f32 = 0.2;
-const INITIAL_WINDOW_SIZE: [f32; 2] = [1280.0, 800.0];
 
 #[derive(Debug, Default)]
 struct App {

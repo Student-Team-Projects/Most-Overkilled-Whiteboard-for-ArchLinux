@@ -1,13 +1,11 @@
 use eframe::egui::{self, Color32, Painter, Pos2, Rect, Response, Sense, Stroke, StrokeKind, Vec2};
 
-use crate::stand_in::{
-    A4_HEIGHT_PX, A4_WIDTH_PX, GAP_BETWEEN_PAGES_PX, StandInBoard, StandInStroke,
-    UNPRINTABLE_MARGIN_PX, WORLD_UNITS_PER_PIXEL, WorldPos,
+use crate::config::{
+    A4_HEIGHT_PX, A4_WIDTH_PX, ERASER_RADIUS_ON_SCREEN_PX, GAP_BETWEEN_PAGES_PX,
+    SPACE_AROUND_PAGE_PX, UNPRINTABLE_MARGIN_PX, WORLD_UNITS_PER_PIXEL,
 };
+use crate::stand_in::{StandInBoard, StandInStroke, WorldPos};
 use crate::tool::{Tool, ToolState};
-
-const ERASER_RADIUS_ON_SCREEN_PX: f32 = 8.0;
-const SPACE_AROUND_PAGE_PX: f32 = 16.0;
 
 const BACKGROUND_BEHIND_PAGES: Color32 = Color32::from_gray(40);
 const UNPRINTABLE_MARGIN_OUTLINE: Stroke = Stroke {

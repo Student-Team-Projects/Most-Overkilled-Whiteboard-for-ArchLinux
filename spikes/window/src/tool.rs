@@ -1,18 +1,10 @@
 use eframe::egui::color_picker::{self, Alpha};
 use eframe::egui::{self, Color32, Rect, Response, RichText, Sense, Stroke, Vec2};
 
-use crate::stand_in::WORLD_UNITS_PER_PIXEL;
-
-const DEFAULT_STROKE_WIDTH_PX: u16 = 4;
-const PRESET_STROKE_WIDTHS_PX: [u16; 3] = [2, 4, 8];
-const MIN_STROKE_WIDTH_PX: u16 = 1;
-const MAX_STROKE_WIDTH_PX: u16 = 32;
-const NAMED_PRESET_COLORS: [(Color32, &str); 4] = [
-    (Color32::BLACK, "Black"),
-    (Color32::from_rgb(220, 40, 40), "Red"),
-    (Color32::from_rgb(30, 90, 220), "Blue"),
-    (Color32::from_rgb(30, 150, 60), "Green"),
-];
+use crate::config::{
+    DEFAULT_STROKE_WIDTH_PX, MAX_STROKE_WIDTH_PX, MIN_STROKE_WIDTH_PX, NAMED_PRESET_COLORS,
+    PRESET_STROKE_WIDTHS_PX, WORLD_UNITS_PER_PIXEL,
+};
 
 const TOOL_ICON_SIZE: f32 = 24.0;
 const ACTION_ICON_SIZE: f32 = 20.0;
