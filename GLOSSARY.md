@@ -16,6 +16,7 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | **World unit** | 1/16 px at zoom 1.0; all coordinates are `i64` world units (ADR 0014) |
 | **StrokeId** | the `OpId` `(PeerId, seq)` of the stroke's `Add` op — globally unique |
 | **Lamport timestamp** | logical clock on each stroke: max seen + 1; with `PeerId` gives draw order |
+| **Stamp** | a fresh `OpId` + Lamport that `Board::stamp` reserves for one local op; never reused |
 | **Tombstone** | record that a stroke was erased; never removed in v1 |
 | **Merge** | union of strokes and of tombstones; order and duplicates don't matter |
 | **Fast-forward** | joining when local state ⊆ live state: union with the live state, no prompt |

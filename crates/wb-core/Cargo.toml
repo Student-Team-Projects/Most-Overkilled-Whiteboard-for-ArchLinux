@@ -8,6 +8,7 @@ autotests = false
 
 [dependencies]
 serde.workspace = true
+xxhash-rust.workspace = true
 
 [dev-dependencies]
 postcard.workspace = true
