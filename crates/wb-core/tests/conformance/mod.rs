@@ -2,3 +2,4 @@
 
 mod board;
 mod codec;
+mod spatial_index;

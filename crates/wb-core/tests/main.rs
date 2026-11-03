@@ -3,4 +3,5 @@
 mod board;
 mod codec;
 mod conformance;
+mod intersects;
 mod support;

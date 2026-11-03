@@ -3,3 +3,4 @@
 pub mod board;
 pub mod codec;
 pub mod config;
+pub mod spatial_index;
