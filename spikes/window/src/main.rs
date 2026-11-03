@@ -2,8 +2,10 @@
 
 mod canvas;
 mod config;
+mod page_layout;
 mod stand_in;
 mod tool;
+mod view;
 
 use eframe::egui;
 

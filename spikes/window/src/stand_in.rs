@@ -4,6 +4,12 @@ pub struct WorldPos {
     pub y: i64,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Aabb {
+    pub min: WorldPos,
+    pub max: WorldPos,
+}
+
 #[derive(Clone, Debug)]
 pub struct StandInStroke {
     pub unmultiplied_rgba: [u8; 4],
