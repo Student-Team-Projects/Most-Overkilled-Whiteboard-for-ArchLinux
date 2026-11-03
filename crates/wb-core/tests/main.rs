@@ -2,4 +2,5 @@
 
 mod board;
 mod conformance;
+mod intersects;
 mod support;

@@ -2,3 +2,4 @@
 
 pub mod board;
 pub mod config;
+pub mod spatial_index;

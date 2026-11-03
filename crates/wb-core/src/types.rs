@@ -75,6 +75,25 @@ impl Aabb {
     }
 }
 
+/// A shape that can tell whether it overlaps a `Rhs` shape.
+///
+/// Implementations are symmetric: `a.intersects(&b) == b.intersects(&a)`.
+pub trait Intersects<Rhs: ?Sized = Self> {
+    /// Whether `self` and `other` share at least one point.
+    fn intersects(&self, other: &Rhs) -> bool;
+}
+
+impl Intersects for Aabb {
+    /// Boxes are closed, so sharing only an edge or a corner counts as intersecting. Both boxes
+    /// must have `min <= max` on both axes.
+    fn intersects(&self, other: &Self) -> bool {
+        self.min.x <= other.max.x
+            && other.min.x <= self.max.x
+            && self.min.y <= other.max.y
+            && other.min.y <= self.max.y
+    }
+}
+
 /// Opaque codec bytes containing an i64 origin and packed deltas.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EncodedPoints(
