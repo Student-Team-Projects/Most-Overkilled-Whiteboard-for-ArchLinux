@@ -1,5 +1,7 @@
 //! Every runtime tunable of the spike: page geometry, world scale, tools and window.
 
+use eframe::egui::{Color32, Stroke, Vec2};
+
 use crate::stand_in::Rgba;
 
 /// World units in one page pixel at zoom 1 (ADR 0014).
@@ -43,3 +45,32 @@ pub const INITIAL_WINDOW_SIZE: [f32; 2] = [1280.0, 800.0];
 pub const TOOLBAR_WIDTH_PX: f32 = 56.0;
 /// Delay before a tooltip appears.
 pub const TOOLTIP_DELAY_SECONDS: f32 = 0.2;
+
+/// Canvas colour around and between the pages.
+pub const BACKGROUND_BEHIND_PAGES: Color32 = Color32::from_gray(40);
+/// Line around the printable part of each page, outside it, in the margin.
+pub const UNPRINTABLE_MARGIN_OUTLINE: Stroke = Stroke {
+    width: 1.0,
+    color: Color32::from_gray(220),
+};
+/// Circle showing the eraser's reach under the pointer.
+pub const ERASER_OUTLINE: Stroke = Stroke {
+    width: 1.0,
+    color: Color32::GRAY,
+};
+
+/// Font size of the save, open, connect and PDF icons in the top bar.
+pub const ACTION_ICON_SIZE: f32 = 20.0;
+/// Font size of the Draw and Erase icons in the toolbar.
+pub const TOOL_ICON_SIZE: f32 = 24.0;
+/// Size of each colour and width preset button, in screen pixels.
+pub const PRESET_BUTTON_SIZE: Vec2 = Vec2::new(40.0, 28.0);
+/// Radius of the colour dot on a colour preset button, in screen pixels.
+pub const COLOR_SWATCH_RADIUS_PX: f32 = 9.0;
+/// Outline of the colour dot, so white and light colours stay visible.
+pub const COLOR_SWATCH_OUTLINE: Stroke = Stroke {
+    width: 1.0,
+    color: Color32::GRAY,
+};
+/// Space left and right of the line drawn on a width preset button, in screen pixels.
+pub const STROKE_WIDTH_PREVIEW_INSET_PX: f32 = 8.0;

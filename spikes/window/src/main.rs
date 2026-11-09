@@ -38,7 +38,7 @@ impl eframe::App for App {
             controller::apply(&mut self.model, command);
         }
         egui::CentralPanel::no_frame().show(ui, |ui| {
-            let (input, canvas) = view::canvas::allocate(ui);
+            let (input, canvas) = view::canvas::AllocatedCanvas::new(ui);
             controller::handle_canvas_input(&mut self.model, &input);
             view::canvas::paint(&canvas, &self.model);
         });

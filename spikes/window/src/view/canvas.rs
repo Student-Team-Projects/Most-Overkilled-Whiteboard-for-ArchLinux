@@ -3,21 +3,13 @@
 use eframe::egui::{self, Color32, Painter, Pos2, Rect, Response, Sense, Stroke, StrokeKind};
 
 use crate::camera::StackedPageCamera;
-use crate::config::ERASER_RADIUS_ON_SCREEN_PX;
+use crate::config::{
+    BACKGROUND_BEHIND_PAGES, ERASER_OUTLINE, ERASER_RADIUS_ON_SCREEN_PX, UNPRINTABLE_MARGIN_OUTLINE,
+};
 use crate::controller::CanvasInput;
 use crate::model::Model;
 use crate::stand_in::{Aabb, Rgba, WorldPos};
 use crate::tool::Tool;
-
-const BACKGROUND_BEHIND_PAGES: Color32 = Color32::from_gray(40);
-const UNPRINTABLE_MARGIN_OUTLINE: Stroke = Stroke {
-    width: 1.0,
-    color: Color32::from_gray(220),
-};
-const ERASER_OUTLINE: Stroke = Stroke {
-    width: 1.0,
-    color: Color32::GRAY,
-};
 
 /// The canvas area reserved for this frame, between reading its input and painting it.
 pub struct AllocatedCanvas {
@@ -25,27 +17,29 @@ pub struct AllocatedCanvas {
     painter: Painter,
 }
 
-/// Reserves the rest of `ui` for the canvas and reads this frame's pointer input on it.
-pub fn allocate(ui: &mut egui::Ui) -> (CanvasInput, AllocatedCanvas) {
-    let (response, painter) = ui.allocate_painter(ui.available_size(), Sense::click_and_drag());
-    let scroll_on_screen = if response.contains_pointer() {
-        ui.input(|input| input.smooth_scroll_delta.y)
-    } else {
-        0.0
-    };
-    let is_pointer_held = response.is_pointer_button_down_on();
-    let pointer_pressed_at = if is_pointer_held || response.clicked() {
-        response.interact_pointer_pos()
-    } else {
-        None
-    };
-    let input = CanvasInput {
-        area: response.rect,
-        scroll_on_screen,
-        pointer_pressed_at,
-        is_pointer_held,
-    };
-    (input, AllocatedCanvas { response, painter })
+impl AllocatedCanvas {
+    /// Reserves the rest of `ui` for the canvas and reads this frame's pointer input on it.
+    pub fn new(ui: &mut egui::Ui) -> (CanvasInput, Self) {
+        let (response, painter) = ui.allocate_painter(ui.available_size(), Sense::click_and_drag());
+        let scroll_on_screen = if response.contains_pointer() {
+            ui.input(|input| input.smooth_scroll_delta.y)
+        } else {
+            0.0
+        };
+        let is_pointer_held = response.is_pointer_button_down_on();
+        let pointer_pressed_at = if is_pointer_held || response.clicked() {
+            response.interact_pointer_pos()
+        } else {
+            None
+        };
+        let input = CanvasInput {
+            area: response.rect,
+            scroll_on_screen,
+            pointer_pressed_at,
+            is_pointer_held,
+        };
+        (input, Self { response, painter })
+    }
 }
 
 /// Paints the visible pages, their strokes and the stroke in progress,

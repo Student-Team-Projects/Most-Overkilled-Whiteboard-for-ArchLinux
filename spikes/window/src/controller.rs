@@ -136,6 +136,11 @@ mod tests_of_private_items_in_binary_crate {
         WorldPos { x: 2_000, y: 1_500 },
     ];
     const POINT_IN_LEFT_MARGIN_OF_FIRST_PAGE: WorldPos = WorldPos { x: 100, y: 1_200 };
+    const POINT_THREE_ABOVE_THE_SEGMENT_MIDDLE: Pos2 = Pos2::new(5.0, 3.0);
+    const POINT_THREE_RIGHT_FOUR_ABOVE_THE_END: Pos2 = Pos2::new(13.0, 4.0);
+    const POINT_THREE_RIGHT_FOUR_ABOVE_THE_START: Pos2 = Pos2::new(3.0, 4.0);
+    const THREE_STRAIGHT_ACROSS: f32 = 3.0;
+    const HYPOTENUSE_OF_THREE_AND_FOUR: f32 = 5.0;
 
     fn assert_close(actual: f32, expected: f32) {
         assert!(
@@ -231,19 +236,22 @@ mod tests_of_private_items_in_binary_crate {
 
     #[test]
     fn point_beside_the_segment_measures_straight_across() {
-        let distance = distance_from_point_to_segment(Pos2::new(5.0, 3.0), START, END);
-        assert_close(distance, 3.0);
+        let distance =
+            distance_from_point_to_segment(POINT_THREE_ABOVE_THE_SEGMENT_MIDDLE, START, END);
+        assert_close(distance, THREE_STRAIGHT_ACROSS);
     }
 
     #[test]
     fn point_past_the_end_measures_to_the_end() {
-        let distance = distance_from_point_to_segment(Pos2::new(13.0, 4.0), START, END);
-        assert_close(distance, 5.0);
+        let distance =
+            distance_from_point_to_segment(POINT_THREE_RIGHT_FOUR_ABOVE_THE_END, START, END);
+        assert_close(distance, HYPOTENUSE_OF_THREE_AND_FOUR);
     }
 
     #[test]
     fn zero_length_segment_measures_to_its_only_point() {
-        let distance = distance_from_point_to_segment(Pos2::new(3.0, 4.0), START, START);
-        assert_close(distance, 5.0);
+        let distance =
+            distance_from_point_to_segment(POINT_THREE_RIGHT_FOUR_ABOVE_THE_START, START, START);
+        assert_close(distance, HYPOTENUSE_OF_THREE_AND_FOUR);
     }
 }

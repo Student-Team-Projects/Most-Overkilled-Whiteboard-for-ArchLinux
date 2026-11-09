@@ -4,20 +4,13 @@ use eframe::egui::color_picker::{self, Alpha};
 use eframe::egui::{self, Color32, Rect, Response, RichText, Sense, Stroke, Vec2};
 
 use crate::config::{
-    MAX_STROKE_WIDTH_PX, MIN_STROKE_WIDTH_PX, NAMED_PRESET_COLORS, PRESET_STROKE_WIDTHS_PX,
+    COLOR_SWATCH_OUTLINE, COLOR_SWATCH_RADIUS_PX, MAX_STROKE_WIDTH_PX, MIN_STROKE_WIDTH_PX,
+    NAMED_PRESET_COLORS, PRESET_BUTTON_SIZE, PRESET_STROKE_WIDTHS_PX,
+    STROKE_WIDTH_PREVIEW_INSET_PX, TOOL_ICON_SIZE,
 };
 use crate::controller::Command;
 use crate::stand_in::Rgba;
 use crate::tool::{Tool, ToolState};
-
-const TOOL_ICON_SIZE: f32 = 24.0;
-const PRESET_BUTTON_SIZE: Vec2 = Vec2::new(40.0, 28.0);
-const COLOR_SWATCH_RADIUS_PX: f32 = 9.0;
-const COLOR_SWATCH_OUTLINE: Stroke = Stroke {
-    width: 1.0,
-    color: Color32::GRAY,
-};
-const STROKE_WIDTH_PREVIEW_INSET_PX: f32 = 8.0;
 
 /// Shows the tool, colour and width pickers with the current choice highlighted.
 /// Returns one command per choice changed this frame.

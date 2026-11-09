@@ -2,7 +2,7 @@
 
 use eframe::egui::{self, RichText};
 
-const ACTION_ICON_SIZE: f32 = 20.0;
+use crate::config::ACTION_ICON_SIZE;
 
 /// Shows the save, open, connect and PDF buttons. They do nothing yet;
 /// each tooltip names the task that wires it up.
