@@ -94,7 +94,7 @@ Rule: `wb-core` knows nothing about IO, egui or sockets; sockets and threads liv
 | `StrokeCache` | `DecodeAll`: unpack once on arrival, keep all | `ChunkWorkingSet`: resident chunks + margin, byte budget |
 | `Camera` | affine matrix (pan + zoom) from day 1 | — (already cheap) |
 | `StrokeCodec` | origin + plain `i32` offsets via postcard | point reduction → delta → bit packing |
-| `Transport` | real UDP socket · `SimTransport` (seeded loss/latency/partition) | — |
+| `Transport` | real UDP socket (`Udp`) · `Sim` (seeded loss/latency/duplication/partition) | — |
 | `Discovery` | candidates (manual ip:port; DHT from the driver) + STUN punching (M1) | LAN / virtual network (M4) |
 | `Broadcast` | send to every known peer | gossip (fanout k) |
 | `AntiEntropy` | exchange full id sets | compact digests (version vectors / hashes) |

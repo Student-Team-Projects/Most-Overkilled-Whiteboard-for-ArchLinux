@@ -16,6 +16,8 @@ eframe = "=0.36.2"
 egui = "=0.36.2"
 serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
 postcard = { version = "1", features = ["alloc"] }
+rand = { version = "0.9", default-features = false }
+rand_chacha = "0.9"
 proptest = { version = "1", default-features = false, features = ["std"] }
 thiserror = "2"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
