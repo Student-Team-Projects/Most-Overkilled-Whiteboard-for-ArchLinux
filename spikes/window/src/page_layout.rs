@@ -16,13 +16,13 @@ pub fn distance_between_page_tops_in_world_units() -> i64 {
 }
 
 /// World `y` of the top edge of page `page_index`.
-pub fn page_top_in_world_units(page_index: u16) -> i64 {
+pub fn page_top_in_world_units(page_index: u32) -> i64 {
     i64::from(page_index) * distance_between_page_tops_in_world_units()
 }
 
 impl Aabb {
     /// The whole A4 page `page_index`, margin included.
-    pub fn page(page_index: u16) -> Self {
+    pub fn page(page_index: u32) -> Self {
         let top = page_top_in_world_units(page_index);
         Self {
             min: WorldPos { x: 0, y: top },
@@ -34,7 +34,7 @@ impl Aabb {
     }
 
     /// Page `page_index` without its unprintable margin: the only part the pen draws on.
-    pub fn printable_part_of_page(page_index: u16) -> Self {
+    pub fn printable_part_of_page(page_index: u32) -> Self {
         let page = Self::page(page_index);
         let margin = pixels_to_world_units(UNPRINTABLE_MARGIN_PX);
         Self {

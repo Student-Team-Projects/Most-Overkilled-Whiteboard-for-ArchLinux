@@ -39,11 +39,11 @@ impl Model {
     }
 
     /// Index of the page whose top edge is nearest to the scroll offset.
-    pub fn page_nearest_to_top_of_view(&self) -> u16 {
+    pub fn page_nearest_to_top_of_view(&self) -> u32 {
         let distance = distance_between_page_tops_in_world_units();
         let nearest = (self.scroll_offset_in_world_units + distance / 2) / distance;
-        u16::try_from(nearest)
-            .unwrap_or(u16::MAX)
+        u32::try_from(nearest)
+            .unwrap_or(u32::MAX)
             .min(self.board.last_page_index())
     }
 
@@ -59,7 +59,7 @@ impl Model {
 
     /// Scrolls so the top of page `page_index` is at the top of the view;
     /// an index past the last page means the last page.
-    pub fn scroll_to_top_of(&mut self, page_index: u16) {
+    pub fn scroll_to_top_of(&mut self, page_index: u32) {
         self.scroll_offset_in_world_units = self.scroll_offset_showing_top_of(page_index);
     }
 
@@ -95,7 +95,7 @@ impl Model {
         self.board.strokes.retain(|stroke| !is_erased(stroke));
     }
 
-    fn scroll_offset_showing_top_of(&self, page_index: u16) -> i64 {
+    fn scroll_offset_showing_top_of(&self, page_index: u32) -> i64 {
         page_top_in_world_units(page_index.min(self.board.last_page_index()))
     }
 }

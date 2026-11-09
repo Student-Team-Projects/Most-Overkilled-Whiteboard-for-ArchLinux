@@ -10,7 +10,7 @@ use crate::model::Model;
 pub fn show(ui: &mut egui::Ui, model: &Model) -> Option<Command> {
     let current_page = model.page_nearest_to_top_of_view();
     let last_page = model.board().last_page_index();
-    let page_number = |page_index: u16| u32::from(page_index) + 1;
+    let page_number = |page_index: u32| u64::from(page_index) + 1;
     let mut command = None;
     ui.horizontal(|ui| {
         let previous = ui.add_enabled(current_page > 0, egui::Button::new("◀"));

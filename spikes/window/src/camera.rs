@@ -136,7 +136,7 @@ mod tests_of_private_items_in_binary_crate {
     ];
     const ONE_PIXEL_IN_WORLD_UNITS: u32 = 16;
     const FLOAT_TOLERANCE_PX: f32 = 1e-3;
-    const LAST_POSSIBLE_PAGE_INDEX: u16 = u16::MAX;
+    const LAST_POSSIBLE_PAGE_INDEX: u32 = u32::MAX;
     const POINTS_FROM_PAGE_TOP_LEFT: [WorldPos; 3] = [
         WorldPos { x: 0, y: 0 },
         WorldPos { x: 4_001, y: 5_003 },

@@ -18,7 +18,7 @@ pub enum Command {
     /// Draw the next strokes this wide, in page pixels.
     SelectStrokeWidth(u16),
     /// Scroll to the top of this page.
-    ScrollToTopOf(u16),
+    ScrollToTopOf(u32),
     /// Add a page after the last one.
     AddPageAtEnd,
 }

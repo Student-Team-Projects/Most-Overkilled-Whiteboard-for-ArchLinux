@@ -49,12 +49,12 @@ pub struct StandInStroke {
 pub struct StandInBoard {
     /// Visible strokes, oldest first, so later ones paint on top.
     pub strokes: Vec<StandInStroke>,
-    last_page_index: u16,
+    last_page_index: u32,
 }
 
 impl StandInBoard {
     /// Index of the last page; 0 when the board has one page.
-    pub fn last_page_index(&self) -> u16 {
+    pub fn last_page_index(&self) -> u32 {
         self.last_page_index
     }
 
@@ -62,7 +62,7 @@ impl StandInBoard {
     /// adding the same page at once get one new page.
     ///
     /// See also: draft ADR 0027.
-    pub fn apply_add_page_idempotently(&mut self, page_index: u16) {
+    pub fn apply_add_page_idempotently(&mut self, page_index: u32) {
         self.last_page_index = self.last_page_index.max(page_index);
     }
 }
