@@ -50,7 +50,8 @@ pub fn apply(model: &mut Model, command: Command) {
 
 /// Scrolls, then lets the current tool act on the printable part of the pages:
 /// the pen extends the stroke in progress and finishes it once the button
-/// is released; the eraser removes every stroke within its radius.
+/// is released or the pointer leaves the printable part, so re-entering starts
+/// a new stroke; the eraser removes every stroke within its radius.
 pub fn handle_canvas_input(model: &mut Model, input: &CanvasInput) {
     scroll(model, input);
     let camera =
@@ -61,10 +62,11 @@ pub fn handle_canvas_input(model: &mut Model, input: &CanvasInput) {
 
     match model.tools.tool {
         Tool::Pen => {
-            if let Some(pos) = pressed_on_printable_part {
-                model.extend_stroke_in_progress(camera.screen_to_world(pos));
+            let printable_point = pressed_on_printable_part.map(|pos| camera.screen_to_world(pos));
+            if let Some(point) = printable_point {
+                model.extend_stroke_in_progress(point);
             }
-            if !input.is_pointer_held {
+            if !input.is_pointer_held || printable_point.is_none() {
                 model.finish_stroke_in_progress();
             }
         }
@@ -133,6 +135,7 @@ mod tests_of_private_items_in_binary_crate {
         WorldPos { x: 1_000, y: 1_000 },
         WorldPos { x: 2_000, y: 1_500 },
     ];
+    const POINT_IN_LEFT_MARGIN_OF_FIRST_PAGE: WorldPos = WorldPos { x: 100, y: 1_200 };
 
     fn assert_close(actual: f32, expected: f32) {
         assert!(
@@ -184,6 +187,30 @@ mod tests_of_private_items_in_binary_crate {
             PRINTABLE_POINTS_ON_FIRST_PAGE
         );
         assert!(model.stroke_in_progress().is_empty());
+    }
+
+    #[test]
+    fn pen_leaving_the_printable_part_ends_the_stroke_and_reentering_starts_a_new_one() {
+        let mut model = Model::default();
+        let camera = StackedPageCamera::fitting_one_whole_page(CANVAS_AREA, 0);
+        let [inside_before, inside_after] = PRINTABLE_POINTS_ON_FIRST_PAGE;
+        for point in [
+            inside_before,
+            POINT_IN_LEFT_MARGIN_OF_FIRST_PAGE,
+            inside_after,
+        ] {
+            let held_at = Some(camera.world_to_screen(point));
+            handle_canvas_input(&mut model, &pointer_input(held_at, true));
+        }
+        handle_canvas_input(&mut model, &pointer_input(None, false));
+
+        let strokes: Vec<Vec<WorldPos>> = model
+            .board()
+            .strokes
+            .iter()
+            .map(|stroke| stroke.points.clone())
+            .collect();
+        assert_eq!(strokes, [vec![inside_before], vec![inside_after]]);
     }
 
     #[test]
