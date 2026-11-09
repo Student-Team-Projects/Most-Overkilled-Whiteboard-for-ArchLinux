@@ -4,8 +4,9 @@ use eframe::egui::{Pos2, Rect};
 
 use crate::camera::StackedPageCamera;
 use crate::config::ERASER_RADIUS_ON_SCREEN_PX;
-use crate::model::{Model, Tool};
+use crate::model::Model;
 use crate::stand_in::{Rgba, StandInStroke};
+use crate::tool::Tool;
 
 /// What the user asked for with a toolbar or page bar button.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

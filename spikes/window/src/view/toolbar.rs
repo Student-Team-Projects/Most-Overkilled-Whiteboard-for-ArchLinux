@@ -7,8 +7,8 @@ use crate::config::{
     MAX_STROKE_WIDTH_PX, MIN_STROKE_WIDTH_PX, NAMED_PRESET_COLORS, PRESET_STROKE_WIDTHS_PX,
 };
 use crate::controller::Command;
-use crate::model::{Tool, ToolState};
 use crate::stand_in::Rgba;
+use crate::tool::{Tool, ToolState};
 
 const TOOL_ICON_SIZE: f32 = 24.0;
 const PRESET_BUTTON_SIZE: Vec2 = Vec2::new(40.0, 28.0);

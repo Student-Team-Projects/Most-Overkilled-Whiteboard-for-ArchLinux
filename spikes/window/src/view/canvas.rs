@@ -5,8 +5,9 @@ use eframe::egui::{self, Color32, Painter, Pos2, Rect, Response, Sense, Stroke, 
 use crate::camera::StackedPageCamera;
 use crate::config::ERASER_RADIUS_ON_SCREEN_PX;
 use crate::controller::CanvasInput;
-use crate::model::{Model, Tool};
+use crate::model::Model;
 use crate::stand_in::{Aabb, Rgba, WorldPos};
+use crate::tool::Tool;
 
 const BACKGROUND_BEHIND_PAGES: Color32 = Color32::from_gray(40);
 const UNPRINTABLE_MARGIN_OUTLINE: Stroke = Stroke {

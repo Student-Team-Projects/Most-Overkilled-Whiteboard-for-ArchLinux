@@ -1,45 +1,8 @@
 //! The window's state and the operations that keep it valid. No egui types.
 
-use crate::config::{DEFAULT_STROKE_COLOR, DEFAULT_STROKE_WIDTH_PX, WORLD_UNITS_PER_PIXEL};
 use crate::page_layout::{distance_between_page_tops_in_world_units, page_top_in_world_units};
-use crate::stand_in::{Aabb, Rgba, StandInBoard, StandInStroke, WorldPos};
-
-/// What the primary pointer button does on the canvas.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Tool {
-    /// Draws a freehand stroke while held.
-    Pen,
-    /// Removes every stroke it touches, whole (ADR 0002).
-    Eraser,
-}
-
-/// The pen settings chosen in the toolbar.
-#[derive(Debug)]
-pub struct ToolState {
-    /// The selected tool.
-    pub tool: Tool,
-    /// Colour of the next stroke.
-    pub color: Rgba,
-    /// Width of the next stroke, in page pixels (zoom 1).
-    pub stroke_width_px: u16,
-}
-
-impl Default for ToolState {
-    fn default() -> Self {
-        Self {
-            tool: Tool::Pen,
-            color: DEFAULT_STROKE_COLOR,
-            stroke_width_px: DEFAULT_STROKE_WIDTH_PX,
-        }
-    }
-}
-
-impl ToolState {
-    /// Width of the next stroke in world units, the unit strokes are stored in.
-    pub fn stroke_width_in_world_units(&self) -> u32 {
-        u32::from(self.stroke_width_px) * u32::from(WORLD_UNITS_PER_PIXEL)
-    }
-}
+use crate::stand_in::{Aabb, StandInBoard, StandInStroke, WorldPos};
+use crate::tool::ToolState;
 
 /// Everything the window shows, and the only operations that change it.
 /// Knows nothing about egui; the controller is its only writer.

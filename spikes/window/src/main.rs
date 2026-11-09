@@ -6,6 +6,7 @@ mod controller;
 mod model;
 mod page_layout;
 mod stand_in;
+mod tool;
 mod view;
 
 use eframe::egui;
