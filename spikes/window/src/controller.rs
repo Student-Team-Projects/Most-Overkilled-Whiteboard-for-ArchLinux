@@ -117,6 +117,7 @@ fn distance_from_point_to_segment(point: Pos2, start: Pos2, end: Pos2) -> f32 {
 mod tests_of_private_items_in_binary_crate {
     use super::*;
     use crate::config::DEFAULT_STROKE_COLOR;
+    use crate::page_layout::page_top_in_world_units;
     use crate::stand_in::WorldPos;
     use eframe::egui::Vec2;
 
@@ -141,6 +142,10 @@ mod tests_of_private_items_in_binary_crate {
     const POINT_THREE_RIGHT_FOUR_ABOVE_THE_START: Pos2 = Pos2::new(3.0, 4.0);
     const THREE_STRAIGHT_ACROSS: f32 = 3.0;
     const HYPOTENUSE_OF_THREE_AND_FOUR: f32 = 5.0;
+    const AREA_TOO_SMALL_FOR_A_PAGE: Rect =
+        Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(20.0, 20.0));
+    const WHEEL_SCROLL_TOWARDS_FIRST_PAGE_PX: f32 = 50.0;
+    const CENTER_OF_TOO_SMALL_AREA: Pos2 = Pos2::new(10.0, 10.0);
 
     fn assert_close(actual: f32, expected: f32) {
         assert!(
@@ -253,5 +258,44 @@ mod tests_of_private_items_in_binary_crate {
         let distance =
             distance_from_point_to_segment(POINT_THREE_RIGHT_FOUR_ABOVE_THE_START, START, START);
         assert_close(distance, HYPOTENUSE_OF_THREE_AND_FOUR);
+    }
+
+    #[test]
+    fn pen_in_an_area_too_small_for_a_page_draws_nothing() {
+        let mut model = Model::default();
+        let pressed = CanvasInput {
+            area: AREA_TOO_SMALL_FOR_A_PAGE,
+            scroll_on_screen: 0.0,
+            pointer_pressed_at: Some(CENTER_OF_TOO_SMALL_AREA),
+            is_pointer_held: true,
+        };
+        handle_canvas_input(&mut model, &pressed);
+        assert!(model.stroke_in_progress().is_empty());
+        handle_canvas_input(
+            &mut model,
+            &CanvasInput {
+                pointer_pressed_at: None,
+                is_pointer_held: false,
+                ..pressed
+            },
+        );
+        assert!(model.board().strokes.is_empty());
+    }
+
+    #[test]
+    fn wheel_in_an_area_too_small_for_a_page_does_not_scroll() {
+        let mut model = Model::default();
+        model.add_page_at_end();
+        let wheel = CanvasInput {
+            area: AREA_TOO_SMALL_FOR_A_PAGE,
+            scroll_on_screen: WHEEL_SCROLL_TOWARDS_FIRST_PAGE_PX,
+            pointer_pressed_at: None,
+            is_pointer_held: false,
+        };
+        handle_canvas_input(&mut model, &wheel);
+        assert_eq!(
+            model.scroll_offset_in_world_units(),
+            page_top_in_world_units(1)
+        );
     }
 }

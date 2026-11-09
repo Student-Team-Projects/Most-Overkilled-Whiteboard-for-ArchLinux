@@ -99,3 +99,93 @@ impl Model {
         page_top_in_world_units(page_index.min(self.board.last_page_index()))
     }
 }
+
+#[cfg(test)]
+mod tests_of_private_items_in_binary_crate {
+    use super::*;
+    use crate::page_layout::page_top_in_world_units;
+
+    const FIRST_PAGE: u32 = 0;
+    const SECOND_PAGE: u32 = 1;
+    const LAST_POSSIBLE_PAGE_INDEX: u32 = u32::MAX;
+    const ONE_WORLD_UNIT: i64 = 1;
+    const PRINTABLE_POINT_ON_FIRST_PAGE: WorldPos = WorldPos { x: 1_000, y: 1_000 };
+    const POINT_IN_TOP_MARGIN_OF_FIRST_PAGE: WorldPos = WorldPos { x: 1_000, y: 100 };
+    const POINT_IN_GAP_BELOW_FIRST_PAGE: WorldPos = WorldPos {
+        x: 1_000,
+        y: 13_600,
+    };
+    const POINT_RIGHT_OF_THE_PAGES: WorldPos = WorldPos { x: 9_600, y: 1_000 };
+    const PRINTABLE_POINT_ON_SECOND_PAGE: WorldPos = WorldPos {
+        x: 1_000,
+        y: 15_000,
+    };
+
+    fn model_with_two_pages_scrolled_to_the_first() -> Model {
+        let mut model = Model::default();
+        model.add_page_at_end();
+        model.scroll_to_top_of(FIRST_PAGE);
+        model
+    }
+
+    #[test]
+    fn scroll_by_stops_at_the_first_page_top() {
+        let mut model = model_with_two_pages_scrolled_to_the_first();
+        model.scroll_by(-ONE_WORLD_UNIT);
+        assert_eq!(model.scroll_offset_in_world_units(), 0);
+        model.scroll_by(i64::MIN);
+        assert_eq!(model.scroll_offset_in_world_units(), 0);
+    }
+
+    #[test]
+    fn scroll_by_stops_at_the_last_page_top() {
+        let mut model = model_with_two_pages_scrolled_to_the_first();
+        model.scroll_by(page_top_in_world_units(SECOND_PAGE) + ONE_WORLD_UNIT);
+        assert_eq!(
+            model.scroll_offset_in_world_units(),
+            page_top_in_world_units(SECOND_PAGE)
+        );
+        model.scroll_by(i64::MAX);
+        assert_eq!(
+            model.scroll_offset_in_world_units(),
+            page_top_in_world_units(SECOND_PAGE)
+        );
+    }
+
+    #[test]
+    fn add_page_at_end_on_the_last_possible_page_adds_nothing() {
+        let mut model = Model::default();
+        model
+            .board
+            .apply_add_page_idempotently(LAST_POSSIBLE_PAGE_INDEX);
+        model.add_page_at_end();
+        assert_eq!(model.board().last_page_index(), LAST_POSSIBLE_PAGE_INDEX);
+        assert_eq!(
+            model.scroll_offset_in_world_units(),
+            page_top_in_world_units(LAST_POSSIBLE_PAGE_INDEX)
+        );
+    }
+
+    #[test]
+    fn nearest_page_switches_exactly_halfway_between_page_tops() {
+        let mut model = model_with_two_pages_scrolled_to_the_first();
+        let halfway = distance_between_page_tops_in_world_units() / 2;
+        model.scroll_by(halfway - ONE_WORLD_UNIT);
+        assert_eq!(model.page_nearest_to_top_of_view(), FIRST_PAGE);
+        model.scroll_by(ONE_WORLD_UNIT);
+        assert_eq!(model.page_nearest_to_top_of_view(), SECOND_PAGE);
+    }
+
+    #[test]
+    fn only_the_printable_part_of_an_existing_page_is_printable() {
+        let mut model = Model::default();
+        assert!(model.is_printable(PRINTABLE_POINT_ON_FIRST_PAGE));
+        assert!(!model.is_printable(POINT_IN_TOP_MARGIN_OF_FIRST_PAGE));
+        assert!(!model.is_printable(POINT_IN_GAP_BELOW_FIRST_PAGE));
+        assert!(!model.is_printable(POINT_RIGHT_OF_THE_PAGES));
+        assert!(!model.is_printable(PRINTABLE_POINT_ON_SECOND_PAGE));
+        model.add_page_at_end();
+        assert!(model.is_printable(PRINTABLE_POINT_ON_SECOND_PAGE));
+        assert!(!model.is_printable(POINT_IN_GAP_BELOW_FIRST_PAGE));
+    }
+}
