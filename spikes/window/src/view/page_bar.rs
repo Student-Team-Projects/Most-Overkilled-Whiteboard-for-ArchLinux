@@ -1,8 +1,12 @@
+//! The bottom bar that moves between pages and adds pages.
+
 use eframe::egui;
 
 use crate::controller::Command;
 use crate::model::Model;
 
+/// Shows previous / next page buttons, "Page n / m" and an add-page button.
+/// Returns the command of the button clicked this frame, if any.
 pub fn show(ui: &mut egui::Ui, model: &Model) -> Option<Command> {
     let current_page = model.page_nearest_to_top_of_view();
     let last_page = model.board().last_page_index();

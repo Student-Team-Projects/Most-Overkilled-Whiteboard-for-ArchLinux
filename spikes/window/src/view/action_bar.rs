@@ -1,7 +1,11 @@
+//! The top bar of file and network actions.
+
 use eframe::egui::{self, RichText};
 
 const ACTION_ICON_SIZE: f32 = 20.0;
 
+/// Shows the save, open, connect and PDF buttons. They do nothing yet;
+/// each tooltip names the task that wires it up.
 pub fn show_not_wired_yet(ui: &mut egui::Ui) {
     let icons_and_descriptions = [
         ("💾", "Save the board to a file (T43 #87)"),

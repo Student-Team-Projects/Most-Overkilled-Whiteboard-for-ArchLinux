@@ -1,8 +1,15 @@
+//! Screen ↔ world conversion.
+
 use eframe::egui::{Pos2, Rect, Vec2};
 
 use crate::config::{SPACE_AROUND_PAGE_PX, WORLD_UNITS_PER_PIXEL};
 use crate::stand_in::{Aabb, WorldPos};
 
+/// Converts between screen positions (egui points) and world positions
+/// for a vertical stack of pages scrolled up and down.
+///
+/// The only place that knows the zoom and the 16 world units per pixel.
+/// Stands in for `Camera` (T11), which adds pan, zoom and its [0.5, 2] clamp.
 #[derive(Clone, Copy, Debug)]
 pub struct StackedPageCamera {
     first_page_top_left: Pos2,
@@ -10,6 +17,11 @@ pub struct StackedPageCamera {
 }
 
 impl StackedPageCamera {
+    /// Zooms so one whole page fits inside `area` with a margin around it,
+    /// centres the stack horizontally and scrolls it up by `scroll_offset_in_world_units`.
+    ///
+    /// The zoom is 0 when `area` is no larger than the margins; the screen-to-world
+    /// conversions then return meaningless values.
     pub fn fitting_one_whole_page(area: Rect, scroll_offset_in_world_units: i64) -> Self {
         let page_at_zoom_one = world_size_at_zoom_one(Aabb::page(0));
         let room = (area.size() - Vec2::splat(2.0 * SPACE_AROUND_PAGE_PX)).max(Vec2::ZERO);
@@ -24,15 +36,19 @@ impl StackedPageCamera {
         }
     }
 
+    /// Screen pixels per page pixel.
     pub fn zoom(self) -> f32 {
         self.zoom
     }
 
+    /// Screen position of a world point.
     pub fn world_to_screen(self, point: WorldPos) -> Pos2 {
         let world_units = Vec2::new(world_units_to_f32(point.x), world_units_to_f32(point.y));
         self.first_page_top_left + self.world_units_to_screen(world_units)
     }
 
+    /// World point under a screen position, rounded to the nearest whole unit.
+    /// Requires a zoom above 0.
     pub fn screen_to_world(self, pos: Pos2) -> WorldPos {
         let world_units = self.screen_to_world_units(pos - self.first_page_top_left);
         WorldPos {
@@ -41,11 +57,14 @@ impl StackedPageCamera {
         }
     }
 
+    /// On-screen length, in screen pixels, of a world length such as a stroke width.
     pub fn world_length_to_screen(self, length_in_world_units: u32) -> f32 {
         let length = world_units_to_f32(i64::from(length_in_world_units));
         self.world_units_to_screen(Vec2::new(length, 0.0)).x
     }
 
+    /// World length of an on-screen length, rounded to the nearest whole unit.
+    /// Keeps the sign. Requires a zoom above 0.
     pub fn screen_length_to_world(self, length_on_screen: f32) -> i64 {
         round_to_world_units(
             self.screen_to_world_units(Vec2::new(length_on_screen, 0.0))
@@ -53,6 +72,7 @@ impl StackedPageCamera {
         )
     }
 
+    /// Screen rectangle covering a world rectangle.
     pub fn world_area_to_screen(self, area: Aabb) -> Rect {
         Rect::from_min_max(
             self.world_to_screen(area.min),

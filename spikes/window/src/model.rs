@@ -1,17 +1,26 @@
+//! The window's state and the operations that keep it valid. No egui types.
+
 use crate::config::{DEFAULT_STROKE_COLOR, DEFAULT_STROKE_WIDTH_PX, WORLD_UNITS_PER_PIXEL};
 use crate::page_layout::{distance_between_page_tops_in_world_units, page_top_in_world_units};
 use crate::stand_in::{Aabb, Rgba, StandInBoard, StandInStroke, WorldPos};
 
+/// What the primary pointer button does on the canvas.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Tool {
+    /// Draws a freehand stroke while held.
     Pen,
+    /// Removes every stroke it touches, whole (ADR 0002).
     Eraser,
 }
 
+/// The pen settings chosen in the toolbar.
 #[derive(Debug)]
 pub struct ToolState {
+    /// The selected tool.
     pub tool: Tool,
+    /// Colour of the next stroke.
     pub color: Rgba,
+    /// Width of the next stroke, in page pixels (zoom 1).
     pub stroke_width_px: u16,
 }
 
@@ -26,13 +35,17 @@ impl Default for ToolState {
 }
 
 impl ToolState {
+    /// Width of the next stroke in world units, the unit strokes are stored in.
     pub fn stroke_width_in_world_units(&self) -> u32 {
         u32::from(self.stroke_width_px) * u32::from(WORLD_UNITS_PER_PIXEL)
     }
 }
 
+/// Everything the window shows, and the only operations that change it.
+/// Knows nothing about egui; the controller is its only writer.
 #[derive(Debug, Default)]
 pub struct Model {
+    /// Pen settings. Public because any combination of them is valid.
     pub tools: ToolState,
     board: StandInBoard,
     stroke_in_progress: Vec<WorldPos>,
@@ -40,23 +53,29 @@ pub struct Model {
 }
 
 impl Model {
+    /// The strokes and pages.
     pub fn board(&self) -> &StandInBoard {
         &self.board
     }
 
+    /// Points of the stroke being drawn, not on the board yet; empty between strokes.
     pub fn stroke_in_progress(&self) -> &[WorldPos] {
         &self.stroke_in_progress
     }
 
+    /// How far the page stack is scrolled up; from 0 to the top of the last page.
     pub fn scroll_offset_in_world_units(&self) -> i64 {
         self.scroll_offset_in_world_units
     }
 
+    /// Whether `point` lies inside the printable part of an existing page,
+    /// the only place the pen draws and the eraser works.
     pub fn is_printable(&self, point: WorldPos) -> bool {
         (0..=self.board.last_page_index())
             .any(|page_index| Aabb::printable_part_of_page(page_index).contains(point))
     }
 
+    /// Index of the page whose top edge is nearest to the scroll offset.
     pub fn page_nearest_to_top_of_view(&self) -> u16 {
         let distance = distance_between_page_tops_in_world_units();
         let nearest = (self.scroll_offset_in_world_units + distance / 2) / distance;
@@ -65,6 +84,8 @@ impl Model {
             .min(self.board.last_page_index())
     }
 
+    /// Scrolls by `world_units` (positive moves down the stack), stopping
+    /// at the first page top and at the last page top.
     pub fn scroll_by(&mut self, world_units: i64) {
         let last_page_top = self.scroll_offset_showing_top_of(self.board.last_page_index());
         self.scroll_offset_in_world_units = self
@@ -73,22 +94,28 @@ impl Model {
             .clamp(0, last_page_top);
     }
 
+    /// Scrolls so the top of page `page_index` is at the top of the view;
+    /// an index past the last page means the last page.
     pub fn scroll_to_top_of(&mut self, page_index: u16) {
         self.scroll_offset_in_world_units = self.scroll_offset_showing_top_of(page_index);
     }
 
+    /// Adds a page after the last one and scrolls to it.
     pub fn add_page_at_end(&mut self) {
         let new_last_page_index = self.board.last_page_index().saturating_add(1);
         self.board.apply_add_page_idempotently(new_last_page_index);
         self.scroll_to_top_of(new_last_page_index);
     }
 
+    /// Adds `point` to the stroke being drawn, unless it repeats the last point.
     pub fn extend_stroke_in_progress(&mut self, point: WorldPos) {
         if self.stroke_in_progress.last() != Some(&point) {
             self.stroke_in_progress.push(point);
         }
     }
 
+    /// Moves the stroke being drawn onto the board with the current colour and width.
+    /// Does nothing when no stroke is in progress.
     pub fn finish_stroke_in_progress(&mut self) {
         let points = std::mem::take(&mut self.stroke_in_progress);
         if !points.is_empty() {
@@ -100,6 +127,7 @@ impl Model {
         }
     }
 
+    /// Removes every stroke on the board for which `is_erased` returns true.
     pub fn erase_strokes_where(&mut self, is_erased: impl Fn(&StandInStroke) -> bool) {
         self.board.strokes.retain(|stroke| !is_erased(stroke));
     }

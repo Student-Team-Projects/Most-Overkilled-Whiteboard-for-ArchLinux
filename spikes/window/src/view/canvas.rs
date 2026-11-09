@@ -1,3 +1,5 @@
+//! The page canvas, in two steps per frame so the controller can act in between.
+
 use eframe::egui::{self, Color32, Painter, Pos2, Rect, Response, Sense, Stroke, StrokeKind};
 
 use crate::camera::StackedPageCamera;
@@ -16,11 +18,13 @@ const ERASER_OUTLINE: Stroke = Stroke {
     color: Color32::GRAY,
 };
 
+/// The canvas area reserved for this frame, between reading its input and painting it.
 pub struct AllocatedCanvas {
     response: Response,
     painter: Painter,
 }
 
+/// Reserves the rest of `ui` for the canvas and reads this frame's pointer input on it.
 pub fn allocate(ui: &mut egui::Ui) -> (CanvasInput, AllocatedCanvas) {
     let (response, painter) = ui.allocate_painter(ui.available_size(), Sense::click_and_drag());
     let scroll_on_screen = if response.contains_pointer() {
@@ -43,6 +47,8 @@ pub fn allocate(ui: &mut egui::Ui) -> (CanvasInput, AllocatedCanvas) {
     (input, AllocatedCanvas { response, painter })
 }
 
+/// Paints the visible pages, their strokes and the stroke in progress,
+/// clipped to the printable parts, plus the eraser outline under the pointer.
 pub fn paint(canvas: &AllocatedCanvas, model: &Model) {
     let area = canvas.response.rect;
     let camera =

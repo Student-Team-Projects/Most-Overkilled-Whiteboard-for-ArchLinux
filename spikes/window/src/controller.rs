@@ -1,3 +1,5 @@
+//! Turns what the user did into changes of the model. The only writer of the model.
+
 use eframe::egui::{Pos2, Rect};
 
 use crate::camera::StackedPageCamera;
@@ -5,23 +7,36 @@ use crate::config::ERASER_RADIUS_ON_SCREEN_PX;
 use crate::model::{Model, Tool};
 use crate::stand_in::{Rgba, StandInStroke};
 
+/// What the user asked for with a toolbar or page bar button.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Command {
+    /// Switch to this tool.
     SelectTool(Tool),
+    /// Draw the next strokes in this colour.
     SelectColor(Rgba),
+    /// Draw the next strokes this wide, in page pixels.
     SelectStrokeWidth(u16),
+    /// Scroll to the top of this page.
     ScrollToTopOf(u16),
+    /// Add a page after the last one.
     AddPageAtEnd,
 }
 
+/// What the pointer did on the canvas during one frame, in screen coordinates.
 #[derive(Clone, Copy, Debug)]
 pub struct CanvasInput {
+    /// The canvas rectangle on screen.
     pub area: Rect,
+    /// Wheel movement in screen pixels while the pointer is over the canvas;
+    /// positive scrolls towards the first page.
     pub scroll_on_screen: f32,
+    /// Where the primary button is held or was just clicked; `None` otherwise.
     pub pointer_pressed_at: Option<Pos2>,
+    /// Whether the primary button is still held on the canvas.
     pub is_pointer_held: bool,
 }
 
+/// Changes `model` as `command` asks.
 pub fn apply(model: &mut Model, command: Command) {
     match command {
         Command::SelectTool(tool) => model.tools.tool = tool,
@@ -32,6 +47,9 @@ pub fn apply(model: &mut Model, command: Command) {
     }
 }
 
+/// Scrolls, then lets the current tool act on the printable part of the pages:
+/// the pen extends the stroke in progress and finishes it once the button
+/// is released; the eraser removes every stroke within its radius.
 pub fn handle_canvas_input(model: &mut Model, input: &CanvasInput) {
     scroll(model, input);
     let camera =

@@ -1,3 +1,5 @@
+//! The left toolbar: tool, colour and stroke width.
+
 use eframe::egui::color_picker::{self, Alpha};
 use eframe::egui::{self, Color32, Rect, Response, RichText, Sense, Stroke, Vec2};
 
@@ -17,6 +19,8 @@ const COLOR_SWATCH_OUTLINE: Stroke = Stroke {
 };
 const STROKE_WIDTH_PREVIEW_INSET_PX: f32 = 8.0;
 
+/// Shows the tool, colour and width pickers with the current choice highlighted.
+/// Returns one command per choice changed this frame.
 pub fn show(ui: &mut egui::Ui, tools: &ToolState) -> Vec<Command> {
     let mut commands = Vec::new();
     ui.vertical_centered(|ui| {
