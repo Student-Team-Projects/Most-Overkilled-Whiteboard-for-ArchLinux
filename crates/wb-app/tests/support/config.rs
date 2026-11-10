@@ -27,15 +27,22 @@ pub const MAX_STEPS: usize = 128;
 pub const OPENING_ZOOM: f32 = 1.0;
 /// One pixel at zoom 1, in world units.
 pub const ONE_WORLD_PIXEL: u32 = 16;
-/// Size of the test viewport, in screen pixels.
+/// Size of the off-screen canvas, in screen pixels.
 pub const VIEWPORT: egui::Vec2 = egui::Vec2::new(800.0, 600.0);
-/// A taller-than-wide area to fit into `VIEWPORT`: an A4 page at 72 dpi, in world units.
-pub const TALL_AREA: wb_core::Aabb = wb_core::Aabb::new(
-    wb_core::WorldPos::new(0, 0),
-    wb_core::WorldPos::new(595 * 16, 842 * 16),
-);
-/// Space left around a fitted area, in screen pixels.
-pub const SPACE_AROUND_PX: f32 = 16.0;
+/// A point far outside a `VIEWPORT` centred on the world origin.
+pub const FAR_OFF_SCREEN: wb_core::WorldPos = wb_core::WorldPos::new(1_000_000, 0);
+/// Two stroke colours told apart in paint order.
+pub const RED: Rgba = Rgba([220, 40, 40, 255]);
+/// See `RED`.
+pub const BLUE: Rgba = Rgba([30, 90, 220, 255]);
+
+/// Eraser reach in world units, divisible by 5 for a 3-4-5 triangle.
+pub const REACH: i64 = 100;
+
+/// Points in a stroke too long for one piece of `PIECE_BUDGET_BYTES`.
+pub const LONG_STROKE_POINTS: i64 = 2_000;
+/// Distance between neighbouring points of the long stroke: a multi-byte varint offset.
+pub const LONG_STROKE_STEP: i64 = 1_000;
 
 /// Generated camera centres lie in this range on both axes.
 pub const WORLD_CENTRE: std::ops::Range<i64> = -(1 << 40)..(1 << 40);

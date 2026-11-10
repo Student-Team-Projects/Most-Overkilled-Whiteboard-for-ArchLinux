@@ -2,7 +2,7 @@
 
 use egui::{Pos2, Vec2};
 use proptest::prelude::*;
-use wb_app::camera::Camera;
+use wb_app::camera::{AffineCamera, Camera};
 use wb_app::config::{MAX_ZOOM, MIN_ZOOM};
 use wb_core::{Aabb, WorldPos};
 
@@ -15,7 +15,7 @@ fn contains(area: Aabb, point: WorldPos) -> bool {
     (area.min.x..=area.max.x).contains(&point.x) && (area.min.y..=area.max.y).contains(&point.y)
 }
 
-fn any_camera() -> impl Strategy<Value = Camera> {
+fn any_camera() -> impl Strategy<Value = AffineCamera> {
     (
         WORLD_CENTRE,
         WORLD_CENTRE,
@@ -24,7 +24,7 @@ fn any_camera() -> impl Strategy<Value = Camera> {
         MIN_ZOOM..=MAX_ZOOM,
     )
         .prop_map(|(x, y, screen_x, screen_y, zoom)| {
-            Camera::new(WorldPos::new(x, y), Pos2::new(screen_x, screen_y), zoom)
+            AffineCamera::new(WorldPos::new(x, y), Pos2::new(screen_x, screen_y), zoom)
         })
 }
 

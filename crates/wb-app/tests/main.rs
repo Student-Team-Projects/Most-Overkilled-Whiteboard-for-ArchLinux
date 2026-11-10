@@ -2,5 +2,8 @@
 
 mod camera;
 mod conformance;
+mod controller;
+mod eraser;
+mod local_board;
 mod stroke_cache;
 mod support;

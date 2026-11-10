@@ -2,3 +2,4 @@
 
 mod camera;
 mod stroke_cache;
+mod stroke_renderer;
