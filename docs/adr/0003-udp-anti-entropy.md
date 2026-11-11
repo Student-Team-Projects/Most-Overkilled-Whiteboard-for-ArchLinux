@@ -8,3 +8,6 @@ Status: accepted · 2026-10-13
   (peers exchange digests of what they have, then send what is missing). No TCP, no QUIC.
 - **Why:** with ADR 0001 duplicates and reordering are harmless, so reliability comes from
   anti-entropy instead of the transport. Fits gossip/discovery naturally; no async runtime needed.
+- **Amended 2026-11-09 (T16):** the `Transport` seam addresses datagrams by `SocketAddr`, not
+  `PeerId`, since a UDP datagram carries no peer id; drivers map between them. The simulated
+  transport's clock belongs to the sim driver, so a simulated `recv` never waits.

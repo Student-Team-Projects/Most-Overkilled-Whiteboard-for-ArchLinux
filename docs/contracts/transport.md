@@ -5,8 +5,8 @@ never by protocol code. Format → `README.md` here.
 
 ## Operations
 
-- `send` — accepts destination peer and datagram bytes; returns success or `TransportError`.
-- `recv` — accepts a timeout; returns one peer and datagram, no datagram on timeout, or `TransportError`.
+- `send` — accepts a destination address (`SocketAddr`) and datagram bytes; returns success or `TransportError`.
+- `recv` — accepts a timeout; returns one sender address and datagram, no datagram on timeout, or `TransportError`.
 - `max_datagram` — accepts no inputs and returns the maximum supported datagram size; does not report errors.
 
 ## Guarantees
@@ -16,6 +16,14 @@ never by protocol code. Format → `README.md` here.
 3. `max_datagram()` is 1200 bytes for both `Udp` and `Sim`, one constant (ADR 0025), until the
    virtual-network answer settles a larger value (G11).
 
+Addresses, not `PeerId`s: a UDP datagram does not say which peer sent it. The driver maps
+`PeerId` ↔ address from what discovery learned.
+
+`Sim` is one in-memory network (`SimNet`) whose clock the sim driver moves; time never passes
+inside `recv`, so `Sim::recv` returns only datagrams that already arrived and never waits. Chaos is
+drawn from a seed: loss and duplication chances, latency plus uniform jitter (which reorders), and
+a partition that loses every datagram sent across it until healed.
+
 ## Not guaranteed
 
 - Delivery, order, no duplicates — callers must survive loss, reordering and duplication.
@@ -24,7 +32,7 @@ never by protocol code. Format → `README.md` here.
 
 | Layer | Impl |
 |---|---|
-| 0 | `Udp` (std `UdpSocket`) · `Sim` (seeded loss, latency, duplication, partitions) |
+| 0 | `Udp` (std `UdpSocket`) · `Sim` (seeded loss, latency, jitter, duplication, partitions) |
 
 ## Conformance tests
 
