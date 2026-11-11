@@ -5,6 +5,7 @@ mod board;
 mod codec;
 mod conformance;
 mod intersects;
+mod page;
 #[cfg(feature = "ecolor")]
 mod rgba;
 mod stroke_points;

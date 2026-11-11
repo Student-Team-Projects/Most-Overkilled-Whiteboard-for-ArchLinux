@@ -205,6 +205,13 @@ pub enum Op {
         /// Identifier of the stroke to erase.
         target: StrokeId,
     },
+    /// Make sure the board has at least `count` pages.
+    AddPage {
+        /// Identifier of this operation.
+        id: OpId,
+        /// How many pages the board has at least, once applied.
+        count: u32,
+    },
 }
 
 impl Op {
@@ -235,6 +242,16 @@ impl Op {
         Self::Erase {
             id: stamp.id,
             target,
+        }
+    }
+
+    /// Builds the op that makes the board at least `count` pages long, with the id of `stamp`.
+    /// To add one page at the end, pass the board's page count plus one, saturating.
+    #[must_use]
+    pub const fn add_page(stamp: Stamp, count: u32) -> Self {
+        Self::AddPage {
+            id: stamp.id,
+            count,
         }
     }
 }

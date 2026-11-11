@@ -6,7 +6,7 @@ below are its contract and its property tests. Format → `README.md` here.
 ## Operations
 
 - `stamp` — accepts the author peer; reserves and returns a fresh `OpId` and Lamport for one local op. The caller builds the op (`Op::add`, `Op::erase`, `Op::add_page`) and applies it. Does not report errors.
-- `apply` — accepts any operation, local or remote, and reports whether the visible picture changed. Does not report errors.
+- `apply` — accepts any operation, local or remote, and reports whether the visible picture, strokes or pages, changed. Does not report errors.
 - `merge` — accepts another replica of the same board and unions its state. Does not report errors.
 - `visible` — accepts no inputs and yields added, unerased strokes in draw order. Does not report errors.
 - `page_count` — accepts no inputs and returns how many pages exist, at least 1. Does not report errors.

@@ -1,23 +1,25 @@
 //! Generated op universes: ids are unique and spread over a few peers, Lamports collide on
-//! purpose, and an erase targets any id: an Add, an Erase, a later op, or one that never exists.
+//! purpose, an erase targets any id: an Add, an Erase, a later op, or one that never exists,
+//! and strokes and add-page ops reach a few pages, gaps between them included.
 
 use proptest::prelude::*;
 use wb_core::{Op, OpId};
 
 use super::{OpExt, OpIdExt};
-use crate::support::config::{LAMPORTS, TARGETS, UNIVERSE};
+use crate::support::config::{LAMPORTS, PAGE_PITCH, PAGES, TARGETS, UNIVERSE};
 
 /// A universe of ops, in id order.
 pub fn ops() -> impl Strategy<Value = Vec<Op>> {
-    let spec = (any::<bool>(), 0..LAMPORTS, 0..TARGETS);
+    let spec = (0..3, 0..LAMPORTS, 0..TARGETS, 0..PAGES, 0..PAGE_PITCH);
     prop::collection::vec(spec, 0..=UNIVERSE).prop_map(|specs| {
         (0u64..)
             .zip(specs)
-            .map(|(i, (is_add, lamport, target))| {
-                if is_add {
-                    Op::stroke(OpId::universe(i), lamport)
-                } else {
-                    Op::erasure(OpId::universe(i), OpId::universe(target))
+            .map(|(i, (kind, lamport, target, page, below_top))| {
+                let id = OpId::universe(i);
+                match kind {
+                    0 => Op::stroke_down_to(id, lamport, i64::from(page) * PAGE_PITCH + below_top),
+                    1 => Op::erasure(id, OpId::universe(target)),
+                    _ => Op::page_add(id, page),
                 }
             })
             .collect()

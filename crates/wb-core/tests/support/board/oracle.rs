@@ -5,12 +5,12 @@ use std::collections::BTreeSet;
 use wb_core::{Lamport, Op, OpId, Stroke};
 
 use super::OpExt;
-use crate::support::config::CANONICAL_ERASER;
+use crate::support::config::{CANONICAL_AUTHOR, PAGE_PITCH};
 
 fn strokes(ops: &[Op]) -> impl Iterator<Item = &Stroke> {
     ops.iter().filter_map(|op| match op {
         Op::Add(stroke) => Some(stroke),
-        Op::Erase { .. } => None,
+        Op::Erase { .. } | Op::AddPage { .. } => None,
     })
 }
 
@@ -18,7 +18,7 @@ fn erase_targets(ops: &[Op]) -> BTreeSet<OpId> {
     ops.iter()
         .filter_map(|op| match op {
             Op::Erase { target, .. } => Some(*target),
-            Op::Add(_) => None,
+            Op::Add(_) | Op::AddPage { .. } => None,
         })
         .collect()
 }
@@ -34,16 +34,36 @@ pub fn picture(ops: &[Op]) -> Vec<Stroke> {
     picture
 }
 
-/// One op per item of the canonical state: the first Add of each stroke id, then one erase of
-/// each erased target by `CANONICAL_ERASER`, with op ids the original erases never had.
+/// How many pages the ops make: at least 1, every add-page count, and one past the page of every
+/// stroke's lowest point, where a page owns the gap below it. Generated strokes never go above
+/// the first page.
+pub fn page_count(ops: &[Op]) -> u32 {
+    let asked = ops.iter().filter_map(|op| match op {
+        Op::AddPage { count, .. } => Some(*count),
+        Op::Add(_) | Op::Erase { .. } => None,
+    });
+    let held = strokes(ops)
+        .map(|stroke| u32::try_from(stroke.bbox.max.y / PAGE_PITCH + 1).unwrap_or(u32::MAX));
+    asked.chain(held).fold(1, u32::max)
+}
+
+/// One op per item of the canonical state: the first Add of each stroke id, one erase of each
+/// erased target, and one add-page op for the page count, all by `CANONICAL_AUTHOR` with op ids
+/// the original ops never had.
 pub fn canonical(ops: &[Op]) -> Vec<Op> {
     let mut added = BTreeSet::new();
     let adds = strokes(ops).filter(|stroke| added.insert(stroke.id));
     let adds = adds.map(|stroke| Op::Add(stroke.clone()));
-    let erases = (0..)
-        .zip(erase_targets(ops))
-        .map(|(seq, target)| Op::erasure(OpId::new(CANONICAL_ERASER, seq), target));
-    adds.chain(erases).collect()
+    let erases = erase_targets(ops).into_iter().map(Some);
+    let page_add = std::iter::once(None);
+    let canonical_ops = (0..).zip(erases.chain(page_add)).map(|(seq, item)| {
+        let id = OpId::new(CANONICAL_AUTHOR, seq);
+        match item {
+            Some(target) => Op::erasure(id, target),
+            None => Op::page_add(id, page_count(ops)),
+        }
+    });
+    adds.chain(canonical_ops).collect()
 }
 
 /// Every id the ops use: op ids and erase targets.
