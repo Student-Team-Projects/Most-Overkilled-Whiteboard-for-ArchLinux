@@ -18,8 +18,8 @@ pub trait StrokeCache {
     /// The codec's error if `stroke`'s points do not decode.
     fn get(&mut self, stroke: &Stroke) -> Result<&StrokePoints, CodecError>;
 
-    /// Tells the cache the world area on screen, margin included; it may drop the points of
-    /// strokes outside it.
+    /// Sets the resident area: the world area on screen plus a margin. The cache may drop decoded
+    /// points of strokes outside it to save memory; a later `get` decodes them again.
     fn set_resident(&mut self, area: Aabb);
 
     /// Drops whatever the cache holds for `id`, an erased stroke.
