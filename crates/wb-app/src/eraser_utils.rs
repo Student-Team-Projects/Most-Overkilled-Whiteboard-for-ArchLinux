@@ -9,6 +9,7 @@ use wb_core::{StrokePoints, WorldPos};
 /// Coordinates are taken relative to `centre` in `i64` first, then measured in `f64`, which is
 /// exact for every point closer than 2^53 world units; farther points are far out of reach.
 #[must_use]
+#[allow(clippy::cast_precision_loss)] // offsets are exact below 2^53, and anything farther is out of reach
 pub fn stroke_is_within_eraser_reach(
     points: &StrokePoints,
     width: u32,
@@ -20,8 +21,8 @@ pub fn stroke_is_within_eraser_reach(
         .into_iter()
         .map(|point| {
             [
-                world_units_to_f64(point.x.saturating_sub(centre.x)),
-                world_units_to_f64(point.y.saturating_sub(centre.y)),
+                point.x.saturating_sub(centre.x) as f64,
+                point.y.saturating_sub(centre.y) as f64,
             ]
         })
         .collect();
@@ -52,11 +53,4 @@ fn distance_from_origin_to_segment(start: [f64; 2], end: [f64; 2]) -> f64 {
         start[1] + along[1] * closest_fraction,
     ];
     closest[0].hypot(closest[1])
-}
-
-/// `units` as an `f64`: the only `i64` to `f64` cast here, so its precision note sits in one
-/// place.
-#[allow(clippy::cast_precision_loss)] // exact below 2^53, and anything farther is out of reach
-fn world_units_to_f64(units: i64) -> f64 {
-    units as f64
 }
