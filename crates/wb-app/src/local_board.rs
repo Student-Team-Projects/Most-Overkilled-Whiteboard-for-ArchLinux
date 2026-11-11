@@ -33,6 +33,10 @@ pub trait LocalBoard {
         width: u32,
     ) -> Result<(), CodecError>;
 
+    /// Appends a page below the last one with an `AddPage` op asking for one page more than the
+    /// board has, so it syncs like a stroke (ADR 0027). Stays at `u32::MAX` pages.
+    fn add_page(&mut self);
+
     /// Erases, whole, every visible stroke that comes within `reach` world units of `centre`
     /// (ADR 0002).
     fn erase_touched(&mut self, centre: WorldPos, reach: u32);

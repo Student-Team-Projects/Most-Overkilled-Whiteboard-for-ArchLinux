@@ -49,7 +49,11 @@ impl StrokeRenderer for Naive {
         _index: &impl SpatialIndex,
         cache: &mut impl StrokeCache,
     ) {
-        let visible_area = camera.visible_area(painter.clip_rect().size());
+        let clip = painter.clip_rect();
+        let visible_area = Aabb::new(
+            camera.screen_to_world(clip.min),
+            camera.screen_to_world(clip.max),
+        );
         cache.set_resident(visible_area);
         for stroke in board.visible() {
             if !stroke.bbox.intersects(&visible_area) {

@@ -1,16 +1,15 @@
 //! Everything the window shows.
 
 use egui::Rect;
-use wb_core::{PeerId, WorldPos};
+use wb_core::{Page, PeerId, WorldPos};
 
 use crate::camera::{AffineCamera, Camera};
 use crate::config::SPACE_AROUND_PAGE_PX;
-use crate::controller::SinglePageController;
 use crate::local_board::{LocalBoard, SimpleLocalBoard};
 use crate::tool::ToolState;
 
-/// Everything the window shows: the pen settings, the camera, the board and the stroke being
-/// drawn. Views only read it; a controller is its only writer.
+/// Everything the window shows: the pen settings, the camera, the board with its pages and the
+/// stroke being drawn. Views only read it; a controller is its only writer.
 #[derive(Debug)]
 pub struct Model {
     /// The pen settings; any combination is valid.
@@ -23,17 +22,13 @@ pub struct Model {
 }
 
 impl Model {
-    /// An empty board authored by `me`, with the default pen. The camera is fitted to the canvas
+    /// An empty board of one page authored by `me`, with the default pen. The camera is fitted to the canvas
     /// on the first frame.
     #[must_use]
     pub fn new(me: PeerId) -> Self {
         Self {
             tools: ToolState::default(),
-            camera: AffineCamera::fitting(
-                SinglePageController::PAGE,
-                Rect::ZERO,
-                SPACE_AROUND_PAGE_PX,
-            ),
+            camera: AffineCamera::fitting(Page(0).bounds(), Rect::ZERO, SPACE_AROUND_PAGE_PX),
             board: SimpleLocalBoard::new(me),
             stroke_in_progress: Vec::new(),
         }

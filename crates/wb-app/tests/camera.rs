@@ -3,7 +3,7 @@
 use egui::{Pos2, Rect};
 use wb_app::camera::{AffineCamera, Camera};
 use wb_app::config::SPACE_AROUND_PAGE_PX;
-use wb_app::controller::SinglePageController;
+use wb_core::Page;
 use wb_core::WorldPos;
 
 use crate::support::config::{ANCHOR_TOLERANCE_PX, ONE_WORLD_PIXEL, OPENING_ZOOM, VIEWPORT};
@@ -37,8 +37,8 @@ fn round_trip_is_exact_at_the_edge_of_the_world() {
 #[test]
 fn fitting_shows_the_whole_area_centred_with_space_around() {
     let viewport = Rect::from_min_size(Pos2::ZERO, VIEWPORT);
-    let camera = AffineCamera::fitting(SinglePageController::PAGE, viewport, SPACE_AROUND_PAGE_PX);
-    let page = camera.world_area_to_screen(SinglePageController::PAGE);
+    let camera = AffineCamera::fitting(Page(0).bounds(), viewport, SPACE_AROUND_PAGE_PX);
+    let page = camera.world_area_to_screen(Page(0).bounds());
     assert!(
         viewport
             .shrink(SPACE_AROUND_PAGE_PX - 0.01)

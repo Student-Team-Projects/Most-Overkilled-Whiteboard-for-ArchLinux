@@ -21,8 +21,8 @@ pub trait StrokeRenderer {
     /// next `paint` shows every change inside `area`.
     fn invalidate(&mut self, area: Aabb);
 
-    /// Paints the strokes of `board` that reach into the viewport: `painter`'s clip rectangle,
-    /// centred on the camera's screen centre. Strokes whose points do not decode are skipped.
+    /// Paints the strokes of `board` that reach into the viewport, `painter`'s clip rectangle.
+    /// Strokes whose points do not decode are skipped.
     fn paint(
         &mut self,
         painter: &Painter,
