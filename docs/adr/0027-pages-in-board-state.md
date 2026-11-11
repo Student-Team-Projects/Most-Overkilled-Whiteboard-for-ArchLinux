@@ -8,21 +8,21 @@ Status: proposed · 2026-11-09 · closes G25 · needs all 3 · first draft by Fi
   reach the others. T30 asks for an add-page that is idempotent across peers. The infinite canvas
   (M4) must not need a new board format.
 - **Decision — pages:**
-  - New op `Op::AddPage { id: OpId, page: u32 }` meaning "pages `0..=page` exist". Adding a page at
-    the end sends `page = last + 1`; two peers adding at once send the same `page` and get one new
-    page, not two.
-  - `Board::last_page()` = the maximum of every applied `AddPage.page` and of the page holding the
-    lowest bounding-box point of every added stroke (erased ones too); 0 on an empty board;
-    saturating at `u32::MAX`. The stroke part keeps a stroke whose `Add` overtakes its `AddPage`
-    on an existing page. It is on `Board` because only the board holds the `AddPage` ops; the page
-    view, "add page" and the export dialog all need it.
+  - New op `Op::AddPage { id: OpId, count: u32 }` meaning "at least `count` pages exist". Adding a
+    page at the end sends `count = page_count + 1`; two peers adding at once send the same `count`
+    and get one new page, not two.
+  - `Board::page_count()` = the maximum of 1, of every applied `AddPage.count`, and of one past the
+    page holding the lowest bounding-box point of every added stroke (erased ones too); 1 on an
+    empty board; saturating at `u32::MAX`. The stroke part keeps a stroke whose `Add` overtakes
+    its `AddPage` on an existing page. It is on `Board` because only the board holds the `AddPage`
+    ops; the page view, "add page" and the export dialog all need it.
   - Page `n` spans world `x` from 0 to 595 × 16 and `y` from `n` × (842 + 16) × 16 for 842 × 16
     units: A4 portrait at 72 dpi, one point = 16 world units (ADR 0014), and a 16 pt gap between
     pages. Its printable area is inset by 14 × 16 units.
-  - `AddPage` ops are retained and resent like erase ops; `state_hash` covers `last_page()`.
+  - `AddPage` ops are retained and resent like erase ops; `state_hash` covers `page_count()`.
   - The board mode, `Stacked` or `Infinite`, is board metadata fixed at creation, next to
     `BoardId` and the name: in the file header (G07) and in the join handshake. `Board` does not
-    enforce it. The MVP has only `Stacked`; in `Infinite` mode `last_page()` is unused.
+    enforce it. The MVP has only `Stacked`; in `Infinite` mode `page_count()` is unused.
 - **Decision — strokes on pages (`Stacked` mode):**
   - The author's input accepts points only inside a printable area. When the pointer leaves it,
     the stroke ends as if the pen were lifted; coming back onto a page starts a new stroke. So every

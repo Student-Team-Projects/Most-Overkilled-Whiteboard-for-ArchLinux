@@ -18,18 +18,18 @@ at the end, and export the pages you pick to a vector PDF. Decision → ADR 0027
 ```mermaid
 flowchart LR
     add["Add page pressed"] --> stamp["Board::stamp"]
-    stamp --> op["Op::AddPage { page: last_page + 1 }"]
+    stamp --> op["Op::AddPage { count: page_count + 1 }"]
     op --> apply["Board::apply"]
-    apply --> last["last_page = max(every AddPage.page, page of every stroke)"]
+    apply --> count["page_count = max(1, every AddPage.count, page of every stroke + 1)"]
     op --> bc["broadcast; anti-entropy resends retained AddPage ops"]
-    bc --> peer["peer: Board::apply → same last_page"]
+    bc --> peer["peer: Board::apply → same page_count"]
 ```
 
 ## Export
 
 ```mermaid
 flowchart TD
-    dialog["Export dialog: checkbox per page 0..=last_page"] --> pre["pre-checked: a visible stroke's bbox intersects the page"]
+    dialog["Export dialog: checkbox per page, page_count of them"] --> pre["pre-checked: a visible stroke's bbox intersects the page"]
     pre --> pick["user confirms the checked pages"]
     pick --> page["for each checked page, top to bottom"]
     page --> q["SpatialIndex::query page area"]
@@ -43,7 +43,7 @@ flowchart TD
 
 | Rule | Source |
 |---|---|
-| pages are shared board state: `AddPage` + `last_page` as a maximum | ADR 0027 · `board.md` guarantees 7–8 |
+| pages are shared board state: `AddPage` + `page_count` as a maximum | ADR 0027 · `board.md` guarantees 7–8 |
 | page `n` geometry: A4 portrait, 1 pt = 16 world units, 16 pt gap, 14 pt printable inset | ADR 0027 · ADR 0014 |
 | strokes end at the page edge; renderer and PDF clip to the page | ADR 0027 |
 | vector PDF via `pdf-writer`; checkboxes, non-empty pages pre-checked | ADR 0027 |
