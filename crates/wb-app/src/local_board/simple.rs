@@ -74,6 +74,12 @@ impl LocalBoard for SimpleLocalBoard {
         Ok(())
     }
 
+    fn add_page(&mut self) {
+        let stamp = self.board.stamp(self.me);
+        let count = self.board.page_count().saturating_add(1);
+        self.board.apply(Op::add_page(stamp, count));
+    }
+
     fn erase_touched(&mut self, centre: WorldPos, reach: u32) {
         let reach_i64 = i64::from(reach);
         let around_centre = Aabb::new(

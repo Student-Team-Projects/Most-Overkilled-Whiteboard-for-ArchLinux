@@ -7,7 +7,6 @@ pub mod controller;
 pub mod eraser_utils;
 pub mod local_board;
 pub mod model;
-pub mod pages;
 mod stroke_cache;
 pub mod stroke_renderer;
 pub mod tool;

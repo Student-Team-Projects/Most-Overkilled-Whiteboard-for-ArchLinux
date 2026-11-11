@@ -91,3 +91,16 @@ fn the_eraser_misses_a_stroke_just_out_of_reach() {
     board.erase_touched(WorldPos::new(just_out - 1, 0), REACH);
     assert_eq!(board.board().visible().count(), 0);
 }
+
+#[test]
+fn adding_a_page_grows_the_board_by_one_page_and_leaves_its_strokes() {
+    let mut board = SimpleLocalBoard::new(AUTHOR);
+    board
+        .add_stroke(&[WorldPos::new(0, 0)], RED, WIDTH)
+        .unwrap();
+    assert_eq!(board.board().page_count(), 1);
+    board.add_page();
+    board.add_page();
+    assert_eq!(board.board().page_count(), 3);
+    assert_eq!(board.board().visible().count(), 1);
+}

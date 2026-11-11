@@ -1,14 +1,13 @@
 //! The controller for a stack of A4 pages.
 
 use egui::Vec2;
-use wb_core::{Aabb, Intersects, WorldPos};
+use wb_core::{Aabb, Board, Intersects, Page, WorldPos};
 
 use super::{CanvasInput, Controller};
 use crate::camera::{AffineCamera, Camera};
 use crate::config::{ERASER_RADIUS_ON_SCREEN_PX, SPACE_AROUND_PAGE_PX};
 use crate::local_board::LocalBoard;
 use crate::model::Model;
-use crate::pages::PageStack;
 use crate::tool::Tool;
 
 /// Shows one whole page at a time, scrolls along the stack, and lets the tools work only on the
@@ -19,24 +18,43 @@ pub struct PageStackController {
 }
 
 impl PageStackController {
+    /// The printable area holding `point`, edges included, if it lies on one of the first
+    /// `page_count` pages.
+    #[must_use]
+    pub fn printable_area_at(page_count: u32, point: WorldPos) -> Option<Aabb> {
+        Page::printable_at(point)
+            .filter(|page| page.0 < page_count)
+            .map(Page::printable_area)
+    }
+
+    /// The centre of `page`.
+    #[must_use]
+    pub fn page_centre(page: Page) -> WorldPos {
+        let bounds = page.bounds();
+        WorldPos::new(
+            bounds.min.x.midpoint(bounds.max.x),
+            bounds.min.y.midpoint(bounds.max.y),
+        )
+    }
+
     /// The camera for this frame: a page fitted to the canvas, at the scroll position of
     /// `previous` moved by `scroll`, kept between the centres of the first and the last page.
     fn scrolled_camera(
-        pages: PageStack,
+        page_count: u32,
         previous: AffineCamera,
         input: &CanvasInput,
     ) -> AffineCamera {
-        let fitted = AffineCamera::fitting(PageStack::page(0), input.area, SPACE_AROUND_PAGE_PX);
+        let fitted = AffineCamera::fitting(Page(0).bounds(), input.area, SPACE_AROUND_PAGE_PX);
         let mut camera = AffineCamera::new(
             WorldPos::new(fitted.world_centre.x, previous.world_centre.y),
             fitted.screen_centre,
             fitted.zoom(),
         );
         camera.pan(Vec2::new(0.0, input.scroll_delta.y));
-        camera.world_centre.y = camera
-            .world_centre
-            .y
-            .clamp(PageStack::centre(0).y, PageStack::centre(pages.last()).y);
+        camera.world_centre.y = camera.world_centre.y.clamp(
+            Self::page_centre(Page(0)).y,
+            Self::page_centre(Page(page_count.saturating_sub(1))).y,
+        );
         camera
     }
 
@@ -45,18 +63,19 @@ impl PageStackController {
     /// printable area with no stroke in progress starts one, on the edge where it crossed in if
     /// it was held outside the area a frame before. Releasing the button finishes the stroke.
     fn pen(&self, model: &mut Model, pointer: Option<WorldPos>, is_pointer_held: bool) {
+        let page_count = model.board.board().page_count();
         if let Some(point) = pointer {
             let stroke_area = model
                 .stroke_in_progress()
                 .first()
-                .and_then(|&first| model.pages.printable_area_at(first));
+                .and_then(|&first| Self::printable_area_at(page_count, first));
             if let (Some(area), Some(&last)) = (stroke_area, model.stroke_in_progress().last())
                 && !contains(area, point)
             {
                 model.extend_stroke_in_progress(edge_towards(area, last, point));
                 model.finish_stroke_in_progress();
             }
-            if let Some(area) = model.pages.printable_area_at(point) {
+            if let Some(area) = Self::printable_area_at(page_count, point) {
                 if model.stroke_in_progress().is_empty()
                     && let Some(previous) = self.last_held_point
                     && !contains(area, previous)
@@ -114,7 +133,8 @@ impl Controller for PageStackController {
     /// starting on a printable edge where the pointer crossed it; the eraser erases every stroke
     /// within its radius of the pointer.
     fn handle_canvas_input(&mut self, model: &mut Model, input: &CanvasInput) {
-        model.camera = Self::scrolled_camera(model.pages, model.camera, input);
+        let page_count = model.board.board().page_count();
+        model.camera = Self::scrolled_camera(page_count, model.camera, input);
         let pointer = input
             .pointer_pressed_at
             .map(|pos| model.camera.screen_to_world(pos));
@@ -122,7 +142,7 @@ impl Controller for PageStackController {
             Tool::Pen => self.pen(model, pointer, input.is_pointer_held),
             Tool::Eraser => {
                 if let Some(centre) =
-                    pointer.filter(|&point| model.pages.printable_area_at(point).is_some())
+                    pointer.filter(|&point| Self::printable_area_at(page_count, point).is_some())
                 {
                     let reach = model
                         .camera

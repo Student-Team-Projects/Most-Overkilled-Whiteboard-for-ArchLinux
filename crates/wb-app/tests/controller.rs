@@ -6,14 +6,13 @@ use wb_app::config::SPACE_AROUND_PAGE_PX;
 use wb_app::controller::{CanvasInput, Command, Controller, PageStackController};
 use wb_app::local_board::LocalBoard;
 use wb_app::model::Model;
-use wb_app::pages::PageStack;
 use wb_app::tool::Tool;
-use wb_core::{Aabb, Board, Raw, StrokeCodec, WorldPos};
+use wb_core::{Aabb, Board, Page, Raw, StrokeCodec, WorldPos};
 
 use crate::support::config::{AUTHOR, VIEWPORT};
 
 fn page() -> Aabb {
-    PageStack::page(0)
+    Page(0).bounds()
 }
 
 fn canvas() -> Rect {
@@ -77,7 +76,7 @@ fn the_pen_draws_nothing_in_the_margin() {
     let mut controller = PageStackController::default();
     let in_margin = on_screen(WorldPos::new(
         page().min.x + 1,
-        PageStack::printable_area(0).min.y + 1,
+        Page(0).printable_area().min.y + 1,
     ));
     controller.handle_canvas_input(&mut model, &input(Some(in_margin), false));
     assert_eq!(strokes(&model), 0);
@@ -87,7 +86,7 @@ fn the_pen_draws_nothing_in_the_margin() {
 fn leaving_the_printable_part_ends_the_stroke_and_reentering_starts_a_new_one() {
     let mut model = Model::new(AUTHOR);
     let mut controller = PageStackController::default();
-    let inside = on_screen(PageStack::printable_area(0).min) + Vec2::new(5.0, 5.0);
+    let inside = on_screen(Page(0).printable_area().min) + Vec2::new(5.0, 5.0);
     let outside = on_screen(page().min) + Vec2::new(1.0, 1.0);
     for pos in [inside, inside + Vec2::new(5.0, 0.0), outside, inside] {
         controller.handle_canvas_input(&mut model, &input(Some(pos), true));
@@ -110,15 +109,17 @@ fn the_eraser_erases_the_stroke_under_the_pointer() {
 fn leaving_the_printable_part_ends_the_stroke_on_its_edge() {
     let mut model = Model::new(AUTHOR);
     let mut controller = PageStackController::default();
-    let row = PageStack::printable_area(0)
+    let row = Page(0)
+        .printable_area()
         .min
         .y
-        .midpoint(PageStack::printable_area(0).max.y);
+        .midpoint(Page(0).printable_area().max.y);
     let inside = on_screen(WorldPos::new(
-        PageStack::printable_area(0)
+        Page(0)
+            .printable_area()
             .min
             .x
-            .midpoint(PageStack::printable_area(0).max.x),
+            .midpoint(Page(0).printable_area().max.x),
         row,
     ));
     let outside = on_screen(WorldPos::new(page().max.x, row));
@@ -129,23 +130,25 @@ fn leaving_the_printable_part_ends_the_stroke_on_its_edge() {
     let last = *Vec::from(&Raw.decode(&stroke.points).unwrap())
         .last()
         .unwrap();
-    assert_eq!(last.x, PageStack::printable_area(0).max.x);
+    assert_eq!(last.x, Page(0).printable_area().max.x);
 }
 
 #[test]
 fn coming_back_onto_the_printable_part_starts_the_stroke_on_its_edge() {
     let mut model = Model::new(AUTHOR);
     let mut controller = PageStackController::default();
-    let row = PageStack::printable_area(0)
+    let row = Page(0)
+        .printable_area()
         .min
         .y
-        .midpoint(PageStack::printable_area(0).max.y);
+        .midpoint(Page(0).printable_area().max.y);
     let outside = on_screen(WorldPos::new(page().max.x, row));
     let inside = on_screen(WorldPos::new(
-        PageStack::printable_area(0)
+        Page(0)
+            .printable_area()
             .min
             .x
-            .midpoint(PageStack::printable_area(0).max.x),
+            .midpoint(Page(0).printable_area().max.x),
         row,
     ));
     for pos in [outside, inside] {
@@ -154,7 +157,7 @@ fn coming_back_onto_the_printable_part_starts_the_stroke_on_its_edge() {
     controller.handle_canvas_input(&mut model, &input(None, false));
     let stroke = model.board.board().visible().next().unwrap();
     let first = Vec::from(&Raw.decode(&stroke.points).unwrap())[0];
-    assert_eq!(first.x, PageStack::printable_area(0).max.x);
+    assert_eq!(first.x, Page(0).printable_area().max.x);
 }
 
 fn first_and_last_points(model: &Model) -> Vec<(WorldPos, WorldPos)> {
@@ -182,8 +185,11 @@ fn adding_a_page_appends_it_and_keeps_the_view() {
     let mut controller = PageStackController::default();
     controller.apply(&mut model, Command::AddPage);
     controller.handle_canvas_input(&mut model, &input(None, false));
-    assert_eq!(model.pages.count(), 2);
-    assert_eq!(model.camera.world_centre, PageStack::centre(0));
+    assert_eq!(model.board.board().page_count(), 2);
+    assert_eq!(
+        model.camera.world_centre,
+        PageStackController::page_centre(Page(0))
+    );
 }
 
 #[test]
@@ -191,18 +197,27 @@ fn scrolling_stays_between_the_first_and_the_last_page() {
     let mut model = Model::new(AUTHOR);
     let mut controller = PageStackController::default();
     controller.handle_canvas_input(&mut model, &scroll(-VIEWPORT.y));
-    assert_eq!(model.camera.world_centre, PageStack::centre(0));
+    assert_eq!(
+        model.camera.world_centre,
+        PageStackController::page_centre(Page(0))
+    );
     controller.apply(&mut model, Command::AddPage);
     controller.handle_canvas_input(&mut model, &scroll(-VIEWPORT.y));
-    assert!(model.camera.world_centre.y > PageStack::centre(0).y);
-    for _ in 0..model.pages.count() * 4 {
+    assert!(model.camera.world_centre.y > PageStackController::page_centre(Page(0)).y);
+    for _ in 0..model.board.board().page_count() * 4 {
         controller.handle_canvas_input(&mut model, &scroll(-VIEWPORT.y));
     }
-    assert_eq!(model.camera.world_centre, PageStack::centre(1));
-    for _ in 0..model.pages.count() * 4 {
+    assert_eq!(
+        model.camera.world_centre,
+        PageStackController::page_centre(Page(1))
+    );
+    for _ in 0..model.board.board().page_count() * 4 {
         controller.handle_canvas_input(&mut model, &scroll(VIEWPORT.y));
     }
-    assert_eq!(model.camera.world_centre, PageStack::centre(0));
+    assert_eq!(
+        model.camera.world_centre,
+        PageStackController::page_centre(Page(0))
+    );
 }
 
 #[test]
@@ -217,7 +232,7 @@ fn the_pen_draws_on_an_added_page() {
     let [(dot, _)] = first_and_last_points(&model)[..] else {
         panic!("expected one stroke");
     };
-    assert_eq!(model.pages.page_at(dot), Some(1));
+    assert_eq!(Page::printable_at(dot), Some(Page(1)));
 }
 
 #[test]
@@ -226,9 +241,9 @@ fn a_stroke_dragged_across_the_gap_becomes_one_stroke_per_page() {
     let mut controller = PageStackController::default();
     controller.apply(&mut model, Command::AddPage);
     controller.handle_canvas_input(&mut model, &input(None, false));
-    let column = PageStack::centre(0).x;
-    let near_bottom_of_first = WorldPos::new(column, PageStack::printable_area(0).max.y - 1);
-    let near_top_of_second = WorldPos::new(column, PageStack::printable_area(1).min.y + 1);
+    let column = PageStackController::page_centre(Page(0)).x;
+    let near_bottom_of_first = WorldPos::new(column, Page(0).printable_area().max.y - 1);
+    let near_top_of_second = WorldPos::new(column, Page(1).printable_area().min.y + 1);
     for point in [near_bottom_of_first, near_top_of_second] {
         let pos = model.camera.world_to_screen(point);
         controller.handle_canvas_input(&mut model, &input(Some(pos), true));
@@ -236,6 +251,6 @@ fn a_stroke_dragged_across_the_gap_becomes_one_stroke_per_page() {
     controller.handle_canvas_input(&mut model, &input(None, false));
     let strokes = first_and_last_points(&model);
     assert_eq!(strokes.len(), 2);
-    assert_eq!(strokes[0].1.y, PageStack::printable_area(0).max.y);
-    assert_eq!(strokes[1].0.y, PageStack::printable_area(1).min.y);
+    assert_eq!(strokes[0].1.y, Page(0).printable_area().max.y);
+    assert_eq!(strokes[1].0.y, Page(1).printable_area().min.y);
 }

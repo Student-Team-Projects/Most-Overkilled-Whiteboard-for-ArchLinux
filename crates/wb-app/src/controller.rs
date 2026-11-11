@@ -8,6 +8,7 @@ pub use page_stack::PageStackController;
 use egui::{Pos2, Rect, Vec2};
 use wb_core::Rgba;
 
+use crate::local_board::LocalBoard;
 use crate::model::Model;
 use crate::tool::Tool;
 
@@ -47,9 +48,7 @@ pub trait Controller {
             Command::SelectTool(tool) => tools.tool = tool,
             Command::SelectColor(color) => tools.color = color,
             Command::SelectStrokeWidth(width_px) => tools.stroke_width_px = width_px,
-            Command::AddPage => {
-                model.pages.add_page();
-            }
+            Command::AddPage => model.board.add_page(),
         }
     }
 

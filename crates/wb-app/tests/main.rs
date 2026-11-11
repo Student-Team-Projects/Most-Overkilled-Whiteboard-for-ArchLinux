@@ -5,6 +5,5 @@ mod conformance;
 mod controller;
 mod eraser;
 mod local_board;
-mod pages;
 mod stroke_cache;
 mod support;

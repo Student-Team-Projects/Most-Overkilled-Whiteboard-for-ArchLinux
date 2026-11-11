@@ -6,14 +6,6 @@ use wb_core::Rgba;
 /// World units in one screen pixel at zoom 1 (ADR 0014).
 pub const WORLD_UNITS_PER_PIXEL: u16 = 16;
 
-/// Page width: A4 at 72 dpi, in pixels at zoom 1 (ADR 0027).
-pub const A4_WIDTH_PX: i64 = 595;
-/// Page height: A4 at 72 dpi, in pixels at zoom 1 (ADR 0027).
-pub const A4_HEIGHT_PX: i64 = 842;
-/// Margin on every side of the page where the pen does not draw, in pixels at zoom 1 (ADR 0027).
-pub const PRINT_MARGIN_PX: i64 = 14;
-/// Gap between neighbouring pages of the stack, in pixels at zoom 1 (ADR 0027).
-pub const PAGE_GAP_PX: i64 = 16;
 /// Space kept between the fitted page and the canvas edges, in screen pixels.
 pub const SPACE_AROUND_PAGE_PX: f32 = 16.0;
 
