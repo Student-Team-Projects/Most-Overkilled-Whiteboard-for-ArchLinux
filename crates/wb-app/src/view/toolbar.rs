@@ -1,4 +1,4 @@
-//! The left toolbar: tool, colour and stroke width.
+//! The left toolbar: tool, colour, stroke width and pages.
 
 use egui::color_picker::{self, Alpha};
 use egui::{Color32, Rect, Response, RichText, Sense, Stroke, Vec2};
@@ -14,7 +14,7 @@ use crate::controller::Command;
 use crate::tool::{Tool, ToolState};
 
 /// The left toolbar for one frame: shows the tool, colour and width pickers with the current
-/// choice highlighted, and collects what the user picked.
+/// choice highlighted and the add-page button, and collects what the user picked.
 pub struct Toolbar<'a> {
     tools: &'a ToolState,
     commands: Vec<Command>,
@@ -38,8 +38,21 @@ impl<'a> Toolbar<'a> {
             self.color_picker(ui);
             ui.separator();
             self.stroke_width_picker(ui);
+            ui.separator();
+            self.page_adder(ui);
         });
         self.commands
+    }
+
+    fn page_adder(&mut self, ui: &mut egui::Ui) {
+        let icon = RichText::new("➕").size(TOOL_ICON_SIZE);
+        if ui
+            .button(icon)
+            .on_hover_text("Add a page below the last")
+            .clicked()
+        {
+            self.commands.push(Command::AddPage);
+        }
     }
 
     fn tool_picker(&mut self, ui: &mut egui::Ui) {

@@ -3,14 +3,14 @@
 use std::hash::{BuildHasher, RandomState};
 
 use wb_app::config::{INITIAL_WINDOW_SIZE, TOOLBAR_WIDTH_PX, TOOLTIP_DELAY_SECONDS};
-use wb_app::controller::{Controller, SinglePageController};
+use wb_app::controller::{Controller, PageStackController};
 use wb_app::model::Model;
 use wb_app::view;
 use wb_core::PeerId;
 
 struct App {
     model: Model,
-    controller: SinglePageController,
+    controller: PageStackController,
 }
 
 impl eframe::App for App {
@@ -60,7 +60,7 @@ fn main() -> eframe::Result {
             show_tooltips_while_pointer_moves(&creation_context.egui_ctx);
             Ok(Box::new(App {
                 model: Model::new(random_peer_id()),
-                controller: SinglePageController::default(),
+                controller: PageStackController::default(),
             }))
         }),
     )

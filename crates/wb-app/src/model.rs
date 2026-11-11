@@ -5,12 +5,12 @@ use wb_core::{PeerId, WorldPos};
 
 use crate::camera::{AffineCamera, Camera};
 use crate::config::SPACE_AROUND_PAGE_PX;
-use crate::controller::SinglePageController;
 use crate::local_board::{LocalBoard, SimpleLocalBoard};
+use crate::pages::PageStack;
 use crate::tool::ToolState;
 
-/// Everything the window shows: the pen settings, the camera, the board and the stroke being
-/// drawn. Views only read it; a controller is its only writer.
+/// Everything the window shows: the pen settings, the camera, the board, its pages and the
+/// stroke being drawn. Views only read it; a controller is its only writer.
 #[derive(Debug)]
 pub struct Model {
     /// The pen settings; any combination is valid.
@@ -19,22 +19,21 @@ pub struct Model {
     pub camera: AffineCamera,
     /// The strokes and everything kept in step with them.
     pub board: SimpleLocalBoard,
+    /// The pages strokes are drawn on; kept here until pages are board state (T30 #66).
+    pub pages: PageStack,
     stroke_in_progress: Vec<WorldPos>,
 }
 
 impl Model {
-    /// An empty board authored by `me`, with the default pen. The camera is fitted to the canvas
+    /// An empty board of one page authored by `me`, with the default pen. The camera is fitted to the canvas
     /// on the first frame.
     #[must_use]
     pub fn new(me: PeerId) -> Self {
         Self {
             tools: ToolState::default(),
-            camera: AffineCamera::fitting(
-                SinglePageController::PAGE,
-                Rect::ZERO,
-                SPACE_AROUND_PAGE_PX,
-            ),
+            camera: AffineCamera::fitting(PageStack::page(0), Rect::ZERO, SPACE_AROUND_PAGE_PX),
             board: SimpleLocalBoard::new(me),
+            pages: PageStack::default(),
             stroke_in_progress: Vec::new(),
         }
     }
