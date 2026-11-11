@@ -7,7 +7,7 @@ How the engineering skills should consume this repo's domain documentation when 
 - **`GLOSSARY.md`** at the repo root.
 - **`docs/adr/`**: read ADRs that touch the area you're about to work in.
 
-The grilling/domain skills get vendored in T37 #74.
+The grilling and domain skills are in the repo → `docs/agents/skills.md`.
 
 ## Use the glossary's vocabulary
 
