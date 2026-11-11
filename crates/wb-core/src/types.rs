@@ -73,6 +73,31 @@ impl Aabb {
     pub const fn new(min: WorldPos, max: WorldPos) -> Self {
         Self { min, max }
     }
+
+    /// The smallest box holding every point of `points` drawn `width` wide: the points' bounds
+    /// grown by half of `width` on every side. Coordinates saturate at the `i64` range.
+    #[must_use]
+    pub fn covering(points: &StrokePoints, width: u32) -> Self {
+        let origin = points.origin;
+        let (mut min, mut max) = (origin, origin);
+        for &[dx, dy] in &points.offsets {
+            let x = origin.x.saturating_add(i64::from(dx));
+            let y = origin.y.saturating_add(i64::from(dy));
+            min = WorldPos::new(min.x.min(x), min.y.min(y));
+            max = WorldPos::new(max.x.max(x), max.y.max(y));
+        }
+        let half_width = i64::from(width / 2);
+        Self::new(
+            WorldPos::new(
+                min.x.saturating_sub(half_width),
+                min.y.saturating_sub(half_width),
+            ),
+            WorldPos::new(
+                max.x.saturating_add(half_width),
+                max.y.saturating_add(half_width),
+            ),
+        )
+    }
 }
 
 /// A shape that can tell whether it overlaps a `Rhs` shape.
@@ -110,12 +135,46 @@ pub struct StrokePoints {
     pub offsets: Vec<[i32; 2]>,
 }
 
+impl From<&StrokePoints> for Vec<WorldPos> {
+    /// The world points of a decoded stroke: its origin plus each offset, in order. Coordinates
+    /// saturate at the `i64` range.
+    fn from(points: &StrokePoints) -> Self {
+        let origin = points.origin;
+        points
+            .offsets
+            .iter()
+            .map(|&[dx, dy]| {
+                WorldPos::new(
+                    origin.x.saturating_add(i64::from(dx)),
+                    origin.y.saturating_add(i64::from(dy)),
+                )
+            })
+            .collect()
+    }
+}
+
 /// Colour with 8-bit red, green, blue, and alpha channels.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Rgba(
     /// Channels in red, green, blue, alpha order.
     pub [u8; 4],
 );
+
+#[cfg(feature = "ecolor")]
+impl From<Rgba> for ecolor::Color32 {
+    /// The egui colour of a stroke colour; the channels are not premultiplied.
+    fn from(Rgba([r, g, b, a]): Rgba) -> Self {
+        Self::from_rgba_unmultiplied(r, g, b, a)
+    }
+}
+
+#[cfg(feature = "ecolor")]
+impl From<ecolor::Color32> for Rgba {
+    /// The stroke colour of an egui colour, with its channels unmultiplied.
+    fn from(color: ecolor::Color32) -> Self {
+        Self(color.to_srgba_unmultiplied())
+    }
+}
 
 /// Stroke data stored by an Add operation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

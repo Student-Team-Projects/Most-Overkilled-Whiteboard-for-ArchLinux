@@ -3597,6 +3597,7 @@ dependencies = [
 name = "wb-core"
 version = "0.1.0"
 dependencies = [
+ "ecolor",
  "postcard",
  "proptest",
  "serde",

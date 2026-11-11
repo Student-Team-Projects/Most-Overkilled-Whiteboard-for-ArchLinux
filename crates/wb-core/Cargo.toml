@@ -8,10 +8,15 @@ license.workspace = true
 autotests = false
 
 [dependencies]
+ecolor = { workspace = true, optional = true }
 postcard.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 xxhash-rust.workspace = true
+
+[features]
+## `From<Rgba> for ecolor::Color32`, for the app's renderer; headless crates leave it off.
+ecolor = ["dep:ecolor"]
 
 [dev-dependencies]
 proptest.workspace = true

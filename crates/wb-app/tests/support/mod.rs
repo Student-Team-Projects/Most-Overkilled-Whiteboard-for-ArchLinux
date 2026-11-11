@@ -2,3 +2,4 @@
 
 pub mod config;
 pub mod stroke_cache;
+pub mod stroke_renderer;

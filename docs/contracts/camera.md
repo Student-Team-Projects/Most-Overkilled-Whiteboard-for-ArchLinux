@@ -1,6 +1,6 @@
 # Contract: `Camera`
 
-Status: agreed 2026-10-20 · World ↔ screen transform for pan and zoom. A concrete type (an affine matrix).
+Status: agreed 2026-10-20 · proposed change: a seam trait (ADR 0029, not agreed yet) · World ↔ screen transform for pan and zoom. A seam trait with one impl per canvas; `AffineCamera` is the first.
 Format → `README.md` here.
 
 ## Operations
