@@ -10,7 +10,7 @@ use wb_core::{Aabb, WorldPos};
 /// The world ↔ screen transform for pan and zoom. Zoom stays in `[MIN_ZOOM, MAX_ZOOM]`; world
 /// points convert to screen points and back within float tolerance.
 ///
-/// See also: `docs/contracts/camera.md`, ADR 0013.
+/// See also: `docs/contracts/camera.md`, ADR 0013, ADR 0029.
 pub trait Camera {
     /// Screen pixels per world pixel.
     fn zoom(&self) -> f32;
