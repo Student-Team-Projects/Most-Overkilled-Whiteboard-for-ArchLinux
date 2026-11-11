@@ -1,50 +1,65 @@
-//! The `Model` trait and its models.
+//! Everything the window shows.
 
-mod app_model;
+use egui::Rect;
+use wb_core::{PeerId, WorldPos};
 
-pub use app_model::AppModel;
-
-use egui::Painter;
-use wb_core::WorldPos;
-
-use crate::camera::Camera;
-use crate::local_board::LocalBoard;
+use crate::camera::{AffineCamera, Camera};
+use crate::config::SPACE_AROUND_PAGE_PX;
+use crate::controller::SinglePageController;
+use crate::local_board::{LocalBoard, SimpleLocalBoard};
 use crate::tool::ToolState;
 
 /// Everything the window shows: the pen settings, the camera, the board and the stroke being
 /// drawn. Views only read it; a controller is its only writer.
-pub trait Model {
-    /// The view onto the board.
-    type Camera: Camera;
-    /// The strokes and everything kept in step with them.
-    type Board: LocalBoard;
-
+#[derive(Debug)]
+pub struct Model {
     /// The pen settings; any combination is valid.
-    fn tools(&self) -> &ToolState;
-    /// The pen settings, to change.
-    fn tools_mut(&mut self) -> &mut ToolState;
+    pub tools: ToolState,
+    /// The view onto the board; any camera is valid.
+    pub camera: AffineCamera,
+    /// The strokes and everything kept in step with them.
+    pub board: SimpleLocalBoard,
+    stroke_in_progress: Vec<WorldPos>,
+}
 
-    /// The view onto the board.
-    fn camera(&self) -> &Self::Camera;
-    /// The view onto the board, to pan, zoom or fit; any camera is valid.
-    fn camera_mut(&mut self) -> &mut Self::Camera;
-
-    /// The strokes.
-    fn board(&self) -> &Self::Board;
-    /// The strokes, to add or erase.
-    fn board_mut(&mut self) -> &mut Self::Board;
-
-    /// Paints the board into `painter` as the camera shows it.
-    fn paint_board(&mut self, painter: &Painter);
+impl Model {
+    /// An empty board authored by `me`, with the default pen. The camera is fitted to the canvas
+    /// on the first frame.
+    #[must_use]
+    pub fn new(me: PeerId) -> Self {
+        Self {
+            tools: ToolState::default(),
+            camera: AffineCamera::fitting(
+                SinglePageController::PAGE,
+                Rect::ZERO,
+                SPACE_AROUND_PAGE_PX,
+            ),
+            board: SimpleLocalBoard::new(me),
+            stroke_in_progress: Vec::new(),
+        }
+    }
 
     /// Points of the stroke being drawn, not on the board yet; empty between strokes.
-    fn stroke_in_progress(&self) -> &[WorldPos];
+    #[must_use]
+    pub fn stroke_in_progress(&self) -> &[WorldPos] {
+        &self.stroke_in_progress
+    }
 
     /// Adds `point` to the stroke being drawn, unless it repeats the last point.
-    fn extend_stroke_in_progress(&mut self, point: WorldPos);
+    pub fn extend_stroke_in_progress(&mut self, point: WorldPos) {
+        if self.stroke_in_progress.last() != Some(&point) {
+            self.stroke_in_progress.push(point);
+        }
+    }
 
     /// Moves the stroke being drawn onto the board with the current colour and width. Does
     /// nothing when no stroke is in progress. A stroke the codec cannot encode is dropped and
     /// reported on stderr.
-    fn finish_stroke_in_progress(&mut self);
+    pub fn finish_stroke_in_progress(&mut self) {
+        let points = std::mem::take(&mut self.stroke_in_progress);
+        let width = self.tools.stroke_width_in_world_units();
+        if let Err(error) = self.board.add_stroke(&points, self.tools.color, width) {
+            eprintln!("stroke dropped: {error}");
+        }
+    }
 }

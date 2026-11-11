@@ -2,7 +2,8 @@
 
 use egui::{Pos2, Rect};
 use wb_app::camera::{AffineCamera, Camera};
-use wb_app::config::{PAGE, SPACE_AROUND_PAGE_PX};
+use wb_app::config::SPACE_AROUND_PAGE_PX;
+use wb_app::controller::SinglePageController;
 use wb_core::WorldPos;
 
 use crate::support::config::{ANCHOR_TOLERANCE_PX, ONE_WORLD_PIXEL, OPENING_ZOOM, VIEWPORT};
@@ -19,10 +20,7 @@ fn non_finite_zoom_factor_leaves_zoom_unchanged() {
 fn one_world_pixel_is_zoom_screen_pixels_and_back() {
     let camera = AffineCamera::new(WorldPos::new(0, 0), Pos2::ZERO, 2.0);
     assert!((camera.world_length_to_screen(ONE_WORLD_PIXEL) - 2.0).abs() < f32::EPSILON);
-    assert_eq!(
-        camera.screen_length_to_world(2.0),
-        i64::from(ONE_WORLD_PIXEL)
-    );
+    assert_eq!(camera.screen_length_to_world(2.0), ONE_WORLD_PIXEL);
 }
 
 #[test]
@@ -39,8 +37,8 @@ fn round_trip_is_exact_at_the_edge_of_the_world() {
 #[test]
 fn fitting_shows_the_whole_area_centred_with_space_around() {
     let viewport = Rect::from_min_size(Pos2::ZERO, VIEWPORT);
-    let camera = AffineCamera::fitting(PAGE, viewport, SPACE_AROUND_PAGE_PX);
-    let page = camera.world_area_to_screen(PAGE);
+    let camera = AffineCamera::fitting(SinglePageController::PAGE, viewport, SPACE_AROUND_PAGE_PX);
+    let page = camera.world_area_to_screen(SinglePageController::PAGE);
     assert!(
         viewport
             .shrink(SPACE_AROUND_PAGE_PX - 0.01)

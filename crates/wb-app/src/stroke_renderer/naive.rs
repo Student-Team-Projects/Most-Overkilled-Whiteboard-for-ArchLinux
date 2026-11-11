@@ -1,17 +1,42 @@
 //! The simplest renderer: every visible stroke, every frame.
 
-use egui::Painter;
-use wb_core::{Aabb, Board, Intersects, SpatialIndex};
+use egui::{Painter, Pos2, Stroke};
+use wb_core::{Aabb, Board, Intersects, Rgba, SpatialIndex, WorldPos};
 
-use super::{StrokeRenderer, paint_round_line};
+use super::{StrokeRenderer, to_color32};
 use crate::camera::Camera;
-use crate::eraser_utils::world_points;
 use crate::stroke_cache::StrokeCache;
 
 /// Walks `board.visible()` each frame and paints every stroke whose box meets the viewport. Keeps
 /// nothing between frames, so `invalidate` has nothing to do. The oracle for faster renderers.
 #[derive(Debug, Default)]
 pub struct Naive;
+
+impl Naive {
+    /// Paints `points` as a line `width_in_world_units` wide: a segment between each pair of
+    /// neighbours and a disc on every point, so ends and joins are round and a lone point is a
+    /// dot.
+    pub fn paint_round_line(
+        painter: &Painter,
+        camera: &impl Camera,
+        points: &[WorldPos],
+        width_in_world_units: u32,
+        color: Rgba,
+    ) {
+        let width = camera.world_length_to_screen(width_in_world_units);
+        let color = to_color32(color);
+        let on_screen: Vec<Pos2> = points
+            .iter()
+            .map(|&point| camera.world_to_screen(point))
+            .collect();
+        for segment in on_screen.windows(2) {
+            painter.line_segment([segment[0], segment[1]], Stroke::new(width, color));
+        }
+        for &point in &on_screen {
+            painter.circle_filled(point, width / 2.0, color);
+        }
+    }
+}
 
 impl StrokeRenderer for Naive {
     fn invalidate(&mut self, _area: Aabb) {}
@@ -31,10 +56,10 @@ impl StrokeRenderer for Naive {
                 continue;
             }
             if let Ok(points) = cache.get(stroke) {
-                paint_round_line(
+                Self::paint_round_line(
                     painter,
                     camera,
-                    world_points(points),
+                    &Vec::from(points),
                     stroke.width,
                     stroke.color,
                 );

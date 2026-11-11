@@ -10,7 +10,7 @@ use wb_core::{
 use super::LocalBoard;
 use crate::camera::Camera;
 use crate::config::PIECE_BUDGET_BYTES;
-use crate::eraser_utils::touches;
+use crate::eraser_utils::stroke_is_within_eraser_reach;
 use crate::stroke_cache::{DecodeAll, StrokeCache};
 use crate::stroke_renderer::{Naive, StrokeRenderer};
 
@@ -74,15 +74,16 @@ impl LocalBoard for SimpleLocalBoard {
         Ok(())
     }
 
-    fn erase_touched(&mut self, centre: WorldPos, reach: i64) {
+    fn erase_touched(&mut self, centre: WorldPos, reach: u32) {
+        let reach_i64 = i64::from(reach);
         let around_centre = Aabb::new(
             WorldPos::new(
-                centre.x.saturating_sub(reach),
-                centre.y.saturating_sub(reach),
+                centre.x.saturating_sub(reach_i64),
+                centre.y.saturating_sub(reach_i64),
             ),
             WorldPos::new(
-                centre.x.saturating_add(reach),
-                centre.y.saturating_add(reach),
+                centre.x.saturating_add(reach_i64),
+                centre.y.saturating_add(reach_i64),
             ),
         );
         let mut candidates = Vec::new();
@@ -91,7 +92,7 @@ impl LocalBoard for SimpleLocalBoard {
         for stroke in self.board.visible() {
             if candidates.contains(&stroke.id)
                 && let Ok(points) = self.cache.get(stroke)
-                && touches(points, stroke.width, centre, reach)
+                && stroke_is_within_eraser_reach(points, stroke.width, centre, reach)
             {
                 touched.push((stroke.id, stroke.bbox));
             }

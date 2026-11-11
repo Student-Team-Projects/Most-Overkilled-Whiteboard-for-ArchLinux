@@ -135,6 +135,24 @@ pub struct StrokePoints {
     pub offsets: Vec<[i32; 2]>,
 }
 
+impl From<&StrokePoints> for Vec<WorldPos> {
+    /// The world points of a decoded stroke: its origin plus each offset, in order. Coordinates
+    /// saturate at the `i64` range.
+    fn from(points: &StrokePoints) -> Self {
+        let origin = points.origin;
+        points
+            .offsets
+            .iter()
+            .map(|&[dx, dy]| {
+                WorldPos::new(
+                    origin.x.saturating_add(i64::from(dx)),
+                    origin.y.saturating_add(i64::from(dy)),
+                )
+            })
+            .collect()
+    }
+}
+
 /// Colour with 8-bit red, green, blue, and alpha channels.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Rgba(

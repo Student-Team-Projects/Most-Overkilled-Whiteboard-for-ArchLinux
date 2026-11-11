@@ -5,4 +5,5 @@ mod board;
 mod codec;
 mod conformance;
 mod intersects;
+mod stroke_points;
 mod support;

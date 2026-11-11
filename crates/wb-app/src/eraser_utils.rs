@@ -2,16 +2,22 @@
 
 use wb_core::{StrokePoints, WorldPos};
 
-/// Whether a stroke through `points`, drawn `width` world units wide, comes within `reach` world
-/// units of `centre`: some segment, or the only point of a dot, lies at most
-/// `reach + width / 2` from it. No points never touch.
+/// Whether a stroke through `points`, drawn `width` world units wide, comes within the eraser's
+/// `reach` world units of `centre`: some segment, or the only point of a dot, lies at most
+/// `reach + width / 2` from it. A stroke with no points is never within reach.
 ///
 /// Coordinates are taken relative to `centre` in `i64` first, then measured in `f64`, which is
 /// exact for every point closer than 2^53 world units; farther points are far out of reach.
 #[must_use]
-pub fn touches(points: &StrokePoints, width: u32, centre: WorldPos, reach: i64) -> bool {
-    let limit = world_units_to_f64(reach.saturating_add(i64::from(width / 2)));
-    let relative: Vec<[f64; 2]> = world_points(points)
+pub fn stroke_is_within_eraser_reach(
+    points: &StrokePoints,
+    width: u32,
+    centre: WorldPos,
+    reach: u32,
+) -> bool {
+    let limit = f64::from(reach.saturating_add(width / 2));
+    let relative: Vec<[f64; 2]> = Vec::<WorldPos>::from(points)
+        .into_iter()
         .map(|point| {
             [
                 world_units_to_f64(point.x.saturating_sub(centre.x)),
@@ -26,17 +32,6 @@ pub fn touches(points: &StrokePoints, width: u32, centre: WorldPos, reach: i64) 
             .windows(2)
             .any(|segment| distance_from_origin_to_segment(segment[0], segment[1]) <= limit),
     }
-}
-
-/// The world points of a decoded stroke: its origin plus each offset.
-pub fn world_points(points: &StrokePoints) -> impl Iterator<Item = WorldPos> + '_ {
-    let origin = points.origin;
-    points.offsets.iter().map(move |&[dx, dy]| {
-        WorldPos::new(
-            origin.x.saturating_add(i64::from(dx)),
-            origin.y.saturating_add(i64::from(dy)),
-        )
-    })
 }
 
 /// Distance from `(0, 0)`, the eraser centre once points are taken relative to it, to the

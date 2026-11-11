@@ -35,7 +35,7 @@ pub trait LocalBoard {
 
     /// Erases, whole, every visible stroke that comes within `reach` world units of `centre`
     /// (ADR 0002).
-    fn erase_touched(&mut self, centre: WorldPos, reach: i64);
+    fn erase_touched(&mut self, centre: WorldPos, reach: u32);
 
     /// Paints the board into `painter` as `camera` shows it.
     fn paint(&mut self, painter: &Painter, camera: &impl Camera);

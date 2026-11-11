@@ -4,12 +4,13 @@ use egui::{Painter, Response, Sense, StrokeKind};
 
 use crate::camera::Camera;
 use crate::config::{
-    BACKGROUND_BEHIND_PAGE, ERASER_OUTLINE, ERASER_RADIUS_ON_SCREEN_PX, PAGE, PAGE_COLOR,
-    PRINTABLE_AREA, PRINTABLE_AREA_OUTLINE,
+    BACKGROUND_BEHIND_PAGE, ERASER_OUTLINE, ERASER_RADIUS_ON_SCREEN_PX, PAGE_COLOR,
+    PRINTABLE_AREA_OUTLINE,
 };
-use crate::controller::{CanvasInput, is_printable};
+use crate::controller::{CanvasInput, SinglePageController};
+use crate::local_board::LocalBoard;
 use crate::model::Model;
-use crate::stroke_renderer::paint_round_line;
+use crate::stroke_renderer::Naive;
 use crate::tool::Tool;
 
 /// The canvas area reserved for this frame, between reading its input and painting it.
@@ -38,26 +39,30 @@ impl AllocatedCanvas {
 
     /// Paints the page, its strokes and the stroke in progress clipped to the printable part,
     /// and the eraser's reach while the pointer is over the printable part.
-    pub fn paint(&self, model: &mut impl Model) {
-        let printable = model.camera().world_area_to_screen(PRINTABLE_AREA);
-        let page = model.camera().world_area_to_screen(PAGE);
+    pub fn paint(&self, model: &mut Model) {
+        let printable = model
+            .camera
+            .world_area_to_screen(SinglePageController::PRINTABLE_AREA);
+        let page = model
+            .camera
+            .world_area_to_screen(SinglePageController::PAGE);
         self.painter
             .rect_filled(self.response.rect, 0.0, BACKGROUND_BEHIND_PAGE);
         self.painter.rect_filled(page, 0.0, PAGE_COLOR);
         self.painter
             .rect_stroke(printable, 0.0, PRINTABLE_AREA_OUTLINE, StrokeKind::Outside);
         let printable_painter = self.painter.with_clip_rect(printable);
-        model.paint_board(&printable_painter);
-        paint_round_line(
+        model.board.paint(&printable_painter, &model.camera);
+        Naive::paint_round_line(
             &printable_painter,
-            model.camera(),
-            model.stroke_in_progress().iter().copied(),
-            model.tools().stroke_width_in_world_units(),
-            model.tools().color,
+            &model.camera,
+            model.stroke_in_progress(),
+            model.tools.stroke_width_in_world_units(),
+            model.tools.color,
         );
-        if model.tools().tool == Tool::Eraser
+        if model.tools.tool == Tool::Eraser
             && let Some(pos) = self.response.hover_pos()
-            && is_printable(model.camera().screen_to_world(pos))
+            && SinglePageController::is_printable(model.camera.screen_to_world(pos))
         {
             self.painter
                 .circle_stroke(pos, ERASER_RADIUS_ON_SCREEN_PX, ERASER_OUTLINE);

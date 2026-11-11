@@ -1,13 +1,14 @@
 //! `LocalBoard`: strokes in through the codec, out through the eraser.
 
-use wb_app::eraser_utils::world_points;
 use wb_app::local_board::{LocalBoard, SimpleLocalBoard};
 use wb_core::{Aabb, Board, Raw, Stroke, StrokeCodec, WorldPos};
 
-use crate::support::config::{AUTHOR, LONG_STROKE_POINTS, LONG_STROKE_STEP, REACH, RED, WIDTH};
+use crate::support::config::{
+    AUTHOR, LONG_STROKE_POINTS, LONG_STROKE_STEP, REACH, REACH_OFFSET, RED, WIDTH,
+};
 
 fn points_of(stroke: &Stroke) -> Option<Vec<WorldPos>> {
-    Some(world_points(&Raw.decode(&stroke.points).ok()?).collect())
+    Some(Vec::from(&Raw.decode(&stroke.points).ok()?))
 }
 
 #[test]
@@ -71,7 +72,7 @@ fn the_eraser_removes_only_the_strokes_it_touches() {
     let untouched = [WorldPos::new(0, 1_000), WorldPos::new(1_000, 1_000)];
     board.add_stroke(&touched, RED, WIDTH).unwrap();
     board.add_stroke(&untouched, RED, WIDTH).unwrap();
-    board.erase_touched(WorldPos::new(500, REACH), REACH);
+    board.erase_touched(WorldPos::new(500, REACH_OFFSET), REACH);
     let left: Vec<Vec<WorldPos>> = board
         .board()
         .visible()
@@ -86,7 +87,7 @@ fn the_eraser_misses_a_stroke_just_out_of_reach() {
     board
         .add_stroke(&[WorldPos::new(0, 0)], RED, WIDTH)
         .unwrap();
-    let just_out = REACH + i64::from(WIDTH / 2) + 1;
+    let just_out = REACH_OFFSET + i64::from(WIDTH / 2) + 1;
     board.erase_touched(WorldPos::new(just_out, 0), REACH);
     assert_eq!(board.board().visible().count(), 1);
     board.erase_touched(WorldPos::new(just_out - 1, 0), REACH);

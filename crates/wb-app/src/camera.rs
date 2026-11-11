@@ -24,8 +24,8 @@ pub trait Camera {
     /// How long `length_in_world_units` is on screen.
     fn world_length_to_screen(&self, length_in_world_units: u32) -> f32;
 
-    /// How many world units `length_on_screen` covers, rounded.
-    fn screen_length_to_world(&self, length_on_screen: f32) -> i64;
+    /// How many world units `length_on_screen` covers, rounded; a negative length gives 0.
+    fn screen_length_to_world(&self, length_on_screen: f32) -> u32;
 
     /// The screen rectangle `area` covers.
     fn world_area_to_screen(&self, area: Aabb) -> Rect {

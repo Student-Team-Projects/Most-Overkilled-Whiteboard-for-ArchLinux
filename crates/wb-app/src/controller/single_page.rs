@@ -3,8 +3,11 @@
 use wb_core::{Aabb, Intersects, WorldPos};
 
 use super::{CanvasInput, Controller};
-use crate::camera::Camera;
-use crate::config::{ERASER_RADIUS_ON_SCREEN_PX, PAGE, PRINTABLE_AREA, SPACE_AROUND_PAGE_PX};
+use crate::camera::{AffineCamera, Camera};
+use crate::config::{
+    A4_HEIGHT_PX, A4_WIDTH_PX, ERASER_RADIUS_ON_SCREEN_PX, PRINT_MARGIN_PX, SPACE_AROUND_PAGE_PX,
+    WORLD_UNITS_PER_PIXEL,
+};
 use crate::local_board::LocalBoard;
 use crate::model::Model;
 use crate::tool::Tool;
@@ -15,17 +18,40 @@ pub struct SinglePageController {
     pointer_held_outside: Option<WorldPos>,
 }
 
-/// Whether `point` lies on the printable part of the page, the only place the pen draws and
-/// the eraser works.
-#[must_use]
-pub fn is_printable(point: WorldPos) -> bool {
-    PRINTABLE_AREA.intersects(&Aabb::new(point, point))
+const UNITS_PER_PX: i64 = WORLD_UNITS_PER_PIXEL as i64;
+const PRINT_MARGIN: i64 = PRINT_MARGIN_PX * UNITS_PER_PX;
+
+impl SinglePageController {
+    /// The one A4 page, its top-left corner at the world origin.
+    pub const PAGE: Aabb = Aabb::new(
+        WorldPos::new(0, 0),
+        WorldPos::new(A4_WIDTH_PX * UNITS_PER_PX, A4_HEIGHT_PX * UNITS_PER_PX),
+    );
+
+    /// The part of `PAGE` the pen draws on: the page without its print margin.
+    pub const PRINTABLE_AREA: Aabb = Aabb::new(
+        WorldPos::new(
+            Self::PAGE.min.x + PRINT_MARGIN,
+            Self::PAGE.min.y + PRINT_MARGIN,
+        ),
+        WorldPos::new(
+            Self::PAGE.max.x - PRINT_MARGIN,
+            Self::PAGE.max.y - PRINT_MARGIN,
+        ),
+    );
+
+    /// Whether `point` lies on the printable part of the page, the only place the pen draws and
+    /// the eraser works.
+    #[must_use]
+    pub fn is_printable(point: WorldPos) -> bool {
+        Self::PRINTABLE_AREA.intersects(&Aabb::new(point, point))
+    }
 }
 
 /// Where the segment from the printable point `inside` towards `outside` leaves the printable
 /// part, rounded to whole world units and kept on it.
 fn printable_edge_towards(inside: WorldPos, outside: WorldPos) -> WorldPos {
-    let area = PRINTABLE_AREA;
+    let area = SinglePageController::PRINTABLE_AREA;
     let fraction = fraction_within(inside.x, outside.x, area.min.x, area.max.x)
         .min(fraction_within(inside.y, outside.y, area.min.y, area.max.y));
     WorldPos::new(
@@ -65,13 +91,13 @@ impl Controller for SinglePageController {
     /// the pointer crossed it; a held pointer coming back onto the printable part starts a new
     /// stroke on the edge where it crossed in;
     /// the eraser erases every stroke within its radius of the pointer.
-    fn handle_canvas_input<M: Model>(&mut self, model: &mut M, input: &CanvasInput) {
-        *model.camera_mut() = M::Camera::fitting(PAGE, input.area, SPACE_AROUND_PAGE_PX);
+    fn handle_canvas_input(&mut self, model: &mut Model, input: &CanvasInput) {
+        model.camera = AffineCamera::fitting(Self::PAGE, input.area, SPACE_AROUND_PAGE_PX);
         let pointer = input
             .pointer_pressed_at
-            .map(|pos| model.camera().screen_to_world(pos));
-        let printable_point = pointer.filter(|&point| is_printable(point));
-        match model.tools().tool {
+            .map(|pos| model.camera.screen_to_world(pos));
+        let printable_point = pointer.filter(|&point| Self::is_printable(point));
+        match model.tools.tool {
             Tool::Pen => {
                 if let Some(point) = printable_point {
                     if let Some(outside) = self.pointer_held_outside {
@@ -90,13 +116,13 @@ impl Controller for SinglePageController {
             Tool::Eraser => {
                 if let Some(centre) = printable_point {
                     let reach = model
-                        .camera()
+                        .camera
                         .screen_length_to_world(ERASER_RADIUS_ON_SCREEN_PX);
-                    model.board_mut().erase_touched(centre, reach);
+                    model.board.erase_touched(centre, reach);
                 }
             }
         }
         self.pointer_held_outside =
-            pointer.filter(|&point| input.is_pointer_held && !is_printable(point));
+            pointer.filter(|&point| input.is_pointer_held && !Self::is_printable(point));
     }
 }

@@ -2,15 +2,17 @@
 
 use egui::{Pos2, Rect, Vec2};
 use wb_app::camera::{AffineCamera, Camera};
-use wb_app::config::{PAGE, PRINTABLE_AREA, SPACE_AROUND_PAGE_PX};
+use wb_app::config::SPACE_AROUND_PAGE_PX;
 use wb_app::controller::{CanvasInput, Command, Controller, SinglePageController};
-use wb_app::eraser_utils::world_points;
 use wb_app::local_board::LocalBoard;
-use wb_app::model::{AppModel, Model};
+use wb_app::model::Model;
 use wb_app::tool::Tool;
-use wb_core::{Board, Raw, StrokeCodec, WorldPos};
+use wb_core::{Aabb, Board, Raw, StrokeCodec, WorldPos};
 
 use crate::support::config::{AUTHOR, VIEWPORT};
+
+const PAGE: Aabb = SinglePageController::PAGE;
+const PRINTABLE_AREA: Aabb = SinglePageController::PRINTABLE_AREA;
 
 fn canvas() -> Rect {
     Rect::from_min_size(Pos2::ZERO, VIEWPORT)
@@ -28,13 +30,13 @@ fn on_screen(point: WorldPos) -> Pos2 {
     AffineCamera::fitting(PAGE, canvas(), SPACE_AROUND_PAGE_PX).world_to_screen(point)
 }
 
-fn strokes(model: &AppModel) -> usize {
-    model.board().board().visible().count()
+fn strokes(model: &Model) -> usize {
+    model.board.board().visible().count()
 }
 
 #[test]
 fn pen_held_across_two_points_then_released_draws_one_stroke() {
-    let mut model = AppModel::new(AUTHOR);
+    let mut model = Model::new(AUTHOR);
     let mut controller = SinglePageController::default();
     let centre = canvas().center();
     controller.handle_canvas_input(&mut model, &input(Some(centre), true));
@@ -51,7 +53,7 @@ fn pen_held_across_two_points_then_released_draws_one_stroke() {
 
 #[test]
 fn a_held_pointer_that_does_not_move_adds_one_point() {
-    let mut model = AppModel::new(AUTHOR);
+    let mut model = Model::new(AUTHOR);
     let mut controller = SinglePageController::default();
     controller.handle_canvas_input(&mut model, &input(Some(canvas().center()), true));
     controller.handle_canvas_input(&mut model, &input(Some(canvas().center()), true));
@@ -60,7 +62,7 @@ fn a_held_pointer_that_does_not_move_adds_one_point() {
 
 #[test]
 fn a_click_without_moving_draws_a_dot() {
-    let mut model = AppModel::new(AUTHOR);
+    let mut model = Model::new(AUTHOR);
     let mut controller = SinglePageController::default();
     controller.handle_canvas_input(&mut model, &input(Some(canvas().center()), false));
     assert_eq!(strokes(&model), 1);
@@ -68,7 +70,7 @@ fn a_click_without_moving_draws_a_dot() {
 
 #[test]
 fn the_pen_draws_nothing_in_the_margin() {
-    let mut model = AppModel::new(AUTHOR);
+    let mut model = Model::new(AUTHOR);
     let mut controller = SinglePageController::default();
     let in_margin = on_screen(WorldPos::new(PAGE.min.x + 1, PRINTABLE_AREA.min.y + 1));
     controller.handle_canvas_input(&mut model, &input(Some(in_margin), false));
@@ -77,7 +79,7 @@ fn the_pen_draws_nothing_in_the_margin() {
 
 #[test]
 fn leaving_the_printable_part_ends_the_stroke_and_reentering_starts_a_new_one() {
-    let mut model = AppModel::new(AUTHOR);
+    let mut model = Model::new(AUTHOR);
     let mut controller = SinglePageController::default();
     let inside = on_screen(PRINTABLE_AREA.min) + Vec2::new(5.0, 5.0);
     let outside = on_screen(PAGE.min) + Vec2::new(1.0, 1.0);
@@ -90,7 +92,7 @@ fn leaving_the_printable_part_ends_the_stroke_and_reentering_starts_a_new_one() 
 
 #[test]
 fn the_eraser_erases_the_stroke_under_the_pointer() {
-    let mut model = AppModel::new(AUTHOR);
+    let mut model = Model::new(AUTHOR);
     let mut controller = SinglePageController::default();
     controller.handle_canvas_input(&mut model, &input(Some(canvas().center()), false));
     controller.apply(&mut model, Command::SelectTool(Tool::Eraser));
@@ -100,7 +102,7 @@ fn the_eraser_erases_the_stroke_under_the_pointer() {
 
 #[test]
 fn leaving_the_printable_part_ends_the_stroke_on_its_edge() {
-    let mut model = AppModel::new(AUTHOR);
+    let mut model = Model::new(AUTHOR);
     let mut controller = SinglePageController::default();
     let row = PRINTABLE_AREA.min.y.midpoint(PRINTABLE_AREA.max.y);
     let inside = on_screen(WorldPos::new(
@@ -111,8 +113,8 @@ fn leaving_the_printable_part_ends_the_stroke_on_its_edge() {
     for pos in [inside, outside] {
         controller.handle_canvas_input(&mut model, &input(Some(pos), true));
     }
-    let stroke = model.board().board().visible().next().unwrap();
-    let last = world_points(&Raw.decode(&stroke.points).unwrap())
+    let stroke = model.board.board().visible().next().unwrap();
+    let last = *Vec::from(&Raw.decode(&stroke.points).unwrap())
         .last()
         .unwrap();
     assert_eq!(last.x, PRINTABLE_AREA.max.x);
@@ -120,7 +122,7 @@ fn leaving_the_printable_part_ends_the_stroke_on_its_edge() {
 
 #[test]
 fn coming_back_onto_the_printable_part_starts_the_stroke_on_its_edge() {
-    let mut model = AppModel::new(AUTHOR);
+    let mut model = Model::new(AUTHOR);
     let mut controller = SinglePageController::default();
     let row = PRINTABLE_AREA.min.y.midpoint(PRINTABLE_AREA.max.y);
     let outside = on_screen(WorldPos::new(PAGE.max.x, row));
@@ -132,9 +134,7 @@ fn coming_back_onto_the_printable_part_starts_the_stroke_on_its_edge() {
         controller.handle_canvas_input(&mut model, &input(Some(pos), true));
     }
     controller.handle_canvas_input(&mut model, &input(None, false));
-    let stroke = model.board().board().visible().next().unwrap();
-    let first = world_points(&Raw.decode(&stroke.points).unwrap())
-        .next()
-        .unwrap();
+    let stroke = model.board.board().visible().next().unwrap();
+    let first = Vec::from(&Raw.decode(&stroke.points).unwrap())[0];
     assert_eq!(first.x, PRINTABLE_AREA.max.x);
 }

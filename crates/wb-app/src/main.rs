@@ -4,12 +4,12 @@ use std::hash::{BuildHasher, RandomState};
 
 use wb_app::config::{INITIAL_WINDOW_SIZE, TOOLBAR_WIDTH_PX, TOOLTIP_DELAY_SECONDS};
 use wb_app::controller::{Controller, SinglePageController};
-use wb_app::model::{AppModel, Model};
+use wb_app::model::Model;
 use wb_app::view;
 use wb_core::PeerId;
 
 struct App {
-    model: AppModel,
+    model: Model,
     controller: SinglePageController,
 }
 
@@ -21,7 +21,9 @@ impl eframe::App for App {
             .exact_size(TOOLBAR_WIDTH_PX)
             .show(ui, |ui| {
                 egui::ScrollArea::vertical()
-                    .show(ui, |ui| view::toolbar::show(ui, self.model.tools()))
+                    .show(ui, |ui| {
+                        view::toolbar::Toolbar::new(&self.model.tools).show(ui)
+                    })
                     .inner
             })
             .inner;
@@ -57,7 +59,7 @@ fn main() -> eframe::Result {
         Box::new(|creation_context| {
             show_tooltips_while_pointer_moves(&creation_context.egui_ctx);
             Ok(Box::new(App {
-                model: AppModel::new(random_peer_id()),
+                model: Model::new(random_peer_id()),
                 controller: SinglePageController::default(),
             }))
         }),

@@ -85,11 +85,12 @@ impl Camera for AffineCamera {
         self.world_units_to_screen(Vec2::new(length, 0.0)).x
     }
 
-    fn screen_length_to_world(&self, length_on_screen: f32) -> i64 {
-        round_to_world_units(
+    fn screen_length_to_world(&self, length_on_screen: f32) -> u32 {
+        let length = round_to_world_units(
             self.screen_to_world_units(Vec2::new(length_on_screen, 0.0))
                 .x,
-        )
+        );
+        u32::try_from(length.max(0)).unwrap_or(u32::MAX)
     }
 
     fn pan(&mut self, screen_delta: Vec2) {

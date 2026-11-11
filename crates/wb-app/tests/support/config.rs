@@ -37,7 +37,9 @@ pub const RED: Rgba = Rgba([220, 40, 40, 255]);
 pub const BLUE: Rgba = Rgba([30, 90, 220, 255]);
 
 /// Eraser reach in world units, divisible by 5 for a 3-4-5 triangle.
-pub const REACH: i64 = 100;
+pub const REACH: u32 = 100;
+/// `REACH` as a coordinate offset.
+pub const REACH_OFFSET: i64 = REACH as i64;
 
 /// Points in a stroke too long for one piece of `PIECE_BUDGET_BYTES`.
 pub const LONG_STROKE_POINTS: i64 = 2_000;
