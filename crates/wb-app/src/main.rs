@@ -58,7 +58,7 @@ fn main() -> eframe::Result {
             show_tooltips_while_pointer_moves(&creation_context.egui_ctx);
             Ok(Box::new(App {
                 model: AppModel::new(random_peer_id()),
-                controller: SinglePageController,
+                controller: SinglePageController::default(),
             }))
         }),
     )

@@ -11,7 +11,9 @@ use crate::tool::Tool;
 
 /// Keeps the one page fitted to the canvas and lets the tools work only on its printable part.
 #[derive(Debug, Default)]
-pub struct SinglePageController;
+pub struct SinglePageController {
+    pointer_held_outside: Option<WorldPos>,
+}
 
 /// Whether `point` lies on the printable part of the page, the only place the pen draws and
 /// the eraser works.
@@ -20,21 +22,66 @@ pub fn is_printable(point: WorldPos) -> bool {
     PRINTABLE_AREA.intersects(&Aabb::new(point, point))
 }
 
+/// Where the segment from the printable point `inside` towards `outside` leaves the printable
+/// part, rounded to whole world units and kept on it.
+fn printable_edge_towards(inside: WorldPos, outside: WorldPos) -> WorldPos {
+    let area = PRINTABLE_AREA;
+    let fraction = fraction_within(inside.x, outside.x, area.min.x, area.max.x)
+        .min(fraction_within(inside.y, outside.y, area.min.y, area.max.y));
+    WorldPos::new(
+        step_towards(inside.x, outside.x, fraction).clamp(area.min.x, area.max.x),
+        step_towards(inside.y, outside.y, fraction).clamp(area.min.y, area.max.y),
+    )
+}
+
+/// How much of the way from `from` to `to`, as a fraction in `[0, 1]`, stays within
+/// `[min, max]`, given that `from` lies within it.
+fn fraction_within(from: i64, to: i64, min: i64, max: i64) -> f64 {
+    let bound = if to > max {
+        max
+    } else if to < min {
+        min
+    } else {
+        return 1.0;
+    };
+    world_units_to_f64(bound.saturating_sub(from)) / world_units_to_f64(to.saturating_sub(from))
+}
+
+/// The coordinate `fraction` of the way from `from` to `to`, rounded.
+#[allow(clippy::cast_possible_truncation)] // the result lies between `from` and `to`
+fn step_towards(from: i64, to: i64, fraction: f64) -> i64 {
+    from.saturating_add((world_units_to_f64(to.saturating_sub(from)) * fraction).round() as i64)
+}
+
+#[allow(clippy::cast_precision_loss)] // pointer moves within one frame are far below 2^53 units
+fn world_units_to_f64(units: i64) -> f64 {
+    units as f64
+}
+
 impl Controller for SinglePageController {
     /// Fits the camera to the page on the canvas, then lets the current tool act on the
     /// printable part: the pen extends the stroke in progress and finishes it once the button is
-    /// released or the pointer leaves the printable part, so re-entering starts a new stroke;
+    /// released or the pointer leaves the printable part, ending it on the printable edge where
+    /// the pointer crossed it; a held pointer coming back onto the printable part starts a new
+    /// stroke on the edge where it crossed in;
     /// the eraser erases every stroke within its radius of the pointer.
     fn handle_canvas_input<M: Model>(&mut self, model: &mut M, input: &CanvasInput) {
         *model.camera_mut() = M::Camera::fitting(PAGE, input.area, SPACE_AROUND_PAGE_PX);
-        let printable_point = input
+        let pointer = input
             .pointer_pressed_at
-            .map(|pos| model.camera().screen_to_world(pos))
-            .filter(|&point| is_printable(point));
+            .map(|pos| model.camera().screen_to_world(pos));
+        let printable_point = pointer.filter(|&point| is_printable(point));
         match model.tools().tool {
             Tool::Pen => {
                 if let Some(point) = printable_point {
+                    if let Some(outside) = self.pointer_held_outside {
+                        model.extend_stroke_in_progress(printable_edge_towards(point, outside));
+                    }
                     model.extend_stroke_in_progress(point);
+                } else if let (Some(outside), Some(&last)) =
+                    (pointer, model.stroke_in_progress().last())
+                {
+                    model.extend_stroke_in_progress(printable_edge_towards(last, outside));
                 }
                 if !input.is_pointer_held || printable_point.is_none() {
                     model.finish_stroke_in_progress();
@@ -49,5 +96,7 @@ impl Controller for SinglePageController {
                 }
             }
         }
+        self.pointer_held_outside =
+            pointer.filter(|&point| input.is_pointer_held && !is_printable(point));
     }
 }
