@@ -4,8 +4,8 @@ use xxhash_rust::xxh3::xxh3_128;
 
 use crate::StrokeId;
 
-/// Wrapping sum of one hash per added stroke id and per erased target; callers insert each item
-/// once.
+/// Wrapping sum of one hash per added stroke id and per erased target, plus one for the page
+/// count when read; callers insert each item once.
 #[derive(Debug, Default)]
 pub struct StateHash(u128);
 
@@ -16,6 +16,7 @@ pub struct StateHash(u128);
 enum Item {
     Added = 1,
     Tombstoned = 2,
+    PageCount = 3,
 }
 
 impl StateHash {
@@ -29,9 +30,13 @@ impl StateHash {
         self.insert(Item::Tombstoned, target);
     }
 
-    /// The current hash.
-    pub fn value(&self) -> u128 {
-        self.0
+    /// The current hash of a board with `page_count` pages: the sum plus the hash of
+    /// `[kind, page_count as u32 LE]`.
+    pub fn value(&self, page_count: u32) -> u128 {
+        let mut bytes = [0; 5];
+        bytes[0] = Item::PageCount as u8;
+        bytes[1..].copy_from_slice(&page_count.to_le_bytes());
+        self.0.wrapping_add(item_hash(&bytes))
     }
 
     /// Adds the hash of `[kind, peer as u64 LE, seq as u64 LE]` to the sum.

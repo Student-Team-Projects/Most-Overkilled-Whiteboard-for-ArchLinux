@@ -3,7 +3,7 @@
 pub mod oracle;
 pub mod strategy;
 
-use wb_core::{Board, EncodedPoints, Lamport, Op, OpId, PeerId, Stroke};
+use wb_core::{Aabb, Board, EncodedPoints, Lamport, Op, OpId, PeerId, Stroke, WorldPos};
 
 use super::config::PEERS;
 
@@ -31,6 +31,10 @@ impl OpIdExt for OpId {
 pub trait OpExt {
     /// Add of a stroke with no points, with any id and Lamport.
     fn stroke(id: OpId, lamport: u64) -> Self;
+    /// Add of a stroke with no points whose lowest point is at `y`.
+    fn stroke_down_to(id: OpId, lamport: u64, y: i64) -> Self;
+    /// Add-page op `id` asking for `count` pages.
+    fn page_add(id: OpId, count: u32) -> Self;
     /// Erase op `id` of the stroke `target`.
     fn erasure(id: OpId, target: OpId) -> Self;
     /// The op's own id: the stroke's id for an Add.
@@ -49,6 +53,18 @@ impl OpExt for Op {
         })
     }
 
+    fn stroke_down_to(id: OpId, lamport: u64, y: i64) -> Self {
+        let mut op = Self::stroke(id, lamport);
+        if let Op::Add(stroke) = &mut op {
+            stroke.bbox = Aabb::new(WorldPos::new(0, 0), WorldPos::new(0, y));
+        }
+        op
+    }
+
+    fn page_add(id: OpId, count: u32) -> Self {
+        Op::AddPage { id, count }
+    }
+
     fn erasure(id: OpId, target: OpId) -> Self {
         Op::Erase { id, target }
     }
@@ -56,7 +72,7 @@ impl OpExt for Op {
     fn id(&self) -> OpId {
         match self {
             Op::Add(stroke) => stroke.id,
-            Op::Erase { id, .. } => *id,
+            Op::Erase { id, .. } | Op::AddPage { id, .. } => *id,
         }
     }
 }
@@ -69,10 +85,14 @@ pub trait BoardExt: Board {
     fn merged(&self, other: &Self) -> Self;
     /// The visible strokes, owned, so pictures compare with `==`.
     fn picture(&self) -> Vec<Stroke>;
+    /// Everything `apply` reports a change of: the page count and the picture.
+    fn view(&self) -> (u32, Vec<Stroke>);
     /// Draws a stroke with no points by `me`, as the app does: stamp, build, apply.
     fn draw_any(&mut self, me: PeerId) -> Stroke;
     /// Erases `target` by `me`, as the app does, and returns the erase op.
     fn erase(&mut self, me: PeerId, target: OpId) -> Op;
+    /// Asks for `count` pages by `me`, as the app does, and returns the add-page op.
+    fn add_pages(&mut self, me: PeerId, count: u32) -> Op;
 }
 
 impl<B: Board> BoardExt for B {
@@ -95,18 +115,28 @@ impl<B: Board> BoardExt for B {
         self.visible().cloned().collect()
     }
 
+    fn view(&self) -> (u32, Vec<Stroke>) {
+        (self.page_count(), self.picture())
+    }
+
     fn draw_any(&mut self, me: PeerId) -> Stroke {
         let stamp = self.stamp(me);
         let op = Op::add(stamp, COLOR, WIDTH, EncodedPoints(Vec::new()), BBOX);
         self.apply(op.clone());
         match op {
             Op::Add(stroke) => stroke,
-            Op::Erase { .. } => unreachable!("Op::add builds an Add"),
+            Op::Erase { .. } | Op::AddPage { .. } => unreachable!("Op::add builds an Add"),
         }
     }
 
     fn erase(&mut self, me: PeerId, target: OpId) -> Op {
         let op = Op::erase(self.stamp(me), target);
+        self.apply(op.clone());
+        op
+    }
+
+    fn add_pages(&mut self, me: PeerId, count: u32) -> Op {
+        let op = Op::add_page(self.stamp(me), count);
         self.apply(op.clone());
         op
     }
