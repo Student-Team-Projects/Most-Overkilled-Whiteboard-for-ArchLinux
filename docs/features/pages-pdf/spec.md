@@ -7,7 +7,7 @@ at the end, and export the pages you pick to a vector PDF. Decision → ADR 0027
 ## What the user sees
 
 - The board opens with page 0. "Add page" appends one page below the last; if two peers press it
-  at once, they get one new page, not two.
+  at once, they get one new page, not two, and whatever both draw on it overlaps.
 - The pen draws only inside a page's printable area. Leaving the page ends the stroke; coming back
   starts a new one, so no line crosses the gap between pages.
 - "Export PDF" opens a dialog with a checkbox per page; pages with something drawn start checked.
@@ -48,4 +48,4 @@ flowchart TD
 | strokes end at the page edge; renderer and PDF clip to the page | ADR 0027 |
 | vector PDF via `pdf-writer`; checkboxes, non-empty pages pre-checked | ADR 0027 |
 | board mode `Stacked` / `Infinite` fixed at creation; MVP only `Stacked` | ADR 0027 · file header open (G07) |
-| colours in the PDF | `Stroke` colour; opacity open (ADR 0028, proposed in PR #104) |
+| colours in the PDF | `Stroke` colour; opacity open (opaque-colours ADR proposed in #105) |

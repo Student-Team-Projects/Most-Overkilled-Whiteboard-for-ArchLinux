@@ -1,6 +1,6 @@
 # 0027 — Pages are board state; strokes stay on one page; vector PDF export
 
-Status: proposed · 2026-11-09 · closes G25 · needs all 3 · first draft by Filip (PR #104)
+Status: proposed · 2026-11-09 · closes G25 · needs all 3 · first draft by Filip
 
 - **Context:** the MVP is a vertical stack of A4 pages with PDF export of the pages that have
   something drawn (ADR 0019). If pages existed only per instance, a peer that joins or reopens a
@@ -14,7 +14,8 @@ Status: proposed · 2026-11-09 · closes G25 · needs all 3 · first draft by Fi
   - `Board::last_page()` = the maximum of every applied `AddPage.page` and of the page holding the
     lowest bounding-box point of every added stroke (erased ones too); 0 on an empty board;
     saturating at `u32::MAX`. The stroke part keeps a stroke whose `Add` overtakes its `AddPage`
-    on an existing page.
+    on an existing page. It is on `Board` because only the board holds the `AddPage` ops; the page
+    view, "add page" and the export dialog all need it.
   - Page `n` spans world `x` from 0 to 595 × 16 and `y` from `n` × (842 + 16) × 16 for 842 × 16
     units: A4 portrait at 72 dpi, one point = 16 world units (ADR 0014), and a 16 pt gap between
     pages. Its printable area is inset by 14 × 16 units.
@@ -43,5 +44,7 @@ Status: proposed · 2026-11-09 · closes G25 · needs all 3 · first draft by Fi
   joins itself; `pdf-writer` is small, has no dependencies and is maintained by the typst team.
 - **Consequences:** protocol version bump (ADR 0015) · `anti-entropy.md` summaries and range pages
   must cover `AddPage` ops · the G07 file header gains the mode · pages are never removed: a page
-  stays even when all its strokes are erased · T27's pen splits strokes at the page edge · T32
+  stays even when all its strokes are erased · two peers that add a page while apart (offline, a
+  partition, a diverged join) get one page, so their strokes on it overlap; accepted, since live
+  peers see each other's page within one round trip · T27's pen splits strokes at the page edge · T32
   gains the page checkboxes.
