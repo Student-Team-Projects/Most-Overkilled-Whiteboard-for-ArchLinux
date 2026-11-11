@@ -160,6 +160,22 @@ pub struct Rgba(
     pub [u8; 4],
 );
 
+#[cfg(feature = "ecolor")]
+impl From<Rgba> for ecolor::Color32 {
+    /// The egui colour of a stroke colour; the channels are not premultiplied.
+    fn from(Rgba([r, g, b, a]): Rgba) -> Self {
+        Self::from_rgba_unmultiplied(r, g, b, a)
+    }
+}
+
+#[cfg(feature = "ecolor")]
+impl From<ecolor::Color32> for Rgba {
+    /// The stroke colour of an egui colour, with its channels unmultiplied.
+    fn from(color: ecolor::Color32) -> Self {
+        Self(color.to_srgba_unmultiplied())
+    }
+}
+
 /// Stroke data stored by an Add operation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Stroke {

@@ -1,6 +1,7 @@
 //! `docs/contracts/stroke-renderer.md`, run on every renderer.
 
-use wb_app::stroke_renderer::{Naive, StrokeRenderer, to_color32};
+use egui::Color32;
+use wb_app::stroke_renderer::{Naive, StrokeRenderer};
 use wb_core::WorldPos;
 
 use crate::support::config::{BLUE, FAR_OFF_SCREEN, RED};
@@ -14,7 +15,7 @@ fn paints_only_strokes_in_view_bottom_first(mut renderer: impl StrokeRenderer) -
     scene.add(&[WorldPos::new(0, 160)], BLUE)?;
     assert_eq!(
         scene.painted_dots(&mut renderer),
-        [to_color32(RED), to_color32(RED), to_color32(BLUE)]
+        [Color32::from(RED), Color32::from(RED), Color32::from(BLUE)]
     );
     Some(())
 }
@@ -25,7 +26,7 @@ fn invalidate_then_paint_shows_add_and_erase(mut renderer: impl StrokeRenderer) 
     assert!(scene.painted_dots(&mut renderer).is_empty());
     let (id, bbox) = scene.add(&[WorldPos::new(0, 0)], BLUE)?;
     renderer.invalidate(bbox);
-    assert_eq!(scene.painted_dots(&mut renderer), [to_color32(BLUE)]);
+    assert_eq!(scene.painted_dots(&mut renderer), [Color32::from(BLUE)]);
     scene.erase(id);
     renderer.invalidate(bbox);
     assert!(scene.painted_dots(&mut renderer).is_empty());

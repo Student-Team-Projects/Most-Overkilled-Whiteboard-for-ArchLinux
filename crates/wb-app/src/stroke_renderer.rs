@@ -4,8 +4,8 @@ mod naive;
 
 pub use naive::Naive;
 
-use egui::{Color32, Painter};
-use wb_core::{Aabb, Board, Rgba, SpatialIndex};
+use egui::Painter;
+use wb_core::{Aabb, Board, SpatialIndex};
 
 use crate::camera::Camera;
 use crate::stroke_cache::StrokeCache;
@@ -31,10 +31,4 @@ pub trait StrokeRenderer {
         index: &impl SpatialIndex,
         cache: &mut impl StrokeCache,
     );
-}
-
-/// The egui colour of a stroke colour.
-#[must_use]
-pub fn to_color32(Rgba([r, g, b, a]): Rgba) -> Color32 {
-    Color32::from_rgba_unmultiplied(r, g, b, a)
 }

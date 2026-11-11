@@ -11,7 +11,6 @@ use crate::config::{
 use wb_core::Rgba;
 
 use crate::controller::Command;
-use crate::stroke_renderer::to_color32;
 use crate::tool::{Tool, ToolState};
 
 /// The left toolbar for one frame: shows the tool, colour and width pickers with the current
@@ -57,20 +56,19 @@ impl<'a> Toolbar<'a> {
         for (color, name) in NAMED_PRESET_COLORS {
             let (rect, response) = Self::preset_button(ui, self.tools.color == color);
             ui.painter()
-                .circle_filled(rect.center(), COLOR_SWATCH_RADIUS_PX, to_color32(color));
+                .circle_filled(rect.center(), COLOR_SWATCH_RADIUS_PX, Color32::from(color));
             ui.painter()
                 .circle_stroke(rect.center(), COLOR_SWATCH_RADIUS_PX, COLOR_SWATCH_OUTLINE);
             if response.on_hover_text(name).clicked() {
                 self.commands.push(Command::SelectColor(color));
             }
         }
-        let mut any_color = to_color32(self.tools.color);
+        let mut any_color = Color32::from(self.tools.color);
         let any_color_button =
             color_picker::color_edit_button_srgba(ui, &mut any_color, Alpha::Opaque);
         if any_color_button.on_hover_text("Any colour").changed() {
-            self.commands.push(Command::SelectColor(Rgba(
-                any_color.to_srgba_unmultiplied(),
-            )));
+            self.commands
+                .push(Command::SelectColor(Rgba::from(any_color)));
         }
     }
 

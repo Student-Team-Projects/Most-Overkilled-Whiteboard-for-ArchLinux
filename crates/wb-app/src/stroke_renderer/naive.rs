@@ -1,9 +1,9 @@
 //! The simplest renderer: every visible stroke, every frame.
 
-use egui::{Painter, Pos2, Stroke};
+use egui::{Color32, Painter, Pos2, Stroke};
 use wb_core::{Aabb, Board, Intersects, Rgba, SpatialIndex, WorldPos};
 
-use super::{StrokeRenderer, to_color32};
+use super::StrokeRenderer;
 use crate::camera::Camera;
 use crate::stroke_cache::StrokeCache;
 
@@ -24,7 +24,7 @@ impl Naive {
         color: Rgba,
     ) {
         let width = camera.world_length_to_screen(width_in_world_units);
-        let color = to_color32(color);
+        let color = Color32::from(color);
         let on_screen: Vec<Pos2> = points
             .iter()
             .map(|&point| camera.world_to_screen(point))
