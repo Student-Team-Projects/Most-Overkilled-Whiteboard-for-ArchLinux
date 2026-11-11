@@ -62,6 +62,7 @@ fn printable_edge_towards(inside: WorldPos, outside: WorldPos) -> WorldPos {
 
 /// How much of the way from `from` to `to`, as a fraction in `[0, 1]`, stays within
 /// `[min, max]`, given that `from` lies within it.
+#[allow(clippy::cast_precision_loss)] // pointer moves within one frame are far below 2^53 units
 fn fraction_within(from: i64, to: i64, min: i64, max: i64) -> f64 {
     let bound = if to > max {
         max
@@ -70,18 +71,14 @@ fn fraction_within(from: i64, to: i64, min: i64, max: i64) -> f64 {
     } else {
         return 1.0;
     };
-    world_units_to_f64(bound.saturating_sub(from)) / world_units_to_f64(to.saturating_sub(from))
+    bound.saturating_sub(from) as f64 / to.saturating_sub(from) as f64
 }
 
 /// The coordinate `fraction` of the way from `from` to `to`, rounded.
 #[allow(clippy::cast_possible_truncation)] // the result lies between `from` and `to`
-fn step_towards(from: i64, to: i64, fraction: f64) -> i64 {
-    from.saturating_add((world_units_to_f64(to.saturating_sub(from)) * fraction).round() as i64)
-}
-
 #[allow(clippy::cast_precision_loss)] // pointer moves within one frame are far below 2^53 units
-fn world_units_to_f64(units: i64) -> f64 {
-    units as f64
+fn step_towards(from: i64, to: i64, fraction: f64) -> i64 {
+    from.saturating_add((to.saturating_sub(from) as f64 * fraction).round() as i64)
 }
 
 impl Controller for SinglePageController {
