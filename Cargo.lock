@@ -3588,6 +3588,7 @@ version = "0.1.0"
 dependencies = [
  "eframe",
  "egui",
+ "proptest",
  "wb-core",
  "wb-net",
 ]
