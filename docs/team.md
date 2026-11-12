@@ -54,8 +54,7 @@ Board rules: `docs/board.md`.
 ## Spikes
 
 `spikes/<name>/` holds prep and learning code: its own Cargo project, **outside the workspace**, not
-checked by CI, merged by PR. It uses stand-in types copied from the shared types in `docs/contracts/README.md` (T08 #32 moves
-them into `wb-core`).
+checked by CI, merged by PR. It uses stand-in copies of the shared types in `wb-core`.
 
 ## CI
 

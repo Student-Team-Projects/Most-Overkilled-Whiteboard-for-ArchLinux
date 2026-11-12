@@ -30,8 +30,8 @@ flowchart LR
     sc0["StrokeCache: DecodeAll · M0"] -->|M4| sc1["ChunkWorkingSet"]
     sr0["StrokeRenderer: Naive · M0"] -->|M4| sr1["ChunkMesh → ChunkTexture"]
     cd0["StrokeCodec: Raw · M0"] -->|M4| cd1["Packed"]
-    cam0["Camera: AffineCamera · M0"] -->|M1| cam1["page stack"]
-    cam0 -->|M4| cam2["infinite canvas"]
+    cam0["Camera: AffineCamera · M0"] --> cam1["page stack · M0"]
+    cam0 -->|M1| cam2["infinite canvas"]
 ```
 
 Seams on the network side:
@@ -93,7 +93,7 @@ Rule: `wb-core` knows nothing about IO, egui or sockets; sockets and threads liv
 | `SpatialIndex` | `Vec` + linear scan | quadtree |
 | `StrokeRenderer` | egui painter, every visible stroke, every frame | cached chunk meshes → chunk textures (wgpu) |
 | `StrokeCache` | `DecodeAll`: unpack once on arrival, keep all | `ChunkWorkingSet`: resident chunks + margin, byte budget |
-| `Camera` | `AffineCamera`: affine matrix (pan + zoom) from day 1 | one impl per canvas: page stack, infinite canvas (ADR 0029) |
+| `Camera` | `AffineCamera`: affine matrix (pan + zoom) from day 1 | page stack (`PageStackController`, M0); infinite canvas (M1, ADR 0029) |
 | `StrokeCodec` | origin + plain `i32` offsets via postcard | point reduction → delta → bit packing |
 | `Transport` | real UDP socket · `SimTransport` (seeded loss/latency/partition) | — |
 | `Discovery` | candidates (manual ip:port; DHT from the driver) + STUN punching (M1) | LAN / virtual network (M4) |
