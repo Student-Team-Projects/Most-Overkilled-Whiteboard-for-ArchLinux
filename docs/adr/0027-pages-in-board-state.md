@@ -1,6 +1,6 @@
 # 0027 — Pages are board state; strokes stay on one page; vector PDF export
 
-Status: proposed · 2026-11-09 · closes G25 · needs all 3 · first draft by Filip
+Status: accepted · 2026-11-12 (all 3, after the M0 demo) · closes G25 · first draft by Filip
 
 - **Context:** the MVP is a vertical stack of A4 pages with PDF export of the pages that have
   something drawn (ADR 0019). If pages existed only per instance, a peer that joins or reopens a

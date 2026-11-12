@@ -1,6 +1,6 @@
 # 0026 — `Board` is a seam trait
 
-Status: proposed · 2026-10-27 · T09 review (#98)
+Status: accepted · 2026-11-12 (all 3, after the M0 demo) · T09 review (#98)
 
 - **Context:** in review of T09, the reviewer asked for `Board` as a trait, like every other seam,
   with one write path for all ops.
