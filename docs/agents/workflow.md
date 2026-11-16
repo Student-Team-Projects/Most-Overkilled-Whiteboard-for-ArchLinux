@@ -15,14 +15,14 @@ code before a human sees it. A trait with rustdoc and a conformance suite is the
 |---|---|---|
 | 1 | Grill → answers in the G issue, ADR in `docs/adr/` | strong + human · `grill-with-docs` |
 | 2 | Spec → `docs/features/<slug>/spec.md` | strong · `to-spec` |
-| 3 | Trait + rustdoc + `docs/contracts/<seam>.md` | strong + all 3 humans · `codebase-design` |
+| 3 | Trait + rustdoc + `docs/contracts/<seam>.md` | strong + human · `codebase-design` |
 | 4 | Tickets → GitHub issues | strong · `to-tickets` |
 | 5 | Conformance tests, red → `tests/conformance/<seam>.rs` | cheaper · `tdd` |
 | 6 | **Test gate** | strong · `review` |
 | 7 | Implementation, green | cheaper · `tdd`, `rust-best-practices` |
 | 8 | **Code review**, then a human | strong · `review`, `rust-best-practices` |
 
-- Stage 3 changes a contract: all 3 humans + an ADR (`AGENTS.md` → Code rules); new constructors excepted (R4).
+- Stage 3 changes a contract: an ADR line, called out in the PR (`AGENTS.md` → Code rules); new constructors excepted (R4).
 - A feature always gets stage 2 (`docs/team.md`). Work that is not a feature and changes no trait, contract or
   `wb-core` public API skips stages 2–4 and starts at 5 from its issue.
 - Docs or tooling with no Rust code: only gate 8, without the `cargo` and Rust checks.
