@@ -35,3 +35,5 @@ Status: accepted · 2026-10-20 (sync, all 3) · closes G29
   same route (VPN split routing and dual-WAN unsupported). DHT may be blocked on campus networks:
   manual `ip:port` is the fallback and works only when one side is reachable (same LAN, public IP,
   forwarded port); test the demo network early (T34). How it works → `docs/design/internet-connect.md`.
+
+Amended by ADR 0031: libp2p connects peers and carries our envelope on a stream; see there what changes.

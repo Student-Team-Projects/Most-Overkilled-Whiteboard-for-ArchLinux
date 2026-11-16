@@ -7,3 +7,5 @@ Status: accepted · 2026-10-13
   Exception: the DHT threads (ADR 0025).
 - **Why:** light, no async colouring of APIs, and the protocol logic stays sans-IO (pure state
   machine), so the simulator can drive it without threads at all.
+
+Amended by ADR 0031: libp2p connects peers and carries our envelope on a stream; see there what changes.
