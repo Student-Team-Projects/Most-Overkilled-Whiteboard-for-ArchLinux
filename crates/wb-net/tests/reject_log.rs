@@ -1,32 +1,10 @@
 //! Log lines for dropped datagrams: only on tick, throttled per reason, driven by injected time.
 
-use wb_core::{BoardId, Time};
-use wb_net::config::{REJECT_LOG_EVERY_MS, VERSION};
+use wb_net::config::VERSION;
 use wb_net::{Reject, RejectLog};
 
-const EVERY: u64 = REJECT_LOG_EVERY_MS;
-
-/// One reject of every reason.
-const EVERY_REJECT: [Reject; 4] = [
-    Reject::WrongMagic,
-    Reject::UnknownVersion { got: VERSION + 1 },
-    Reject::Undecodable,
-    Reject::ForeignBoard {
-        got: BoardId([0; 8]),
-    },
-];
-
-/// Just the text of the lines due at `ms`.
-fn lines_at(log: &mut RejectLog, ms: u64) -> Vec<String> {
-    log.tick(Time(ms))
-        .into_iter()
-        .map(|(_, line)| line)
-        .collect()
-}
-
-fn line(dropped: u64, reject: Reject) -> String {
-    format!("dropped {dropped} datagrams, newest: {reject}")
-}
+use crate::support::config::EVERY;
+use crate::support::reject_log::{EVERY_REJECT, line, lines_at};
 
 #[test]
 fn nothing_is_logged_before_a_tick_or_without_drops() {

@@ -2,16 +2,13 @@
 
 use proptest::prelude::*;
 use wb_net::config::{MAGIC, VERSION};
-use wb_net::{Body, Inbox, Reason, Reject};
+use wb_net::{Body, Inbox, Reject};
 
 use crate::support::config::{MAX_DATAGRAMS, OTHER, OURS};
 use crate::support::envelope::{board_datagram, datagram, discovery_datagram};
+use crate::support::inbox::counts;
 
 type Accepted = Result<Body<Vec<u8>, Vec<u8>>, Reject>;
-
-fn counts(inbox: &Inbox) -> [u64; 4] {
-    Reason::ALL.map(|reason| inbox.dropped(reason))
-}
 
 #[test]
 fn accepts_our_board_and_any_discovery() {

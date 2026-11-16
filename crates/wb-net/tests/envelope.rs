@@ -4,15 +4,8 @@ use proptest::prelude::*;
 use wb_net::config::{MAGIC, MAX_DATAGRAM, VERSION};
 use wb_net::{Body, EncodeError, Reject};
 
-use crate::support::config::MAX_RANDOM;
-use crate::support::envelope::{TestPacket, packet};
-
-/// A small valid datagram to corrupt one byte at a time.
-fn valid() -> Vec<u8> {
-    TestPacket::new(Body::Discovery(vec![1, 2, 3]))
-        .encode()
-        .unwrap_or_default()
-}
+use crate::support::config::{MAX_RANDOM, OVERHEAD};
+use crate::support::envelope::{TestPacket, TestPacketExt, packet};
 
 proptest! {
     #[test]
@@ -36,7 +29,7 @@ proptest! {
 
 #[test]
 fn rejects_wrong_magic() {
-    let mut bytes = valid();
+    let mut bytes = TestPacket::valid();
     bytes[0] ^= 1;
     assert_eq!(TestPacket::decode(&bytes), Err(Reject::WrongMagic));
     assert_eq!(TestPacket::decode(&[]), Err(Reject::WrongMagic), "empty");
@@ -51,7 +44,7 @@ fn rejects_wrong_magic() {
 
 #[test]
 fn rejects_unknown_version_and_names_it() {
-    let mut bytes = valid();
+    let mut bytes = TestPacket::valid();
     let got = VERSION + 1;
     bytes[MAGIC.len()] = got;
     assert_eq!(
@@ -62,7 +55,7 @@ fn rejects_unknown_version_and_names_it() {
 
 #[test]
 fn rejects_body_that_is_not_exactly_one_body() {
-    let bytes = valid();
+    let bytes = TestPacket::valid();
     let cases = [
         ("truncated", bytes[..bytes.len() - 1].to_vec()),
         ("trailing byte", [&bytes[..], &[0]].concat()),
@@ -77,10 +70,6 @@ fn rejects_body_that_is_not_exactly_one_body() {
         );
     }
 }
-
-/// Wire size of `Discovery(payload)` with a payload of 128 to 16383 bytes: magic + version,
-/// 1 byte of variant tag, 2 bytes of length varint, then the payload.
-const OVERHEAD: usize = MAGIC.len() + 1 + 1 + 2;
 
 #[test]
 fn encodes_up_to_max_datagram_and_not_one_byte_more() {

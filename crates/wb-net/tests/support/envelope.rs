@@ -9,6 +9,20 @@ use super::config::MAX_PAYLOAD;
 /// A packet whose discovery and sync messages are plain bytes: the envelope never looks inside.
 pub type TestPacket = Packet<Vec<u8>, Vec<u8>>;
 
+/// Builds a small valid datagram to corrupt one byte at a time.
+pub trait TestPacketExt {
+    /// A small valid datagram to corrupt one byte at a time.
+    fn valid() -> Vec<u8>;
+}
+
+impl TestPacketExt for TestPacket {
+    fn valid() -> Vec<u8> {
+        Self::new(Body::Discovery(vec![1, 2, 3]))
+            .encode()
+            .unwrap_or_default()
+    }
+}
+
 fn op_id() -> impl Strategy<Value = OpId> {
     (any::<u64>(), any::<u64>()).prop_map(|(peer, seq)| OpId::new(PeerId(peer), seq))
 }
