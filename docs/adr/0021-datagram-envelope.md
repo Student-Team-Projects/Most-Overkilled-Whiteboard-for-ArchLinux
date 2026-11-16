@@ -14,7 +14,7 @@ Status: accepted · 2026-10-15 · closes G08
 - **Conformance tests:** with injected time, cover one exact counter per reason (all four), immediate
   first log per reason, per-reason 10 s throttling with correct “+N more” across several intervals,
   and a version-mismatch log containing both received and supported versions.
-- **Amended 2026-11-16 (T26 #50, proposed — needs all 3):** drops are only counted on receive;
+- **Amended 2026-11-16 (T26 #50):** drops are only counted on receive;
   log lines come out on the driver's `tick`, at most one per reason per 10 s, saying how many were
   dropped since the last line. The first line waits for the next tick instead of logging at once.
   Why: one output path, and no count is lost when the drops stop. Counters stay exact.
