@@ -5,7 +5,7 @@ Overview → `docs/architecture.md` · decisions → ADR 0006, ADR 0016 in `docs
 
 ```mermaid
 flowchart TD
-    start["wb join code, optionally with ip:port · wb open file"] --> local{"local state for this BoardId?"}
+    start["wb join <code> [ip:port | multiaddr] · wb open file"] --> local{"local state for this BoardId?"}
     local -- no --> livecheck{"live session found? via Discovery"}
     livecheck -- yes --> take["take the live state"]
     livecheck -- no --> missing["error: board not found (no state to open)"]
@@ -19,7 +19,8 @@ flowchart TD
     dlg --> discard["discard local: take R"]
 ```
 
-In the MVP, joining uses a board code (DHT, ADR 0025), optionally with `ip:port` (T35 #72, T21 #45);
+In M1, joining uses a session code with optional `ip:port` or multiaddr (ADR 0032). `ip:port`
+translates to `/ip4/<ip>/udp/<port>/quic-v1`;
 `wb list` / name lookup needs LAN discovery (M4).
 
 While the relation is being classified, peers exchange only summaries, range hashes, or id pages;
@@ -36,7 +37,7 @@ A version-vector summary that falls back to range pages follows the same compari
 | CLI `wb new / join / open / list`; Ctrl+S saves | ADR 0016 |
 | fast-forward vs diverged; three choices | ADR 0006 |
 | choice shown as an in-app dialog | ADR 0016 |
-| fresh random `PeerId` every run, so reopened files never reuse ids | ADR 0006 |
+| fresh `PeerId(u64)` derived from the ephemeral libp2p identity each run, so reopened files never reuse ids | ADR 0006 |
 | `relation()` semantics | `docs/contracts/anti-entropy.md` guarantee 2 |
-| `list` only sees this machine until real discovery | `docs/contracts/discovery.md`, open (G12) |
+| `list` shows sessions currently known through libp2p discovery; the view may be incomplete while the DHT lookup is pending | `docs/contracts/discovery.md` |
 | what a save file contains | open (G07) |

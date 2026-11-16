@@ -2,6 +2,9 @@
 
 Status: accepted · 2026-10-14
 
+Amended by ADR 0032 (2026-11-16): devnet also proves the libp2p adapter across direct, DCUtR,
+relay, and NAT scenarios in network namespaces.
+
 - **Context:** the other team's virtual network will be usable late in the semester; we need several
   "devices" with real networking from M1.
 - **Decision:** `scripts/devnet.sh` creates N network namespaces on one bridge — each instance gets its

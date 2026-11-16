@@ -10,8 +10,7 @@
 - **Constraints:**
   - Rust. Team of 3.
   - Another team builds the Arch Linux virtual network — we assume all devices are connected and we
-    can send to them like in a local network. We do not handle connecting, just P2P whiteboard.
-    (Re-scope: the virtual network and LAN discovery are post-MVP; MVP connects via STUN + a DHT rendezvous, manual ip:port as fallback, ADR 0025.)
+    can send to them like in a local network. MVP uses libp2p to connect peers; our protocol runs over the `Link` seam (ADR 0032).
   - Layered plan: first everything as simple as possible but with good engineering practices, so the
     structure is final. Later reimplement components to be more performant, each testable in
     isolation (e.g. quadtree starts as a vector with linear search).
@@ -25,11 +24,11 @@
     and benchmark".
   - Huge board stays smooth — on prepared generated examples.
   - Save to disk: "we want to be able to save it to the disk".
-- **Rejected / deferred:** pixel eraser (ADR 0002) · TCP/QUIC (0003) · tokio (0004) ·
+- **Rejected / deferred:** pixel eraser (ADR 0002) · app-owned connection transport (0003) ·
   always-merge-on-open (0006) · tombstone GC in v1.
 - **Open questions:** what a save file contains → G07 (reopen behaviour is decided: ADR 0006, ADR 0016).
 - **Re-scope 2026-10-15 (stakeholder, ADR 0019):** MVP for the grade = a page version (A4 pages, PDF
-  export of pages with something drawn), connecting peers through STUN (+ DHT rendezvous, ADR 0025) with a connect modal, and a
+  export of pages with something drawn), connecting peers through libp2p and Kademlia rendezvous (ADR 0032) with a connect modal, and a
   visual interface, not CLI only — "we want both cli and visual as we prefer cli"; the egui menu is Kacper's call since egui is already a dependency. "if it works shitty but works we pass" — optimising
   (infinite canvas, quadtree, chunks, gossip) comes after the MVP.
 

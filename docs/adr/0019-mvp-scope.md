@@ -2,6 +2,9 @@
 
 Status: accepted · 2026-10-15 · stakeholder re-plan
 
+Amended by ADR 0032 (2026-11-16): MVP uses the libp2p subset, Kademlia rendezvous, and homelab
+relay fallback; M1 proves direct and relayed peers, manual LAN join, Noise encryption, and devnet.
+
 - **Decision:**
   - MVP for the grade is a vertical stack of A4 pages, PDF export, internet connection through STUN
     and a DHT rendezvous (ADR 0025) with manual `ip:port` join, and both front ends: CLI (ADR 0016, preferred) and

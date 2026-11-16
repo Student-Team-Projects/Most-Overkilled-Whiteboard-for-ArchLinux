@@ -1,119 +1,66 @@
 # Architecture
 
-The structure we build once and keep: crates, seams, and what each seam starts as and grows into.
-Intent → `docs/README.md` · decisions → `docs/adr/` · words → `GLOSSARY.md` ·
-what each seam must do → `docs/contracts/` · diagrams of complex topics → `docs/design/`.
+Crates, seams, and runtime structure. Intent → `docs/README.md` · decisions → `docs/adr/` · words →
+`GLOSSARY.md` · contracts → `docs/contracts/` · complex flows → `docs/design/`.
 
-## Overview in diagrams
-
-Crates and who may depend on whom (arrow = "depends on"; `wb-core` knows no IO, egui or sockets):
+## Crates and dependencies
 
 ```mermaid
 flowchart TD
-    app["wb-app (binary)"]
-    net["wb-net"]
-    core["wb-core"]
-    eframe(["eframe"])
-    egui(["egui"])
-    app --> net
-    app --> core
-    app --> eframe
-    app --> egui
+    app["wb-app"] --> net["wb-net"]
+    app --> core["wb-core"]
     net --> core
+    app --> gui["eframe / egui"]
 ```
 
-Seams on the local side — layer 0 is the oracle, the arrow is the later fast impl (milestone):
+`wb-core` knows no IO, GUI, or sockets. `wb-net` owns the sans-IO protocol and its libp2p adapter.
+
+## Network seams
 
 ```mermaid
 flowchart LR
-    si0["SpatialIndex: LinearIndex · M0"] -->|M4| si1["QuadTree"]
-    sc0["StrokeCache: DecodeAll · M0"] -->|M4| sc1["ChunkWorkingSet"]
-    sr0["StrokeRenderer: Naive · M0"] -->|M4| sr1["ChunkMesh → ChunkTexture"]
-    cd0["StrokeCodec: Raw · M0"] -->|M4| cd1["Packed"]
-    cam0["Camera: AffineCamera · M0"] -->|M1| cam1["page stack"]
-    cam0 -->|M4| cam2["infinite canvas"]
+    link["Link: libp2p adapter + Sim · M1"]
+    disc["Discovery: AutoNAT · Kademlia · Circuit Relay v2 · DCUtR"]
+    bc["Broadcast: SendToAll · M1"] -->|later| gossip["Gossip"]
+    ae["AntiEntropy: FullSet · M2"] -->|later| vv["VersionVector"]
+    link --> disc
 ```
 
-Seams on the network side:
+`Link` sends protocol messages up to 1200 B. Its stream uses a u16 big-endian length prefix outside
+the cap; the envelope is the capped unit. Oversize length resets that stream; a malformed envelope
+within the cap is counted and dropped while the stream stays open. `PeerId(u64)` is the first eight
+bytes of a hash of the ephemeral libp2p `PeerId` for this run.
+
+Connect order: direct dial; if AutoNAT says private, reserve Circuit Relay v2; attempt DCUtR; remain
+on relay if that attempt fails. Configuration includes the homelab bootstrap/relay node and public
+Amino bootstrap nodes. Manual join accepts `join <code> [ip:port | multiaddr]`; `ip:port` maps to
+`/ip4/<ip>/udp/<port>/quic-v1`.
+
+## Runtime and simulation
 
 ```mermaid
 flowchart LR
-    tr["Transport: Udp + Sim · M1"]
-    di0["Discovery: candidates + STUN punching · M1 · DHT feeds candidates from the driver"] -->|M4| di1["LAN / virtual network"]
-    br0["Broadcast: SendToAll · M1"] -->|M4| br1["Gossip"]
-    ae0["AntiEntropy: FullSet · M2"] -->|later| ae1["VersionVector"]
-```
-
-Runtime (ADR 0004): main and net threads in the app, plus the DHT threads (ADR 0025); the simulator drives the same sans-IO protocol code:
-
-```mermaid
-flowchart LR
-    subgraph appproc["wb-app process"]
-        subgraph mainth["main thread"]
-            ui["egui UI + tools"] --> board["Board replica"]
-            board --> rend["StrokeRenderer"]
-        end
-        subgraph netth["net thread"]
-            drv["driver: Time + datagrams"] --> proto["sans-IO protocol: Discovery · Broadcast · AntiEntropy"]
-        end
-        mainth -->|"channel: local ops, commands"| netth
-        netth -->|"channel: remote ops, events + repaint"| mainth
-        drv <-->|"Transport: Udp"| udp[("UDP")]
-        dht["DHT threads: mainline"] -->|"channel: candidates"| drv
+    subgraph process["wb-app"]
+        ui["GUI thread"] <-->|"channels"| netthread["net thread · Tokio current_thread"]
+        netthread --> swarm["libp2p swarm"]
+        netthread --> core["sans-IO protocol: Discovery · Broadcast · AntiEntropy"]
+        swarm -->|"PeerUp / PeerDown and messages"| core
     end
-    subgraph simproc["wb-sim binary (wb-net)"]
-        sdrv["sim driver: simulated Time"] --> sproto["same sans-IO protocol"]
-        sdrv <-->|"Transport: Sim, seeded chaos"| chaos[("loss · latency · partitions")]
-    end
+    sim["wb-sim"] --> simcore["same sans-IO protocol"]
+    simcore <--> chaos["Sim Link: loss · duplication · reordering · partitions"]
 ```
 
-Channel details (bounded or not, crate) are open in G21. The app net thread uses a blocking UDP
-socket with timers.
+Tokio owns the swarm and drives timers, `AntiEntropy` cadence, and `RejectLog::tick`. It supplies
+`now` to the core; the core never awaits. The GUI remains on its own thread. Simulation exercises
+the same protocol deterministically; the real adapter is integrated in the ADR 0017 devnet for
+direct, DCUtR, and relay paths.
 
-## Layering rule
-
-Every performance idea lives behind a **seam** (a trait). Layer 0 is the simplest correct impl and
-stays forever as the **oracle**: the fast impl must pass the same test suite and agree with the
-oracle on random inputs, and must show a benchmark win, before it replaces layer 0 as the default.
-
-## Crates (Cargo workspace, `crates/<name>`)
+## Crates
 
 | Crate | Contents | Depends on |
 |---|---|---|
-| `wb-core` | geometry, `Stroke`, `StrokeId`, `Board` CRDT state + `merge`, ops, pages, `StrokeCodec` + postcard format, `SpatialIndex` seam | serde, postcard, thiserror, xxhash-rust |
-| `wb-net` | sans-IO protocol, `Transport` seam + UDP/Sim drivers, discovery, broadcast, anti-entropy, deterministic sim module and `wb-sim` binary | core |
-| `wb-app` | the binary: eframe window, tools, menu + connect modal, threads, save/load, join flow, `Camera`, `StrokeRenderer` + `StrokeCache`, chunks, PDF export | core, net, eframe/egui |
+| `wb-core` | geometry, board state, ops, pages, codec and spatial index seams | serde, postcard, thiserror, xxhash-rust |
+| `wb-net` | sans-IO protocol, `Link` and libp2p adapter, discovery, broadcast, anti-entropy, deterministic `Sim`, `wb-sim` | core, libp2p |
+| `wb-app` | GUI, tools, threads, save/load, join flow, rendering, PDF export | core, net, eframe/egui |
 
-Rule: `wb-core` knows nothing about IO, egui or sockets; sockets and threads live only in `wb-net` drivers and `wb-app`.
-
-## Seams
-
-| Seam | Layer 0 (simple) | Later layer (fast) |
-|---|---|---|
-| `SpatialIndex` | `Vec` + linear scan | quadtree |
-| `StrokeRenderer` | egui painter, every visible stroke, every frame | cached chunk meshes → chunk textures (wgpu) |
-| `StrokeCache` | `DecodeAll`: unpack once on arrival, keep all | `ChunkWorkingSet`: resident chunks + margin, byte budget |
-| `Camera` | `AffineCamera`: affine matrix (pan + zoom) from day 1 | one impl per canvas: page stack, infinite canvas (ADR 0029) |
-| `StrokeCodec` | origin + plain `i32` offsets via postcard | point reduction → delta → bit packing |
-| `Transport` | real UDP socket · `SimTransport` (seeded loss/latency/partition) | — |
-| `Discovery` | candidates (manual ip:port; DHT from the driver) + STUN punching (M1) | LAN / virtual network (M4) |
-| `Broadcast` | send to every known peer | gossip (fanout k) |
-| `AntiEntropy` | exchange full id sets | compact digests (version vectors / hashes) |
-
-## Runtime (ADR 0004)
-
-The protocol is a pure state machine: `handle(event, now) → Vec<Outgoing>`. The net thread and the
-deterministic sim module are two drivers of the same code.
-
-## Data flow: drawing a stroke
-
-1. Pointer down/move → points collected in screen space → camera inverse → `i64` world space.
-2. Pointer up → codec simplifies and encodes into one or more pieces (ADR 0005, 0014; stays
-   encoded in memory). For each piece: compute its bounding box → `Board::stamp` reserves the `OpId`
-   (ADR 0009) and Lamport timestamp (ADR 0008) → `Op::add` → `Board::apply` → insert into the
-   spatial index → broadcast.
-3. Anti-entropy heals anything broadcast lost (ADR 0003).
-4. Remote op → net → main → `Board::apply` → index + invalidate the affected area.
-5. Drawing and erasing read unpacked points only through `StrokeCache` (ADR 0018).
-
-The same flow as a sequence diagram → `docs/design/stroke-lifecycle.md`.
+Local performance seams and their oracle/fast implementations remain listed in `docs/contracts/`.

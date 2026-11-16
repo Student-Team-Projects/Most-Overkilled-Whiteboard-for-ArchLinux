@@ -1,6 +1,6 @@
 # 0025 — Internet connect: candidates, STUN, DHT rendezvous
 
-Status: accepted · 2026-10-20 (sync, all 3) · closes G29
+Status: superseded by ADR 0032 (2026-11-16)
 
 - **Context:** peers sit behind home NATs; the stakeholder does not want to depend on one third party.
 - **Decision:**
@@ -36,4 +36,5 @@ Status: accepted · 2026-10-20 (sync, all 3) · closes G29
   manual `ip:port` is the fallback and works only when one side is reachable (same LAN, public IP,
   forwarded port); test the demo network early (T34). How it works → `docs/design/internet-connect.md`.
 
-Amended by ADR 0031: libp2p connects peers and carries our envelope on a stream; see there what changes.
+Amended by ADR 0031: libp2p connects peers and carries our envelope on a stream. Superseded by
+ADR 0032 (2026-11-16): libp2p connection, hashed session rendezvous, relay, and manual join model.
