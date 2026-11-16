@@ -30,28 +30,25 @@ fn drops_a_foreign_board_and_names_it() {
     assert_eq!(foreign, Err(Reject::ForeignBoard { got: OTHER }));
 }
 
-/// A different number of drops per reason, so counts swapped between reasons show up.
+/// Each bad datagram adds one to its own reason's count and to no other.
 #[test]
-fn counts_each_reason_exactly() {
+fn counts_each_reason_separately() {
     let mut wrong_version = board_datagram(OURS);
     wrong_version[MAGIC.len()] = VERSION + 1;
     let mut truncated = board_datagram(OURS);
     truncated.pop();
-    let feeds = [
-        (b"nope".to_vec(), 1),
-        (wrong_version, 2),
-        (truncated, 3),
-        (board_datagram(OTHER), 4),
-        (board_datagram(OURS), 5),
+    let cases = [
+        (b"nope".to_vec(), [1, 0, 0, 0]),
+        (wrong_version, [0, 1, 0, 0]),
+        (truncated, [0, 0, 1, 0]),
+        (board_datagram(OTHER), [0, 0, 0, 1]),
+        (board_datagram(OURS), [0, 0, 0, 0]),
     ];
-
-    let mut inbox = Inbox::new(OURS);
-    for (datagram, times) in feeds {
-        for _ in 0..times {
-            let _: Accepted = inbox.accept(&datagram);
-        }
+    for (datagram, expected) in cases {
+        let mut inbox = Inbox::new(OURS);
+        let _: Accepted = inbox.accept(&datagram);
+        assert_eq!(counts(&inbox), expected, "{datagram:?}");
     }
-    assert_eq!(counts(&inbox), [1, 2, 3, 4]);
 }
 
 proptest! {
