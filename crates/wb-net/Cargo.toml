@@ -8,6 +8,7 @@ autotests = false
 
 [dependencies]
 wb-core = { workspace = true }
+log.workspace = true
 postcard.workspace = true
 serde.workspace = true
 thiserror.workspace = true

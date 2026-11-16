@@ -2,4 +2,5 @@
 
 mod envelope;
 mod inbox;
+mod reject_log;
 mod support;
