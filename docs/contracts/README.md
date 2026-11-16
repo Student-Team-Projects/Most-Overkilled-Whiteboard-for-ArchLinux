@@ -22,7 +22,7 @@ Write each contract in prose; the trait in code is the signature, documented per
 - `EncodedPoints` — opaque codec bytes containing an i64 origin and packed deltas.
 - `StrokePoints` — decoded origin and signed 32-bit offsets, materialized on demand.
 - `Stroke` — id, Lamport timestamp, color, width in world units (ADR 0013), bounding box, and encoded points.
-- `Op` — either `Add(Stroke)` or `Erase { id, target }`; new variants may be added (ADR 0015).
+- `Op` — `Add(Stroke)`, `Erase { id, target }`, or `AddPage { id, count }` (ADR 0027); new variants may be added (ADR 0015).
 - `Time` — injected millisecond time; drivers provide it and it is never read from the OS.
 - `Outgoing` — sans-IO destination peer and message.
 
@@ -58,7 +58,7 @@ Coordinate rule: every coordinate computation is `i64`; `i32` exists only as dec
 
 | Seam | File | Status |
 |---|---|---|
-| `Board` (type, not a trait) | `board.md` | agreed |
+| `Board` | `board.md` | agreed |
 | `StrokeCodec` | `stroke-codec.md` | agreed |
 | `SpatialIndex` | `spatial-index.md` | agreed |
 | `Camera` (type) | `camera.md` | agreed |

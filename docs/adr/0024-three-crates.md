@@ -9,3 +9,6 @@ Status: accepted · 2026-10-16 · closes G31
   egui. Crates do not enforce "no sockets in core" anyway (`std::net` is std) — review does.
 - **Amended 2026-10-22 (T08):** wire types (`Packet`, `Body`, `BoardMsg`) live in `wb-net`, since they
   hold its `SyncMsg` and `DiscoveryMsg`; `wb-core` keeps the domain types and a generic `Outgoing`.
+- **Amended 2026-11-11 (T13, #111):** `wb-core` has an optional `ecolor` feature (egui's colour
+  crate only) for `From` between `Rgba` and `Color32`; only `wb-app` turns it on, so headless
+  binaries still never link egui. Needs all 3.

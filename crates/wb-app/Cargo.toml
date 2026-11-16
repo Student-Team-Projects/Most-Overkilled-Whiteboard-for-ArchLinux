@@ -4,16 +4,25 @@ edition.workspace = true
 rust-version.workspace = true
 version.workspace = true
 publish.workspace = true
+license.workspace = true
+autotests = false
 
 [[bin]]
 name = "wb"
 path = "src/main.rs"
 
 [dependencies]
-wb-core = { workspace = true }
+wb-core = { workspace = true, features = ["ecolor"] }
 wb-net = { workspace = true }
 eframe = { workspace = true }
 egui = { workspace = true }
+
+[dev-dependencies]
+proptest.workspace = true
+
+[[test]]
+name = "main"
+path = "tests/main.rs"
 
 [lints]
 workspace = true

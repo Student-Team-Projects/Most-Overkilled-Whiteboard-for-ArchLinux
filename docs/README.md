@@ -42,3 +42,5 @@
 | board | https://github.com/orgs/Student-Team-Projects/projects/6 |
 
 Full map → `AGENTS.md`.
+
+Licence: MIT — `LICENSE`.

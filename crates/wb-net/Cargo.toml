@@ -5,6 +5,7 @@ rust-version.workspace = true
 version.workspace = true
 publish.workspace = true
 autotests = false
+license.workspace = true
 
 [dependencies]
 wb-core = { workspace = true }

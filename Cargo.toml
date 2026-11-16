@@ -8,17 +8,20 @@ edition = "2024"
 rust-version = "1.98"
 version = "0.1.0"
 publish = false
+license = "MIT"
 
 [workspace.dependencies]
 wb-core = { path = "crates/wb-core" }
 wb-net = { path = "crates/wb-net" }
 eframe = "=0.36.2"
 egui = "=0.36.2"
+ecolor = "=0.36.2"
 serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
 postcard = { version = "1", features = ["alloc"] }
 proptest = { version = "1", default-features = false, features = ["std"] }
 thiserror = "2"
 log = "0.4"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
 
 [workspace.lints.rust]
 missing_docs = "deny"

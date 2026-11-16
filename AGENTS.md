@@ -16,6 +16,7 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 | words | `GLOSSARY.md` |
 | team workflow, definition of done | `docs/team.md` |
 | code rules | `RULES.md` |
+| agent workflow: grill → spec → tickets → TDD → review | `docs/agents/workflow.md` |
 | **backlog** | **GitHub Issues + Project board** (ADR 0011) — see `docs/agents/issue-tracker.md` |
 
 ## Backlog rules (ADR 0011)
@@ -48,5 +49,6 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 
 ## Agent skills
 
+- Workflow every agent follows: `docs/agents/workflow.md`; its skills, pinned upstream: `docs/agents/skills.md`.
 - Issue tracker: GitHub Issues. See `docs/agents/issue-tracker.md`.
 - Domain docs: single-context (`GLOSSARY.md` + `docs/adr/`). See `docs/agents/domain.md`.

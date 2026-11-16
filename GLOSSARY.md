@@ -5,7 +5,8 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | Term | Meaning |
 |---|---|
 | **Board** | one shared whiteboard, identified by `BoardId`; its state = strokes + tombstones |
-| **Page** | an A4 rectangle in world units; MVP drawing happens only on pages (ADR 0019) |
+| **Page** | an A4 rectangle in world units; MVP drawing happens only on pages (ADR 0019); pages are board state (ADR 0027) |
+| **Printable area** | a page minus a 14 pt margin; the pen draws only inside it (ADR 0027) |
 | **STUN** | protocol to learn your public ip:port behind NAT; used with a rendezvous to connect peers |
 | **Rendezvous** | the step where two peers exchange their public addresses before hole punching; MVP: via the DHT (ADR 0025) |
 | **Candidate** | one address a peer might be reached at: manual, DHT or relay (ADR 0025) |
@@ -16,6 +17,7 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | **World unit** | 1/16 px at zoom 1.0; all coordinates are `i64` world units (ADR 0014) |
 | **StrokeId** | the `OpId` `(PeerId, seq)` of the stroke's `Add` op — globally unique |
 | **Lamport timestamp** | logical clock on each stroke: max seen + 1; with `PeerId` gives draw order |
+| **Stamp** | a fresh `OpId` + Lamport that `Board::stamp` reserves for one local op; never reused |
 | **Tombstone** | record that a stroke was erased; never removed in v1 |
 | **Merge** | union of strokes and of tombstones; order and duplicates don't matter |
 | **Fast-forward** | joining when local state ⊆ live state: union with the live state, no prompt |
