@@ -1,14 +1,11 @@
 //! Named test parameters.
 
-use wb_core::{BoardId, Time};
+use wb_core::BoardId;
 
 /// The board the inbox under test is on.
 pub const OURS: BoardId = BoardId([1; 8]);
 /// Some other board.
 pub const OTHER: BoardId = BoardId([2; 8]);
-
-/// Receive time in the inbox tests, which do not look at the log.
-pub const NOW: Time = Time(0);
 
 /// Random inbox runs feed at most this many datagrams.
 pub const MAX_DATAGRAMS: usize = 32;

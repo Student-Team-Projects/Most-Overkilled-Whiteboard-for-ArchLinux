@@ -1,66 +1,84 @@
-//! Throttled log lines for dropped datagrams: one per reason at most every 10 s.
+//! Log lines for dropped datagrams, written on tick: at most one per reason every 10 s.
 
 use wb_core::Time;
 
 use crate::config::REJECT_LOG_EVERY_MS;
 use crate::envelope::{Reason, Reject};
 
-/// Decides which dropped datagrams get a log line, so a flood of garbage cannot flood the log.
+/// Collects dropped datagrams and turns them into log lines on `tick`, so a flood of garbage
+/// cannot flood the log.
 ///
-/// Each reason is throttled on its own. The first drop of a reason is logged at once; later
-/// drops of that reason within `REJECT_LOG_EVERY_MS` of its last line are skipped, and the next
-/// line after that says how many were skipped. Skipped drops are still counted exactly by
-/// `Inbox`; only the lines are thinned out. A clock that goes backwards counts as no time passed.
-#[derive(Debug, Default)]
+/// `record` only collects; nothing is logged until `tick`. Each reason is throttled on its own:
+/// on a tick, a reason with drops since its last line gets a new line, unless its last line was
+/// less than `REJECT_LOG_EVERY_MS` ago; then its drops wait for a later tick. A clock that goes
+/// backwards counts as no time passed.
+#[derive(Debug)]
 pub struct RejectLog {
-    reasons: [Throttle; Reason::ALL.len()],
+    reasons: [Pending; Reason::ALL.len()],
 }
 
-/// The state of one reason: when it last got a line, and how many drops it skipped since.
-#[derive(Debug, Default, Clone, Copy)]
-struct Throttle {
-    last: Option<Time>,
-    skipped: u64,
+/// One reason: when it last got a line, and the drops since then.
+#[derive(Debug, Clone, Copy)]
+struct Pending {
+    last_line: Option<Time>,
+    dropped: u64,
+    /// The newest drop since the last line, shown in the next line.
+    newest: Option<Reject>,
 }
 
-impl Throttle {
-    /// Never logged, nothing skipped.
+impl Pending {
+    /// Never logged, nothing dropped.
     const NEW: Self = Self {
-        last: None,
-        skipped: 0,
+        last_line: None,
+        dropped: 0,
+        newest: None,
     };
 }
 
 impl RejectLog {
-    /// A log where no reason has been logged yet.
+    /// A log with nothing collected.
     #[must_use]
     pub const fn new() -> Self {
         Self {
-            reasons: [Throttle::NEW; Reason::ALL.len()],
+            reasons: [Pending::NEW; Reason::ALL.len()],
         }
     }
 
-    /// The line to log for `reject`, dropped at `now`, or `None` if it is skipped.
+    /// Collects one dropped datagram; it shows up in a line on a later `tick`.
+    pub fn record(&mut self, reject: Reject) {
+        let pending = &mut self.reasons[reject.reason() as usize];
+        pending.dropped = pending.dropped.saturating_add(1);
+        pending.newest = Some(reject);
+    }
+
+    /// The lines due at `now`, one per reason at most, in `Reason::ALL` order.
     ///
-    /// The line is `dropped datagram: <reject>`, plus ` (+N more)` when N drops of the same
-    /// reason were skipped since its last line. An unknown version names both versions.
-    pub fn record(&mut self, reject: &Reject, now: Time) -> Option<String> {
-        let throttle = &mut self.reasons[reject.reason() as usize];
-        let quiet = throttle
-            .last
-            .is_some_and(|last| now.0.saturating_sub(last.0) < REJECT_LOG_EVERY_MS);
-        if quiet {
-            throttle.skipped = throttle.skipped.saturating_add(1);
-            return None;
+    /// A line is `dropped N datagrams, newest: <reject>`; for an unknown version the reject
+    /// names both versions. Each returned line resets its reason's count.
+    pub fn tick(&mut self, now: Time) -> Vec<(Reject, String)> {
+        let mut lines = Vec::new();
+        for pending in &mut self.reasons {
+            let quiet = pending
+                .last_line
+                .is_some_and(|last| now.0.saturating_sub(last.0) < REJECT_LOG_EVERY_MS);
+            let Some(newest) = pending.newest.filter(|_| !quiet) else {
+                continue;
+            };
+            lines.push((
+                newest,
+                format!("dropped {} datagrams, newest: {newest}", pending.dropped),
+            ));
+            *pending = Pending {
+                last_line: Some(now),
+                ..Pending::NEW
+            };
         }
-        let line = match throttle.skipped {
-            0 => format!("dropped datagram: {reject}"),
-            skipped => format!("dropped datagram: {reject} (+{skipped} more)"),
-        };
-        *throttle = Throttle {
-            last: Some(now),
-            skipped: 0,
-        };
-        Some(line)
+        lines
+    }
+}
+
+impl Default for RejectLog {
+    fn default() -> Self {
+        Self::new()
     }
 }

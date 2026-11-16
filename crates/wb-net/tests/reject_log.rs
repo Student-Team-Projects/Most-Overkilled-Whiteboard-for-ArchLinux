@@ -1,18 +1,10 @@
-//! Throttled log lines for dropped datagrams, driven by injected time.
+//! Log lines for dropped datagrams: only on tick, throttled per reason, driven by injected time.
 
 use wb_core::{BoardId, Time};
 use wb_net::config::{REJECT_LOG_EVERY_MS, VERSION};
 use wb_net::{Reject, RejectLog};
 
 const EVERY: u64 = REJECT_LOG_EVERY_MS;
-
-/// Records `reject` at each time in `times` and returns the lines, `None` where skipped.
-fn lines(log: &mut RejectLog, reject: &Reject, times: &[u64]) -> Vec<Option<String>> {
-    times
-        .iter()
-        .map(|&ms| log.record(reject, Time(ms)))
-        .collect()
-}
 
 /// One reject of every reason.
 const EVERY_REJECT: [Reject; 4] = [
@@ -24,70 +16,95 @@ const EVERY_REJECT: [Reject; 4] = [
     },
 ];
 
-#[test]
-fn first_drop_of_each_reason_logs_at_once() {
-    let mut log = RejectLog::new();
-    for reject in EVERY_REJECT {
-        assert_eq!(
-            log.record(&reject, Time(0)),
-            Some(format!("dropped datagram: {reject}")),
-            "{reject:?}"
-        );
-    }
+/// Just the text of the lines due at `ms`.
+fn lines_at(log: &mut RejectLog, ms: u64) -> Vec<String> {
+    log.tick(Time(ms))
+        .into_iter()
+        .map(|(_, line)| line)
+        .collect()
 }
 
-/// Over several intervals: a line at most once per interval, and each says how many it skipped.
+fn line(dropped: u64, reject: Reject) -> String {
+    format!("dropped {dropped} datagrams, newest: {reject}")
+}
+
 #[test]
-fn throttles_per_interval_and_counts_skipped_drops() {
+fn nothing_is_logged_before_a_tick_or_without_drops() {
     let mut log = RejectLog::new();
-    let got = lines(
-        &mut log,
-        &Reject::Undecodable,
-        &[0, 1, 2, EVERY - 1, EVERY, EVERY + 1, 2 * EVERY, 4 * EVERY],
-    );
-    let line = |suffix: &str| Some(format!("dropped datagram: undecodable body{suffix}"));
+    assert_eq!(lines_at(&mut log, 0), Vec::<String>::new(), "no drops");
+    log.record(Reject::Undecodable);
+    assert_eq!(lines_at(&mut log, 0), [line(1, Reject::Undecodable)]);
     assert_eq!(
-        got,
-        [
-            line(""),
-            None,
-            None,
-            None,
-            line(" (+3 more)"),
-            None,
-            line(" (+1 more)"),
-            line(""),
-        ]
+        lines_at(&mut log, 2 * EVERY),
+        Vec::<String>::new(),
+        "no new drops"
     );
+}
+
+#[test]
+fn first_tick_after_drops_logs_every_reason() {
+    let mut log = RejectLog::new();
+    for reject in EVERY_REJECT {
+        log.record(reject);
+    }
+    assert_eq!(
+        lines_at(&mut log, 0),
+        EVERY_REJECT.map(|reject| line(1, reject))
+    );
+}
+
+/// Several intervals, ticked often: a line at most once per interval, each with the drops since
+/// the line before.
+#[test]
+fn throttles_per_interval_and_counts_every_drop() {
+    let mut log = RejectLog::new();
+    let mut got = Vec::new();
+    for (ms, drops) in [
+        (0, 1),
+        (1, 2),
+        (EVERY - 1, 1),
+        (EVERY, 0),
+        (EVERY + 1, 4),
+        (2 * EVERY, 0),
+    ] {
+        for _ in 0..drops {
+            log.record(Reject::Undecodable);
+        }
+        got.push(lines_at(&mut log, ms));
+    }
+    let one = |dropped| vec![line(dropped, Reject::Undecodable)];
+    assert_eq!(got, [one(1), vec![], vec![], one(3), vec![], one(4)]);
 }
 
 #[test]
 fn reasons_throttle_independently() {
     let mut log = RejectLog::new();
-    assert!(log.record(&Reject::WrongMagic, Time(0)).is_some());
-    assert!(log.record(&Reject::WrongMagic, Time(1)).is_none());
-    assert!(
-        log.record(&Reject::Undecodable, Time(1)).is_some(),
-        "own throttle"
-    );
+    log.record(Reject::WrongMagic);
+    assert_eq!(lines_at(&mut log, 0).len(), 1);
+    log.record(Reject::WrongMagic);
+    log.record(Reject::Undecodable);
+    assert_eq!(lines_at(&mut log, 1), [line(1, Reject::Undecodable)]);
 }
 
 #[test]
 fn unknown_version_line_names_both_versions() {
     let got = VERSION + 1;
-    let line = RejectLog::new().record(&Reject::UnknownVersion { got }, Time(0));
+    let mut log = RejectLog::new();
+    log.record(Reject::UnknownVersion { got });
     assert_eq!(
-        line,
-        Some(format!(
-            "dropped datagram: unknown version {got}, this build speaks {VERSION}"
-        ))
+        lines_at(&mut log, 0),
+        [format!(
+            "dropped 1 datagrams, newest: unknown version {got}, this build speaks {VERSION}"
+        )]
     );
 }
 
 #[test]
 fn clock_going_backwards_counts_as_no_time() {
     let mut log = RejectLog::new();
-    let got = lines(&mut log, &Reject::WrongMagic, &[EVERY, 0, 2 * EVERY]);
-    let line = |suffix: &str| Some(format!("dropped datagram: wrong magic{suffix}"));
-    assert_eq!(got, [line(""), None, line(" (+1 more)")]);
+    log.record(Reject::WrongMagic);
+    assert_eq!(lines_at(&mut log, EVERY).len(), 1);
+    log.record(Reject::WrongMagic);
+    assert_eq!(lines_at(&mut log, 0), Vec::<String>::new());
+    assert_eq!(lines_at(&mut log, 2 * EVERY), [line(1, Reject::WrongMagic)]);
 }
