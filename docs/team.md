@@ -22,9 +22,9 @@ Board rules: `docs/board.md`.
 - Everyone takes features end-to-end (UI → core → net) from the milestone in `docs/roadmap.md`.
 - Each feature gets a short spec in `docs/features/<slug>/spec.md` before code, with at least one
   Mermaid diagram (style and examples → `docs/design/`).
-- **Contracts are shared property:** changing a seam trait or anything in `wb-core`'s public API
-  needs agreement from all 3 and an ADR line (new constructors excepted, `RULES.md` R4). That is where feature
-  teams collide — keep it explicit.
+- **Contracts are shared:** changing a seam trait or anything in `wb-core`'s public API gets an ADR
+  line and is called out in the PR; the reviewers' approval is the agreement (new constructors
+  excepted, `RULES.md` R4).
 
 ## Git flow
 
