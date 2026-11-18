@@ -13,7 +13,6 @@ use crate::config::{MAGIC, MAX_DATAGRAM, VERSION};
 /// version are not fields: `encode` always writes this build's values and `decode` accepts no
 /// others.
 ///
-/// See also: ADR 0021.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Packet<D, S> {
     /// What the datagram carries.
