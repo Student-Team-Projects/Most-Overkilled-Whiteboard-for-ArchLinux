@@ -36,7 +36,7 @@ flowchart TD
     q --> vis["keep visible strokes, in visible() order"]
     vis --> get["StrokeCache::get → points"]
     get --> path["pdf-writer: path, width / 16 pt, round caps and joins, clipped to the page"]
-    path --> file["PDF page 595 × 842 pt"]
+    path --> file["Landscape PDF page 842 × 595 pt"]
 ```
 
 ## Reading guide
@@ -44,7 +44,7 @@ flowchart TD
 | Rule | Source |
 |---|---|
 | pages are shared board state: `AddPage` + `page_count` as a maximum | ADR 0027 · `board.md` guarantees 7–8 |
-| page `n` geometry: A4 portrait, 1 pt = 16 world units, 16 pt gap, 14 pt printable inset | ADR 0027 · ADR 0014 |
+| page `n` geometry: landscape A4, 842 × 595 pt, 1 pt = 16 world units, 16 pt gap, 14 pt printable inset | ADR 0027 · ADR 0014 |
 | strokes end at the page edge; renderer and PDF clip to the page | ADR 0027 |
 | vector PDF via `pdf-writer`; checkboxes, non-empty pages pre-checked | ADR 0027 |
 | board mode `Stacked` / `Infinite` fixed at creation; MVP only `Stacked` | ADR 0027 · file header open (G07) |
