@@ -1,6 +1,6 @@
 # 0029 — `Camera` is a seam trait, one impl per canvas
 
-Status: proposed · 2026-11-11 · T11 review (#111)
+Status: accepted · 2026-11-12 (all 3, after the M0 demo) · T11 review (#111)
 
 - **Context:** `camera.md` agreed on `Camera` as one concrete type, an affine matrix. The app will
   have several canvases, and each moves its view differently:
