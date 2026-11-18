@@ -9,4 +9,5 @@ Status: accepted · 2026-10-13
 - **Why:** with ADR 0001 duplicates and reordering are harmless, so reliability comes from
   anti-entropy instead of the transport. Fits gossip/discovery naturally; no async runtime needed.
 
-Amended by ADR 0031: libp2p connects peers and carries our envelope on a stream; see there what changes.
+Amended by ADR 0031: libp2p connects peers and carries our envelope on a stream. Amended by ADR
+0032 (2026-11-16): `Link` is best-effort at the protocol boundary; see ADR 0032.

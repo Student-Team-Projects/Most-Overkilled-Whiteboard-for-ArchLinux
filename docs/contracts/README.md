@@ -13,7 +13,7 @@ Write each contract in prose; the trait in code is the signature, documented per
 
 ## Shared types (`wb-core`)
 
-- `PeerId` — per-run random peer identifier (ADR 0006).
+- `PeerId` — first eight bytes of a hash of the ephemeral libp2p `PeerId`, per run (ADR 0032).
 - `BoardId` — board identifier: 8 random bytes (ADR 0025 encodes it).
 - `OpId` — operation identifier composed of a peer and its sequence number (ADR 0009); `StrokeId` aliases it and identifies the Add operation for a stroke.
 - `Lamport` — logical timestamp used for draw order (ADR 0008).
@@ -36,8 +36,8 @@ Wire packets use postcard enums. The `WBRD` magic and version are checked before
 the rest; version 1 is the initial format and every wire change, including the stroke codec, bumps
 it. Only one version is supported at a time, with no negotiation (ADR 0021).
 
-The datagram envelope conformance suite uses injected time to verify separate exact invalid-packet
-counters for wrong magic, unknown version, undecodable body, and foreign board id; immediate first
+The envelope conformance suite uses injected time to verify separate exact invalid-envelope
+counters for `WrongMagic`, `UnknownVersion`, `Undecodable`, and `ForeignBoard`; immediate first
 logs per reason; per-reason 10-second throttling and correct “+N more” counts over several intervals;
 and version-mismatch logs that include both versions (ADR 0021).
 
@@ -64,9 +64,9 @@ Coordinate rule: every coordinate computation is `i64`; `i32` exists only as dec
 | `Camera` (type) | `camera.md` | agreed |
 | `StrokeRenderer` | `stroke-renderer.md` | agreed |
 | `StrokeCache` | `stroke-cache.md` | agreed |
-| `Transport` | `transport.md` | agreed |
-| `Discovery` | `discovery.md` | agreed |
+| `Link` | `link.md` | accepted · ADR 0032 |
+| `Discovery` | `discovery.md` | accepted · ADR 0032 |
 | `Broadcast` | `broadcast.md` | agreed |
 | `AntiEntropy` | `anti-entropy.md` | agreed |
 
-All agreed at the 2026-10-20 sync (G24); a change needs all 3 + an ADR line.
+Network contract accepted in ADR 0032 (2026-11-16); other contracts retain their recorded status.

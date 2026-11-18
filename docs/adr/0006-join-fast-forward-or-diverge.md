@@ -13,3 +13,7 @@ Status: accepted · 2026-10-13
     *open as copy* (new board_id) or *discard local* (take R).
 - **Why:** git-like and very simple; union is always safe, the prompt only guards against unwanted
   visual overlap. Each session gets a random 64-bit PeerId so reopened files never reuse stroke ids.
+
+
+Amended by ADR 0032 (2026-11-16): `PeerId(u64)` is derived from the ephemeral libp2p identity;
+the fresh-per-run property remains.

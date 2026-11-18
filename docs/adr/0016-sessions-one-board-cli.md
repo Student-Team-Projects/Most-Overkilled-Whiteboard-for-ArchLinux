@@ -2,6 +2,8 @@
 
 Status: accepted · 2026-10-14 · closes G05
 
+Amended by ADR 0032 (2026-11-16): join syntax is `join <code> [ip:port | multiaddr]`.
+
 - **Decision:**
   - One board per app instance; another board = another instance.
   - A board has a random `BoardId` and a human name; `list` shows name · short id · peer count;

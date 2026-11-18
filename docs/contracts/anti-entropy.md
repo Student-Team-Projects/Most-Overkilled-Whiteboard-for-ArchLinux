@@ -19,12 +19,12 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
    `Diverged` iff both have something the other lacks. Fast-forward is a union (ADR 0006), so a
    wrong relation from stale, mixed-source or racing pages costs at most a missing or extra prompt,
    never local ops. No snapshot is needed.
-3. Every message fits in `Transport::max_datagram()` — large states are sent in pages.
+3. Every message fits in 1200 B — large states are sent in pages.
 4. Every 1 s, the next peer of a shuffled rotation (each peer once per cycle) gets a push-pull
    round. On mismatch, range pages compare stroke ids and tombstone target ids in `[lo, hi)`. Each
    peer rotates a local cursor through the ranges, one per round and wrapping; this cursor is not
    shared round state. A lost page is retried next round. If a receiver's ids in `[lo, hi)` do not
-   fit one datagram, it answers only `[lo, mid)` that fits and states `mid`; both peers diff only
+   fit one message, it answers only `[lo, mid)` that fits and states `mid`; both peers diff only
    that covered range. The initiator moves its local cursor to `mid`, so the remainder is compared
    in later rounds. If a peer lacks a tombstone target, the answer includes one retained erase op
    for that target.
@@ -32,7 +32,7 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
    target ids, excluding erase OpIds. A newly inserted stroke id or newly tombstoned target updates
    it in O(1). Equal canonical state has equal hashes.
 6. Pages are filled by serializing each candidate and stopping before it exceeds
-   `Transport::max_datagram()` (or by reserving worst-case postcard prefix and id sizes).
+   1200 B (or by reserving worst-case postcard prefix and id sizes).
 7. During join classification, summaries, range hashes, and id pages are comparison-only: no ops
    are pushed or applied until relation is known and the user chooses merge, copy, or discard for
    `Diverged` or `Ahead`. Live ops arriving meanwhile are buffered (capped, oldest dropped;
@@ -60,7 +60,7 @@ late join and the join check (ADR 0006). Sans-IO. Format → `README.md` here.
 |---|---|
 | `converges_under_chaos` (sim, seeded loss/latency/partition, N = 3…100) | 1 |
 | `relation_matches_set_compare` (proptest vs brute-force set diff) | 2 |
-| `pages_fit_datagram` on 100k-stroke boards | 3 |
+| `pages_fit_message` on 100k-stroke boards | 3 |
 | `state_hash_tracks_canonical_state` (unit + proptest, including repeated erase) | 5 |
 | `range_split_and_page_answer` (unit + proptest; retained erase op) | 4, 6 |
 | `multi_page_converges` (board requiring at least 3 pages) | 1, 4 |

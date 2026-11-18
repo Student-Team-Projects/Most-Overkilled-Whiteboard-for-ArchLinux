@@ -2,6 +2,9 @@
 
 Status: accepted · 2026-11-16 · amends ADR 0003, 0004, 0025
 
+Refined by ADR 0032 (2026-11-16): `Transport` is replaced by the `Link` seam; framing, identity,
+connect order, and runtime are specified there.
+
 - **Context:** the ADR 0025 path (STUN + Mainline + our own punching) has no relay, so peers behind
   symmetric NAT never connect, and traffic is unencrypted. rust-libp2p already has DHT, hole
   punching and a relay. Comparison and research: PR for this ADR, team HMMM's `virtual-network` RFC 0002/0003.

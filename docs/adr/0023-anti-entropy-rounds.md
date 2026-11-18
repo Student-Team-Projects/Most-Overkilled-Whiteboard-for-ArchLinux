@@ -2,6 +2,8 @@
 
 Status: accepted · 2026-10-15 · closes G10
 
+Amended by ADR 0032 (2026-11-16): page budgets apply to 1200 B messages, as specified in ADR 0032.
+
 ## Decision
 
 - Every 1 s, push-pull with the next peer of a shuffled rotation (each peer once per cycle, so no

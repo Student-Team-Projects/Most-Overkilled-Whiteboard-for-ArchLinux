@@ -2,6 +2,8 @@
 
 Status: accepted · 2026-10-15 · closes G06
 
+Amended by ADR 0032 (2026-11-16): the wire limit is 1200 B for the envelope; stream framing is in ADR 0032.
+
 - **Context:** UDP datagrams have a fixed budget, and encoded offsets may not fit `i32`.
 - **Decision:** split one stroke into pieces that share an endpoint. Piece budget = `max_datagram()`
   minus a complete Add packet with worst-case metadata and points-length prefix, measured once by serializing it

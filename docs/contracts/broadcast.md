@@ -4,7 +4,7 @@ Status: agreed 2026-10-20 · How an op leaves this peer towards the others. Form
 
 ## Operations
 
-- `broadcast` — accepts a locally authored operation and peer set; returns outgoing datagrams to spread it. Does not report errors.
+- `broadcast` — accepts a locally authored operation and peer set; returns outgoing messages to spread it. Does not report errors.
 - `on_receive` — accepts sender, received operation, and peer set; returns outgoing forwards, or none for an already seen operation. Does not report errors.
 
 These operations are sans-IO and never touch a socket.
@@ -27,7 +27,7 @@ These operations are sans-IO and never touch a socket.
 
 | Layer | Impl |
 |---|---|
-| 0 | `SendToAll`: one datagram per known peer, never forwards |
+| 0 | `SendToAll`: one message per known peer, never forwards |
 | later | `Gossip { fanout }`: send to k random peers, forward first-seen messages |
 
 ## Conformance tests

@@ -29,7 +29,7 @@ sequenceDiagram
         App->>Index: insert(id, bbox)
         App->>Net: op via channel
     end
-    Net-)Peer: Broadcast, best-effort UDP
+    Net-)Peer: Broadcast over best-effort `Link` messages
     Note over Net,Peer: lost? AntiEntropy heals it later
     Peer->>Peer: Board::apply(op), index insert, invalidate area
     App->>Rend: paint(frame)
