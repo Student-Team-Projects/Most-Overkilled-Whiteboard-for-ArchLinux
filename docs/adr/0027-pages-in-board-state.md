@@ -1,6 +1,6 @@
 # 0027 — Pages are board state; strokes stay on one page; vector PDF export
 
-Status: proposed · 2026-11-09 · closes G25 · needs all 3 · first draft by Filip
+Status: accepted · 2026-11-12 (all 3, after the M0 demo) · closes G25 · first draft by Filip
 
 - **Context:** the MVP is a vertical stack of A4 pages with PDF export of the pages that have
   something drawn (ADR 0019). If pages existed only per instance, a peer that joins or reopens a
@@ -16,9 +16,9 @@ Status: proposed · 2026-11-09 · closes G25 · needs all 3 · first draft by Fi
     empty board; saturating at `u32::MAX`. The stroke part keeps a stroke whose `Add` overtakes
     its `AddPage` on an existing page. It is on `Board` because only the board holds the `AddPage`
     ops; the page view, "add page" and the export dialog all need it.
-  - Page `n` spans world `x` from 0 to 595 × 16 and `y` from `n` × (842 + 16) × 16 for 842 × 16
-    units: A4 portrait at 72 dpi, one point = 16 world units (ADR 0014), and a 16 pt gap between
-    pages. Its printable area is inset by 14 × 16 units.
+  - Page `n` spans world `x` from 0 to 842 × 16 and `y` from `n` × (595 + 16) × 16 for 595 × 16
+    units: landscape A4 at 72 dpi, one point = 16 world units (ADR 0014), and a 16 pt gap between
+    vertically stacked pages. Its printable area is inset by 14 × 16 units.
   - `AddPage` ops are retained and resent like erase ops; `state_hash` covers `page_count()`.
   - The board mode, `Stacked` or `Infinite`, is board metadata fixed at creation, next to
     `BoardId` and the name: in the file header (G07) and in the join handshake. `Board` does not
@@ -30,7 +30,7 @@ Status: proposed · 2026-11-09 · closes G25 · needs all 3 · first draft by Fi
   - The renderer and the PDF clip each page to its bounds, for the part of a line's width that
     overhangs the printable area.
 - **Decision — PDF export:**
-  - Vector, written with the `pdf-writer` crate: one PDF page of 595 × 842 pt per exported page;
+  - Vector, written with the `pdf-writer` crate: one landscape PDF page of 842 × 595 pt per exported page;
     each visible stroke is a path in `visible()` order, its width in points = world width / 16,
     with round caps and joins, clipped to the page.
   - The export dialog lists every page with a checkbox; pages with something drawn are checked by

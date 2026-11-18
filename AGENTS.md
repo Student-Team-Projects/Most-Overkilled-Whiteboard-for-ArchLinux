@@ -30,7 +30,7 @@ Read by Claude Code (via `CLAUDE.md`), Codex and opencode. Team rules for humans
 ## Code rules
 
 - Follow `RULES.md` for all code changes.
-- Changing a contract or `wb-core`'s public API needs all 3 humans + an ADR — stop and ask; additive constructors on `wb-core` types need no ADR (R4).
+- Changing a contract or `wb-core`'s public API: add an ADR line and say so in the PR; approving the PR is agreeing to it. Additive constructors on `wb-core` types need no ADR (R4).
 - For `spikes/` workspace boundaries, see `docs/team.md` → Spikes.
 
 ## PR reviews

@@ -1,6 +1,6 @@
 # Contract: `Camera`
 
-Status: agreed 2026-10-20 · proposed change: a seam trait (ADR 0029, not agreed yet) · World ↔ screen transform for pan and zoom. A seam trait with one impl per canvas; `AffineCamera` is the first.
+Status: agreed 2026-10-20 · a seam trait since ADR 0029 (accepted 2026-11-12) · World ↔ screen transform for pan and zoom. A seam trait with one impl per canvas; `AffineCamera` is the first.
 Format → `README.md` here.
 
 ## Operations

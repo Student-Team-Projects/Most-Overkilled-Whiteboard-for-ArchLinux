@@ -9,7 +9,7 @@ Write each contract in prose; the trait in code is the signature, documented per
 - The contract states the **weakest** guarantee all planned impls keep (layer 0 *and* the fast one).
   Code above the seam may rely only on what is written here.
 - Every clause maps to a test in the seam's shared **conformance suite**; each impl runs it.
-- Changing a contract = all 3 agree + ADR line (`docs/team.md`).
+- Changing a contract = an ADR line, called out in the PR; approving the PR is agreeing (`docs/team.md`).
 
 ## Shared types (`wb-core`)
 
@@ -69,4 +69,4 @@ Coordinate rule: every coordinate computation is `i64`; `i32` exists only as dec
 | `Broadcast` | `broadcast.md` | agreed |
 | `AntiEntropy` | `anti-entropy.md` | agreed |
 
-Network contract accepted in ADR 0032 (2026-11-16); other contracts retain their recorded status.
+Network contract accepted in ADR 0032 (2026-11-16); other contracts retain their recorded status. Later contract changes go through an ADR line and a PR; approving the PR is agreement to that change.

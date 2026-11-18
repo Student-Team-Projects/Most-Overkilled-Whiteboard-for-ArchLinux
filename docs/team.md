@@ -22,9 +22,9 @@ Board rules: `docs/board.md`.
 - Everyone takes features end-to-end (UI → core → net) from the milestone in `docs/roadmap.md`.
 - Each feature gets a short spec in `docs/features/<slug>/spec.md` before code, with at least one
   Mermaid diagram (style and examples → `docs/design/`).
-- **Contracts are shared property:** changing a seam trait or anything in `wb-core`'s public API
-  needs agreement from all 3 and an ADR line (new constructors excepted, `RULES.md` R4). That is where feature
-  teams collide — keep it explicit.
+- **Contracts are shared:** changing a seam trait or anything in `wb-core`'s public API gets an ADR
+  line and is called out in the PR; the reviewers' approval is the agreement (new constructors
+  excepted, `RULES.md` R4).
 
 ## Git flow
 
@@ -54,8 +54,7 @@ Board rules: `docs/board.md`.
 ## Spikes
 
 `spikes/<name>/` holds prep and learning code: its own Cargo project, **outside the workspace**, not
-checked by CI, merged by PR. It uses stand-in types copied from the shared types in `docs/contracts/README.md` (T08 #32 moves
-them into `wb-core`).
+checked by CI, merged by PR. It uses stand-in copies of the shared types in `wb-core`.
 
 ## CI
 

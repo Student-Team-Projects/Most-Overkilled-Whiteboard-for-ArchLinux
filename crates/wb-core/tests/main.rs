@@ -10,3 +10,4 @@ mod page;
 mod rgba;
 mod stroke_points;
 mod support;
+mod types;
