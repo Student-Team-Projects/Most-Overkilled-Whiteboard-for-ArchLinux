@@ -26,7 +26,9 @@ relay if the upgrade fails. Homelab bootstrap and Circuit Relay v2 addresses liv
 user config directory (for example, `bootstrap = ["<multiaddr>"]`); it is never committed to the
 repo. The devnet supplies its own config file. With no user config file, use Amino bootstrap and
 manual join only; relay is unavailable. Manual join is `join <code> [ip:port | multiaddr]`; translate `ip:port` to
-`/ip4/<ip>/udp/<port>/quic-v1`.
+`/ip4/<ip>/udp/<port>/quic-v1`. Each instance listens by default on
+`/ip4/0.0.0.0/udp/0/quic-v1` (OS-chosen ephemeral port); `--port <n>` overrides it. To join a
+local instance manually, use `join <code> 127.0.0.1:<port>`.
 
 ## NAT background
 

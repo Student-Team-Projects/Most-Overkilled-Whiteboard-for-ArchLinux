@@ -32,14 +32,18 @@ Status: accepted · 2026-11-16 · amends ADR 0003, 0004, 0006, 0019, 0021, 0025,
      `/ip4/<ip>/udp/<port>/quic-v1`. The code remains required to find and address the intended
      board. `ForeignBoard` drops and counts envelopes for another board; admission by code is
      deferred.
-  9. **Runtime:** GUI has its own thread. The net thread runs a Tokio runtime (`current_thread`
+  9. **Local instances — Settles G14 (#14):** by default each instance listens on
+     `/ip4/0.0.0.0/udp/0/quic-v1`, letting the OS choose an ephemeral port. `--port <n>` overrides
+     the port. Each run has a fresh libp2p key, so many instances on one machine work without
+     coordination. To manually join a local instance, use `join <code> 127.0.0.1:<port>`.
+  10. **Runtime:** GUI has its own thread. The net thread runs a Tokio runtime (`current_thread`
      is sufficient) that owns the swarm and drives timers and ticks, including `AntiEntropy`
      cadence and `RejectLog::tick`. Tokio supplies `now` to the sans-IO core; the core never
      awaits, preserving deterministic simulation. GUI and net thread use bounded
      `tokio::sync::mpsc` channels in both directions. The UI uses `try_send` and never blocks; a
      full channel means drop and log. It uses `try_recv` each frame. Net events wake the UI with
      egui `request_repaint`.
-  10. **M1 network done:** two peers on different networks draw together using a session code,
+  11. **M1 network done:** two peers on different networks draw together using a session code,
       directly or through the homelab relay; manual LAN join works; links use Noise encryption;
       the ADR 0017 devnet NAT scenario is the proof.
 - **Consequences:** ADR 0003's best-effort message semantics remain visible to protocols on top of
