@@ -29,11 +29,13 @@ flowchart LR
 `Link` sends protocol messages up to 1200 B. Its stream uses a u16 big-endian length prefix outside
 the cap; the envelope is the capped unit. Oversize length resets that stream; a malformed envelope
 within the cap is counted and dropped while the stream stays open. `PeerId(u64)` is the first eight
-bytes of a hash of the ephemeral libp2p `PeerId` for this run.
+bytes, big-endian, of SHA-256(libp2p `PeerId` bytes) for this run.
 
 Connect order: direct dial; if AutoNAT says private, reserve Circuit Relay v2; attempt DCUtR; remain
-on relay if that attempt fails. Configuration includes the homelab bootstrap/relay node and public
-Amino bootstrap nodes. Manual join accepts `join <code> [ip:port | multiaddr]`; `ip:port` maps to
+on relay if that attempt fails. Homelab bootstrap/relay addresses live only in a user TOML config file in the user config
+directory (for example, `bootstrap = ["<multiaddr>"]`); they are never committed to the repo. The
+devnet supplies its own config file. With no user config file, Amino bootstrap and manual join
+remain available, but relay does not. Manual join accepts `join <code> [ip:port | multiaddr]`; `ip:port` maps to
 `/ip4/<ip>/udp/<port>/quic-v1`.
 
 ## Runtime and simulation
@@ -50,7 +52,10 @@ flowchart LR
     simcore <--> chaos["Sim Link: loss · duplication · reordering · partitions"]
 ```
 
-Tokio owns the swarm and drives timers, `AntiEntropy` cadence, and `RejectLog::tick`. It supplies
+GUI and net thread use bounded `tokio::sync::mpsc` channels in both directions. The UI uses
+`try_send` and never blocks; on a full channel it drops and logs, and calls `try_recv` each frame.
+Net events wake the UI with egui `request_repaint`. Tokio owns the swarm and drives timers,
+`AntiEntropy` cadence, and `RejectLog::tick`. It supplies
 `now` to the core; the core never awaits. The GUI remains on its own thread. Simulation exercises
 the same protocol deterministically; the real adapter is integrated in the ADR 0017 devnet for
 direct, DCUtR, and relay paths.

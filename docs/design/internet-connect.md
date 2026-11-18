@@ -22,9 +22,10 @@ sequenceDiagram
 ```
 
 Connection order: direct dial; if AutoNAT reports private, reserve a relay; try DCUtR; remain on
-relay if the upgrade fails. The configured homelab supplies bootstrap and relay service. Public
-Amino bootstrap nodes keep DHT discovery available without the homelab; without it, relay is
-unavailable. Manual join is `join <code> [ip:port | multiaddr]`; translate `ip:port` to
+relay if the upgrade fails. Homelab bootstrap and Circuit Relay v2 addresses live only in a user TOML config file in the
+user config directory (for example, `bootstrap = ["<multiaddr>"]`); it is never committed to the
+repo. The devnet supplies its own config file. With no user config file, use Amino bootstrap and
+manual join only; relay is unavailable. Manual join is `join <code> [ip:port | multiaddr]`; translate `ip:port` to
 `/ip4/<ip>/udp/<port>/quic-v1`.
 
 ## NAT background
@@ -69,6 +70,7 @@ peer addresses.
 | Rule | Source |
 |---|---|
 | Link size, framing, lifecycle | ADR 0032 · `docs/contracts/link.md` |
+| PeerId mapping, GUI/net channels, and bootstrap config | ADR 0032 · `docs/architecture.md` |
 | Bootstrap, relay and connect order | ADR 0032 · `docs/contracts/discovery.md` |
 | `join <code> [ip:port | multiaddr]` | ADR 0032 |
 | NAT behavior | background above |

@@ -43,3 +43,9 @@ protocol drivers and `Sim`; protocol logic never touches the libp2p swarm.
 | 3 | Devnet: malformed envelope is counted and dropped; stream remains up |
 | 4 | Sim conformance: up/down events under partitions. Devnet: reconnect backoff, ~2 min expiry, and no replay after reconnect |
 | 5 | Devnet integration (ADR 0017): direct, DCUtR, and relay paths |
+
+## Thread boundary
+
+The GUI and net thread use bounded `tokio::sync::mpsc` channels in both directions. The UI never
+blocks: it uses `try_send` (drop and log when full) and `try_recv` each frame. Net events request
+an egui repaint. The net thread owns the Tokio runtime and swarm (ADR 0032).

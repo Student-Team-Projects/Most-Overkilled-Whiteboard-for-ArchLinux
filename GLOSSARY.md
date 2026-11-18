@@ -23,7 +23,7 @@ Shared words for code, specs and talks. Decisions behind them → `docs/adr/`.
 | **Multiaddr** | a structured address that describes how to reach a network peer |
 | **Oracle** | the layer-0 impl that fast impls are tested against |
 | **Page** | an A4 rectangle in world units; MVP drawing happens only on pages (ADR 0019); pages are board state (ADR 0027) |
-| **Peer** | one running app instance; first eight bytes of a hash of the ephemeral libp2p peer id per run (ADR 0032) |
+| **Peer** | one running app instance; first eight bytes, big-endian, of SHA-256(libp2p PeerId bytes) per run (ADR 0032) |
 | **PeerDown** | Link event that reports a peer is no longer considered connected |
 | **PeerUp** | Link event that reports a peer is considered connected |
 | **Printable area** | a page minus a 14 pt margin; the pen draws only inside it (ADR 0027) |
