@@ -8,3 +8,5 @@ Status: accepted · 2026-10-13
   (peers exchange digests of what they have, then send what is missing). No TCP, no QUIC.
 - **Why:** with ADR 0001 duplicates and reordering are harmless, so reliability comes from
   anti-entropy instead of the transport. Fits gossip/discovery naturally; no async runtime needed.
+
+Amended by ADR 0031: libp2p connects peers and carries our envelope on a stream; see there what changes.
