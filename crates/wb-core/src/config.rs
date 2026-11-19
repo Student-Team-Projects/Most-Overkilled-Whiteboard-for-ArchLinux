@@ -4,9 +4,9 @@
 const UNITS_PER_POINT: i64 = 16;
 
 /// Width of an A4 page.
-pub const PAGE_WIDTH: i64 = 595 * UNITS_PER_POINT;
+pub const PAGE_WIDTH: i64 = 842 * UNITS_PER_POINT;
 /// Height of an A4 page.
-pub const PAGE_HEIGHT: i64 = 842 * UNITS_PER_POINT;
+pub const PAGE_HEIGHT: i64 = 595 * UNITS_PER_POINT;
 /// Space between one page and the next.
 pub const PAGE_GAP: i64 = 16 * UNITS_PER_POINT;
 /// Margin on every side of a page where the pen does not draw.

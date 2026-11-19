@@ -6,7 +6,9 @@ use wb_app::config::SPACE_AROUND_PAGE_PX;
 use wb_core::Page;
 use wb_core::WorldPos;
 
-use crate::support::config::{ANCHOR_TOLERANCE_PX, ONE_WORLD_PIXEL, OPENING_ZOOM, VIEWPORT};
+use crate::support::config::{
+    ANCHOR_TOLERANCE_PX, HEIGHT_LIMITED_VIEWPORT, ONE_WORLD_PIXEL, OPENING_ZOOM, VIEWPORT,
+};
 
 #[test]
 fn non_finite_zoom_factor_leaves_zoom_unchanged() {
@@ -36,7 +38,16 @@ fn round_trip_is_exact_at_the_edge_of_the_world() {
 
 #[test]
 fn fitting_shows_the_whole_area_centred_with_space_around() {
-    let viewport = Rect::from_min_size(Pos2::ZERO, VIEWPORT);
+    assert_page_fits_viewport(VIEWPORT);
+}
+
+#[test]
+fn fitting_respects_height_when_height_limits_the_fit() {
+    assert_page_fits_viewport(HEIGHT_LIMITED_VIEWPORT);
+}
+
+fn assert_page_fits_viewport(viewport_size: egui::Vec2) {
+    let viewport = Rect::from_min_size(Pos2::ZERO, viewport_size);
     let camera = AffineCamera::fitting(Page(0).bounds(), viewport, SPACE_AROUND_PAGE_PX);
     let page = camera.world_area_to_screen(Page(0).bounds());
     assert!(
@@ -45,9 +56,11 @@ fn fitting_shows_the_whole_area_centred_with_space_around() {
             .contains_rect(page)
     );
     assert!((page.center() - viewport.center()).length() < ANCHOR_TOLERANCE_PX);
-    let tight = (page.height() - (VIEWPORT.y - 2.0 * SPACE_AROUND_PAGE_PX)).abs();
+    let tight = (page.width() - (viewport_size.x - 2.0 * SPACE_AROUND_PAGE_PX))
+        .abs()
+        .min((page.height() - (viewport_size.y - 2.0 * SPACE_AROUND_PAGE_PX)).abs());
     assert!(
         tight < ANCHOR_TOLERANCE_PX,
-        "the page should fill the height"
+        "the page should fill the limiting viewport dimension"
     );
 }

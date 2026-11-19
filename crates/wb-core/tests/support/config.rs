@@ -25,14 +25,14 @@ pub const CANONICAL_AUTHOR: PeerId = PeerId(u64::MAX);
 /// Generated strokes lie on pages `0..PAGES`, and generated add-page ops ask for `0..PAGES` pages.
 pub const PAGES: u32 = 4;
 
-/// Top of one page to the top of the next: A4 height plus the gap, 842 + 16 points of 16 units.
-pub const PAGE_PITCH: i64 = (842 + 16) * 16;
-/// The first page, A4 at 595 × 842 points of 16 units.
-pub const FIRST_PAGE: Aabb = Aabb::new(WorldPos::new(0, 0), WorldPos::new(595 * 16, 842 * 16));
+/// Top of one page to the top of the next: A4 height plus the gap, 595 + 16 points of 16 units.
+pub const PAGE_PITCH: i64 = (595 + 16) * 16;
+/// The first page, A4 at 842 × 595 points of 16 units.
+pub const FIRST_PAGE: Aabb = Aabb::new(WorldPos::new(0, 0), WorldPos::new(842 * 16, 595 * 16));
 /// The first page's printable area: 14 points in from every edge.
 pub const FIRST_PRINTABLE_AREA: Aabb = Aabb::new(
     WorldPos::new(14 * 16, 14 * 16),
-    WorldPos::new((595 - 14) * 16, (842 - 14) * 16),
+    WorldPos::new((842 - 14) * 16, (595 - 14) * 16),
 );
 
 /// The real piece budget in bytes: about one datagram.

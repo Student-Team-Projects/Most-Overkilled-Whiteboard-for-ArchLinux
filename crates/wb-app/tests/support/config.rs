@@ -29,6 +29,8 @@ pub const OPENING_ZOOM: f32 = 1.0;
 pub const ONE_WORLD_PIXEL: u32 = 16;
 /// Size of the off-screen canvas, in screen pixels.
 pub const VIEWPORT: egui::Vec2 = egui::Vec2::new(800.0, 600.0);
+/// Size of a viewport where the page height limits the fit, in screen pixels.
+pub const HEIGHT_LIMITED_VIEWPORT: egui::Vec2 = egui::Vec2::new(1_200.0, 600.0);
 /// A point far outside a `VIEWPORT` centred on the world origin.
 pub const FAR_OFF_SCREEN: wb_core::WorldPos = wb_core::WorldPos::new(1_000_000, 0);
 /// Two stroke colours told apart in paint order.
