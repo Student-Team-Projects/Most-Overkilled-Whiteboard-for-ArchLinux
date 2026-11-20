@@ -1,0 +1,92 @@
+//! Test packets and their generators.
+
+use proptest::prelude::*;
+use wb_core::{Aabb, BoardId, EncodedPoints, Lamport, Op, OpId, PeerId, Rgba, Stroke, WorldPos};
+use wb_net::{BoardMsg, Body, Packet};
+
+use super::config::MAX_PAYLOAD;
+
+/// A packet whose discovery and sync messages are plain bytes: the envelope never looks inside.
+pub type TestPacket = Packet<Vec<u8>, Vec<u8>>;
+
+/// Builds a small valid datagram to corrupt one byte at a time.
+pub trait TestPacketExt {
+    /// A small valid datagram to corrupt one byte at a time.
+    fn valid() -> Vec<u8>;
+}
+
+impl TestPacketExt for TestPacket {
+    fn valid() -> Vec<u8> {
+        Self::new(Body::Discovery(vec![1, 2, 3]))
+            .encode()
+            .unwrap_or_default()
+    }
+}
+
+fn op_id() -> impl Strategy<Value = OpId> {
+    (any::<u64>(), any::<u64>()).prop_map(|(peer, seq)| OpId::new(PeerId(peer), seq))
+}
+
+fn op() -> impl Strategy<Value = Op> {
+    let pos = || (any::<i64>(), any::<i64>()).prop_map(|(x, y)| WorldPos::new(x, y));
+    let add = (
+        op_id(),
+        any::<u64>(),
+        any::<[u8; 4]>(),
+        any::<u32>(),
+        pos(),
+        pos(),
+        prop::collection::vec(any::<u8>(), 0..=MAX_PAYLOAD),
+    )
+        .prop_map(|(id, lamport, color, width, min, max, points)| {
+            Op::Add(Stroke {
+                id,
+                lamport: Lamport(lamport),
+                color: Rgba(color),
+                width,
+                bbox: Aabb::new(min, max),
+                points: EncodedPoints(points),
+            })
+        });
+    let erase = (op_id(), op_id()).prop_map(|(id, target)| Op::Erase { id, target });
+    prop_oneof![add, erase]
+}
+
+/// Encoded datagram of a sync message for `board`.
+#[must_use]
+pub fn board_datagram(board: BoardId) -> Vec<u8> {
+    let body = Body::Board {
+        board,
+        msg: BoardMsg::Sync(vec![1, 2, 3]),
+    };
+    TestPacket::new(body).encode().unwrap_or_default()
+}
+
+/// Encoded datagram of a discovery message.
+#[must_use]
+pub fn discovery_datagram() -> Vec<u8> {
+    TestPacket::new(Body::Discovery(vec![4, 5]))
+        .encode()
+        .unwrap_or_default()
+}
+
+/// Any datagram an inbox may get: valid packets for random boards, and random bytes.
+pub fn datagram() -> impl Strategy<Value = Vec<u8>> {
+    let valid = packet().prop_map(|packet| packet.encode().unwrap_or_default());
+    let garbage = prop::collection::vec(any::<u8>(), 0..=MAX_PAYLOAD);
+    prop_oneof![valid, garbage]
+}
+
+/// Any packet of every shape: discovery, a board op, or board sync traffic.
+pub fn packet() -> impl Strategy<Value = TestPacket> {
+    let bytes = || prop::collection::vec(any::<u8>(), 0..=MAX_PAYLOAD);
+    let msg = prop_oneof![
+        op().prop_map(BoardMsg::Op),
+        bytes().prop_map(BoardMsg::Sync)
+    ];
+    let board = (any::<[u8; 8]>(), msg).prop_map(|(id, msg)| Body::Board {
+        board: BoardId(id),
+        msg,
+    });
+    prop_oneof![bytes().prop_map(Body::Discovery), board].prop_map(Packet::new)
+}
